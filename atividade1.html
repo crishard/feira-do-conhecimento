@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Atividade 1 — JavaScript Básico</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #060609; color: #e2e8f0; max-width: 780px; margin: 0 auto; padding: 40px 20px; }
+    h1 { font-size: 1.6rem; margin-bottom: 4px; }
+    .sub { color: #64748b; font-size: 0.9rem; margin-bottom: 36px; }
+    h2 { font-size: 1rem; color: #06b6d4; margin: 32px 0 14px; border-bottom: 1px solid #1c1c2e; padding-bottom: 8px; }
+
+    .pergunta { background: #0e0e16; border: 1px solid #1c1c2e; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+    .pergunta p { font-size: 0.92rem; line-height: 1.7; margin-bottom: 12px; }
+    .pergunta code { background: #13131f; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: #86efac; font-family: monospace; }
+
+    .opcoes { display: flex; flex-direction: column; gap: 7px; }
+    .opcao { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.88rem; padding: 8px 12px; border-radius: 7px; border: 1px solid #1c1c2e; background: #12121e; transition: border-color 0.15s; }
+    .opcao:hover { border-color: #f97316; }
+    .opcao input { accent-color: #f97316; }
+    .opcao.certa  { border-color: #10b981; background: #0d1f0d; color: #4ade80; }
+    .opcao.errada { border-color: #ef4444; background: #1a0a0a; color: #f87171; }
+
+    .btn-checar { margin-top: 12px; background: none; border: 1px solid #f97316; color: #f97316; padding: 7px 18px; border-radius: 7px; cursor: pointer; font-size: 0.85rem; font-family: inherit; }
+    .btn-checar:hover { background: #1c0e00; }
+    .feedback { margin-top: 10px; font-size: 0.84rem; padding: 8px 12px; border-radius: 7px; display: none; }
+    .feedback.ok  { background: #0d1f0d; border: 1px solid #14532d; color: #4ade80; }
+    .feedback.err { background: #1a0a0a; border: 1px solid #7f1d1d; color: #f87171; }
+
+    /* EXERCÍCIO PRÁTICO */
+    .exercicio { background: #0e0e16; border: 1px solid #1c1c2e; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+    .exercicio .enunciado { font-size: 0.92rem; line-height: 1.75; margin-bottom: 14px; }
+    .exercicio .enunciado strong { color: #f97316; }
+    .exercicio code { background: #13131f; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: #86efac; font-family: monospace; }
+    textarea {
+      width: 100%; background: #0b0b17; border: 1px solid #1c1c2e; color: #e2e8f0;
+      font-family: 'Consolas', monospace; font-size: 0.85rem; padding: 12px;
+      border-radius: 8px; resize: vertical; min-height: 120px; line-height: 1.7;
+      outline: none; box-sizing: border-box;
+    }
+    textarea:focus { border-color: #f97316; }
+    .btn-rodar { margin-top: 10px; background: #f97316; border: none; color: #000; padding: 8px 20px; border-radius: 7px; cursor: pointer; font-size: 0.85rem; font-weight: 700; font-family: inherit; }
+    .btn-rodar:hover { background: #ea6c0a; }
+    .saida {
+      margin-top: 10px; background: #0b0b17; border: 1px solid #1c1c2e;
+      border-radius: 8px; padding: 10px 14px; font-family: monospace; font-size: 0.82rem;
+      color: #94a3b8; min-height: 40px; white-space: pre-wrap; display: none;
+    }
+    .saida.ok  { border-color: #14532d; color: #86efac; }
+    .saida.err { border-color: #7f1d1d; color: #f87171; }
+    .gabarito-btn { background: none; border: 1px solid #1c1c2e; color: #64748b; padding: 5px 14px; border-radius: 7px; cursor: pointer; font-size: 0.78rem; font-family: inherit; margin-top: 8px; }
+    .gabarito-btn:hover { border-color: #64748b; }
+    .gabarito { display: none; margin-top: 10px; background: #0c1a24; border: 1px solid #0e4963; border-radius: 8px; padding: 10px 14px; font-family: monospace; font-size: 0.82rem; color: #67e8f9; white-space: pre; }
+
+    .placar { text-align: center; background: #0e0e16; border: 1px solid #1c1c2e; border-radius: 12px; padding: 24px; margin-top: 32px; display: none; }
+    .placar .nota { font-size: 3rem; font-weight: 900; color: #f97316; }
+    .placar p { color: #94a3b8; font-size: 0.9rem; margin-top: 6px; }
+    .btn-resultado { margin-top: 24px; background: #f97316; border: none; color: #000; padding: 10px 28px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 700; font-family: inherit; display: block; margin-left: auto; margin-right: auto; }
+  </style>
+</head>
+<body>
+
+<h1>📝 Atividade 1</h1>
+<p class="sub">Blocos 1, 2 e 3 · Variáveis, Operadores e Condicionais · JavaScript</p>
+
+<!-- ════════════════════════════════════ PERGUNTAS ════ -->
+<h2>Parte 1 — Perguntas de Múltipla Escolha</h2>
+
+<!-- P1 -->
+<div class="pergunta" id="p1">
+  <p><strong>1.</strong> Qual das opções abaixo declara uma variável cujo valor <strong>não pode ser alterado</strong>?</p>
+  <div class="opcoes">
+    <label class="opcao"><input type="radio" name="p1" value="a"> let nome = "João";</label>
+    <label class="opcao"><input type="radio" name="p1" value="b"> var nome = "João";</label>
+    <label class="opcao"><input type="radio" name="p1" value="c"> const nome = "João";</label>
+    <label class="opcao"><input type="radio" name="p1" value="d"> string nome = "João";</label>
+  </div>
+  <button class="btn-checar" onclick="checar('p1','c','Use const quando o valor não deve mudar nunca.')">Verificar</button>
+  <div class="feedback" id="fb-p1"></div>
+</div>
+
+<!-- P2 -->
+<div class="pergunta" id="p2">
+  <p><strong>2.</strong> O que o código abaixo vai imprimir?</p>
+  <p><code>let x = 10;<br>x += 5;<br>console.log(x);</code></p>
+  <div class="opcoes">
+    <label class="opcao"><input type="radio" name="p2" value="a"> 10</label>
+    <label class="opcao"><input type="radio" name="p2" value="b"> 5</label>
+    <label class="opcao"><input type="radio" name="p2" value="c"> 15</label>
+    <label class="opcao"><input type="radio" name="p2" value="d"> x5</label>
+  </div>
+  <button class="btn-checar" onclick="checar('p2','c','x += 5 é o mesmo que x = x + 5. Então 10 + 5 = 15.')">Verificar</button>
+  <div class="feedback" id="fb-p2"></div>
+</div>
+
+<!-- P3 -->
+<div class="pergunta" id="p3">
+  <p><strong>3.</strong> Qual operador verifica se dois valores são <strong>iguais em valor E em tipo</strong>?</p>
+  <div class="opcoes">
+    <label class="opcao"><input type="radio" name="p3" value="a"> ==</label>
+    <label class="opcao"><input type="radio" name="p3" value="b"> =</label>
+    <label class="opcao"><input type="radio" name="p3" value="c"> !=</label>
+    <label class="opcao"><input type="radio" name="p3" value="d"> ===</label>
+  </div>
+  <button class="btn-checar" onclick="checar('p3','d','=== compara valor E tipo. Por isso 5 === \"5\" é false (number vs string).')">Verificar</button>
+  <div class="feedback" id="fb-p3"></div>
+</div>
+
+<!-- P4 -->
+<div class="pergunta" id="p4">
+  <p><strong>4.</strong> O que o código abaixo vai imprimir?</p>
+  <p><code>let pontos = 45;<br>if (pontos >= 60) {<br>&nbsp;&nbsp;console.log("Aprovado");<br>} else {<br>&nbsp;&nbsp;console.log("Reprovado");<br>}</code></p>
+  <div class="opcoes">
+    <label class="opcao"><input type="radio" name="p4" value="a"> Aprovado</label>
+    <label class="opcao"><input type="radio" name="p4" value="b"> Reprovado</label>
+    <label class="opcao"><input type="radio" name="p4" value="c"> Nada — tem erro no código</label>
+    <label class="opcao"><input type="radio" name="p4" value="d"> Aprovado e Reprovado</label>
+  </div>
+  <button class="btn-checar" onclick="checar('p4','b','45 >= 60 é false, então o else é executado.')">Verificar</button>
+  <div class="feedback" id="fb-p4"></div>
+</div>
+
+<!-- ════════════════════════════════════ EXERCÍCIOS ════ -->
+<h2>Parte 2 — Exercícios Práticos</h2>
+
+<!-- E1 -->
+<div class="exercicio">
+  <div class="enunciado">
+    <strong>Exercício 1 — Calculadora de Desconto</strong><br><br>
+    Crie as variáveis <code>preco</code> (valor: <code>200</code>) e <code>desconto</code> (valor: <code>30</code>).<br>
+    Calcule o <code>precoFinal</code> subtraindo o desconto do preço.<br>
+    Depois use <code>console.log</code> para mostrar:<br>
+    — o preço original<br>
+    — o desconto<br>
+    — o preço final
+  </div>
+  <textarea id="cod-e1" spellcheck="false" placeholder="// escreva seu código aqui..."></textarea>
+  <br>
+  <button class="btn-rodar" onclick="rodar('e1')">▶ Rodar</button>
+  <button class="gabarito-btn" onclick="verGabarito('g1')">Ver gabarito</button>
+  <div class="saida" id="saida-e1"></div>
+  <pre class="gabarito" id="g1">let preco = 200;
+let desconto = 30;
+let precoFinal = preco - desconto;
+
+console.log(preco);
+console.log(desconto);
+console.log(precoFinal);</pre>
+</div>
+
+<!-- E2 -->
+<div class="exercicio">
+  <div class="enunciado">
+    <strong>Exercício 2 — Classificador de Idade</strong><br><br>
+    Crie uma variável <code>idade</code> com qualquer número.<br>
+    Usando <code>if / else if / else</code>, imprima no console:<br>
+    — <code>"Criança"</code> se idade for menor que 12<br>
+    — <code>"Adolescente"</code> se idade for entre 12 e 17<br>
+    — <code>"Adulto"</code> se idade for 18 ou mais<br><br>
+    Teste com pelo menos 3 idades diferentes.
+  </div>
+  <textarea id="cod-e2" spellcheck="false" placeholder="// escreva seu código aqui..."></textarea>
+  <br>
+  <button class="btn-rodar" onclick="rodar('e2')">▶ Rodar</button>
+  <button class="gabarito-btn" onclick="verGabarito('g2')">Ver gabarito</button>
+  <div class="saida" id="saida-e2"></div>
+  <pre class="gabarito" id="g2">let idade = 8;
+if (idade < 12) {
+  console.log("Criança");
+} else if (idade < 18) {
+  console.log("Adolescente");
+} else {
+  console.log("Adulto");
+}
+
+// Teste com outras idades:
+idade = 15;
+if (idade < 12) {
+  console.log("Criança");
+} else if (idade < 18) {
+  console.log("Adolescente");
+} else {
+  console.log("Adulto");
+}</pre>
+</div>
+
+<!-- BOTÃO PLACAR -->
+<button class="btn-resultado" onclick="mostrarPlacar()">Ver minha pontuação</button>
+<div class="placar" id="placar">
+  <div class="nota" id="nota-texto"></div>
+  <p id="nota-msg"></p>
+</div>
+
+<script>
+let acertos = 0;
+let respondidas = {};
+
+function checar(id, certa, explicacao) {
+  const selecionado = document.querySelector(`input[name="${id}"]:checked`);
+  if (!selecionado) return;
+
+  const valor = selecionado.value;
+  const opcoes = document.querySelectorAll(`input[name="${id}"]`);
+  const fb = document.getElementById('fb-' + id);
+
+  opcoes.forEach(op => {
+    const label = op.parentElement;
+    label.style.pointerEvents = 'none';
+    if (op.value === certa)  label.classList.add('certa');
+    if (op.value === valor && valor !== certa) label.classList.add('errada');
+  });
+
+  fb.style.display = 'block';
+  if (valor === certa) {
+    fb.className = 'feedback ok';
+    fb.textContent = '✅ Correto! ' + explicacao;
+    if (!respondidas[id]) { acertos++; respondidas[id] = true; }
+  } else {
+    fb.className = 'feedback err';
+    fb.textContent = '❌ Errado. ' + explicacao;
+    respondidas[id] = true;
+  }
+
+  document.querySelector(`#${id} .btn-checar`).disabled = true;
+}
+
+function rodar(id) {
+  const codigo = document.getElementById('cod-' + id).value;
+  const saida = document.getElementById('saida-' + id);
+  const logs = [];
+
+  const console_fake = { log: (...args) => logs.push(args.join(' ')) };
+  try {
+    const fn = new Function('console', codigo);
+    fn(console_fake);
+    saida.style.display = 'block';
+    saida.className = 'saida ok';
+    saida.textContent = logs.length ? logs.join('\n') : '(nenhum console.log encontrado)';
+  } catch(e) {
+    saida.style.display = 'block';
+    saida.className = 'saida err';
+    saida.textContent = '❌ Erro: ' + e.message;
+  }
+}
+
+function verGabarito(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function mostrarPlacar() {
+  const total = 4;
+  const pct = Math.round((acertos / total) * 100);
+  const placar = document.getElementById('placar');
+  placar.style.display = 'block';
+  document.getElementById('nota-texto').textContent = acertos + '/4 (' + pct + '%)';
+  const msgs = {
+    100: '🏆 Perfeito! Você dominou os 3 blocos.',
+    75:  '👍 Muito bom! Revise o que errou.',
+    50:  '📖 Metade certa. Vale revisar os blocos.',
+    0:   '💪 Continue praticando! Releia os conceitos.',
+  };
+  const chave = pct >= 100 ? 100 : pct >= 75 ? 75 : pct >= 50 ? 50 : 0;
+  document.getElementById('nota-msg').textContent = msgs[chave];
+  placar.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

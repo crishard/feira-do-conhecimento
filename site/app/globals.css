@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --roxo: #7c3aed;
+  --ciano: #06b6d4;
+  --verde: #10b981;
+  --amarelo: #fbbf24;
+  --bg: #0a0a14;
+  --painel: #10101c;
+  --painel2: #16162a;
+  --borda: #262639;
+  --texto: #e2e8f0;
+  --muted: #6b7280;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-painel: var(--painel);
+  --color-painel2: var(--painel2);
+  --color-borda: var(--borda);
+  --color-texto: var(--texto);
+  --color-muted: var(--muted);
+  --color-roxo: var(--roxo);
+  --color-ciano: var(--ciano);
+  --color-verde: var(--verde);
+  --color-amarelo: var(--amarelo);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: radial-gradient(circle at 50% -20%, #17172f, var(--bg));
+  color: var(--texto);
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--roxo);
+  color: #fff;
+}
+
+/* leve estilização de scrollbar para o painel de código */
+.scroll-fino::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.scroll-fino::-webkit-scrollbar-thumb {
+  background: var(--borda);
+  border-radius: 999px;
+}
+.scroll-fino::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* o bloco gerado pelo shiki deve ocupar a largura e rolar por conta própria */
+.visor-codigo pre.shiki {
+  margin: 0;
+  padding: 16px;
+  border-radius: 12px;
+  overflow: auto;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}

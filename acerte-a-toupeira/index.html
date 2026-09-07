@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acerte a Toupeira</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="jogo">
+    <header>
+      <h1>🔨 Acerte a Toupeira</h1>
+      <p class="subtitulo">Feira de Conhecimento</p>
+    </header>
+
+    <div class="painel">
+      <div class="stat">
+        <span class="rotulo">Pontos</span>
+        <strong id="pontos">0</strong>
+      </div>
+      <div class="stat">
+        <span class="rotulo">Tempo</span>
+        <strong id="tempo">30</strong>
+      </div>
+      <div class="stat">
+        <span class="rotulo">Recorde</span>
+        <strong id="recorde">0</strong>
+      </div>
+    </div>
+
+    <div id="tabuleiro" class="tabuleiro">
+      <div class="buraco" data-i="0"><div class="alvo"></div></div>
+      <div class="buraco" data-i="1"><div class="alvo"></div></div>
+      <div class="buraco" data-i="2"><div class="alvo"></div></div>
+      <div class="buraco" data-i="3"><div class="alvo"></div></div>
+      <div class="buraco" data-i="4"><div class="alvo"></div></div>
+      <div class="buraco" data-i="5"><div class="alvo"></div></div>
+      <div class="buraco" data-i="6"><div class="alvo"></div></div>
+      <div class="buraco" data-i="7"><div class="alvo"></div></div>
+      <div class="buraco" data-i="8"><div class="alvo"></div></div>
+    </div>
+
+    <div id="tela" class="tela">
+      <h2 id="telaTitulo">Pronto pra jogar?</h2>
+      <p id="telaTexto">Acerte as toupeiras 🐹 e ganhe pontos.<br>Cuidado com as bombas 💣 — elas tiram pontos!</p>
+      <button id="botao">Começar</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

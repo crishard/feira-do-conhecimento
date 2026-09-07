@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cidade Sustentável</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>🏙️ Cidade Sustentável</h1>
+        <p class="tag">Gestão urbana · Agenda 2030 — ODS 6, 7, 11 e 13 · pensamento sistêmico e decisão baseada em dados</p>
+      </div>
+      <div class="relogio">
+        <span id="dataJogo">Mês 1 · Ano 1</span>
+        <span id="prazo" class="prazo">meta em 36 meses</span>
+      </div>
+    </header>
+
+    <div class="indicadores" id="indicadores">
+      <div class="ind"><span class="rot">Orçamento</span><strong id="iOrcamento">—</strong><span class="sub" id="iFluxo"></span></div>
+      <div class="ind"><span class="rot">População</span><strong id="iPopulacao">—</strong><span class="sub" id="iPopVar"></span></div>
+      <div class="ind"><span class="rot">Satisfação</span><strong id="iSatisfacao">—</strong><span class="sub">meta ≥ 60</span></div>
+      <div class="ind"><span class="rot">Energia</span><strong id="iEnergia">—</strong><span class="sub" id="iEnergiaSub">oferta / demanda</span></div>
+      <div class="ind"><span class="rot">Água</span><strong id="iAgua">—</strong><span class="sub" id="iAguaSub">oferta / demanda</span></div>
+      <div class="ind"><span class="rot">Resíduos</span><strong id="iResiduos">—</strong><span class="sub" id="iResiduosSub">capac. / geração</span></div>
+      <div class="ind destaque"><span class="rot">CO₂ por habitante</span><strong id="iCo2">—</strong><span class="sub">meta ≤ 6 kg/mês</span></div>
+    </div>
+
+    <main>
+      <section class="visao">
+        <canvas id="cidade" width="720" height="380"></canvas>
+        <div class="graficos">
+          <canvas id="grafico" width="720" height="180"></canvas>
+          <div class="legenda-grafico">
+            <span><i class="cor co2"></i> CO₂ por habitante</span>
+            <span><i class="cor sat"></i> Satisfação</span>
+          </div>
+        </div>
+        <div id="evento" class="evento escondido"></div>
+      </section>
+
+      <section class="construcao">
+        <div class="abas" id="abas">
+          <button data-cat="energia" class="ativa">⚡ Energia</button>
+          <button data-cat="saneamento">💧 Água &amp; Resíduos</button>
+          <button data-cat="cidade">🌳 Mobilidade &amp; Verde</button>
+        </div>
+        <div id="catalogo" class="catalogo"></div>
+        <div class="acoes">
+          <button id="btnAvancar" class="btn-principal">Avançar mês ▶</button>
+          <button id="btnReiniciar" class="btn-fantasma">Reiniciar</button>
+        </div>
+        <p class="dica" id="dica">Construa e depois avance o mês para ver o efeito das suas decisões nos gráficos.</p>
+      </section>
+    </main>
+
+    <div id="telaFinal" class="tela-final escondido">
+      <div class="relatorio">
+        <h2 id="finalTitulo"></h2>
+        <p id="finalResumo"></p>
+        <canvas id="graficoFinal" width="760" height="220"></canvas>
+        <div id="finalMedalhas" class="medalhas"></div>
+        <div id="finalNumeros" class="numeros"></div>
+        <button id="btnJogarDeNovo" class="btn-principal">Jogar de novo</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

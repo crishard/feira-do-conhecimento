@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quebra-blocos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🧱 Quebra-blocos</h1>
+  <p class="subtitulo">Rebata a bola e derrube todos os blocos.</p>
+
+  <div class="legenda">
+    <span><span class="tecla">← →</span> ou <span class="tecla">mouse</span> move a raquete</span>
+    <span>Espaço solta a bola / pausa</span>
+  </div>
+
+  <div class="placar">
+    <span>Pontos: <strong id="pontos">0</strong></span>
+    <span>Vidas: <strong id="vidas">3</strong></span>
+    <span>Nível: <strong id="nivel">1</strong></span>
+  </div>
+
+  <div class="quadro">
+    <canvas id="jogo" width="640" height="520" tabindex="0"></canvas>
+    <div id="telaFim" class="tela-fim escondido">
+      <p id="textoFim"></p>
+      <button id="botaoReiniciar">Jogar de novo</button>
+    </div>
+  </div>
+
+  <p class="rodape">Cada nível deixa a bola um pouco mais rápida.</p>
+
+  <script src="script.js"></script>
+</body>
+</html>

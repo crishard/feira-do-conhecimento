@@ -1,0 +1,25 @@
+# dependências e builds (cada subprojeto tem o seu)
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# variáveis de ambiente e logs
+.env
+.env.*
+*.log
+npm-debug.log*
+
+# sistema
+.DS_Store
+Thumbs.db
+
+# configurações locais do Claude Code (não versionar por projeto)
+**/.claude/settings.local.json
+
+# projetos que já têm repositório git próprio
+/compilerjs/
+
+# pasta com dados de alunos (nomes em PDF) — não versionar
+/sorteador/

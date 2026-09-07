@@ -1,0 +1,220 @@
+:root {
+  --roxo: #7c3aed;
+  --ciano: #06b6d4;
+  --bg: #0a0a14;
+  --borda: #252538;
+  --texto: #e2e8f0;
+  --muted: #64748b;
+  --terra: #6b4423;
+  --terra-escura: #4a2f18;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: radial-gradient(circle at 50% 0%, #14142a, var(--bg));
+  color: var(--texto);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.jogo {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+}
+
+header {
+  text-align: center;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--roxo), var(--ciano));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitulo {
+  color: var(--muted);
+  font-size: 0.95rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.painel {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.stat {
+  flex: 1;
+  background: #10101c;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+}
+
+.stat .rotulo {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat strong {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--ciano);
+}
+
+.stat.alerta strong {
+  color: #f43f5e;
+}
+
+.tabuleiro {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 20px;
+  background: #10101c;
+  border: 1px solid var(--borda);
+  border-radius: 20px;
+}
+
+.buraco {
+  position: relative;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--terra), var(--terra-escura) 70%, #2a1a0d);
+  box-shadow: inset 0 12px 20px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.alvo {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -100%;
+  aspect-ratio: 1;
+  border-radius: 50% 50% 42% 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(2rem, 9vw, 3.2rem);
+  transition: bottom 0.12s ease-out;
+}
+
+.alvo.subindo {
+  bottom: 4%;
+}
+
+.alvo.toupeira {
+  background: linear-gradient(180deg, #a56a3c, #7c4a28);
+}
+
+.alvo.bomba {
+  background: linear-gradient(180deg, #3f3f52, #23232f);
+}
+
+.alvo.dourada {
+  background: linear-gradient(180deg, #fbbf24, #d97706);
+  box-shadow: 0 0 24px rgba(251, 191, 36, 0.7);
+}
+
+.buraco.acertado .alvo {
+  animation: tremer 0.25s;
+}
+
+@keyframes tremer {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-4px) rotate(-8deg); }
+  75% { transform: translateX(4px) rotate(8deg); }
+}
+
+.flutuante {
+  position: absolute;
+  font-weight: 800;
+  font-size: 1.4rem;
+  pointer-events: none;
+  animation: subir 0.7s ease-out forwards;
+  z-index: 5;
+}
+
+@keyframes subir {
+  to { transform: translateY(-50px); opacity: 0; }
+}
+
+.tela {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+  background: rgba(8, 8, 18, 0.92);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  padding: 32px;
+}
+
+.tela.escondido {
+  display: none;
+}
+
+.tela h2 {
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
+  color: #fff;
+}
+
+.tela p {
+  color: var(--texto);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.tela button {
+  background: linear-gradient(135deg, var(--roxo), var(--ciano));
+  color: #fff;
+  border: none;
+  padding: 16px 44px;
+  border-radius: 999px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
+}
+
+.tela button:hover {
+  transform: scale(1.05);
+}
+
+.tela button:active {
+  transform: scale(0.98);
+}

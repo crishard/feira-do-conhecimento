@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cobrinha</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🐍 Cobrinha</h1>
+  <p class="subtitulo">Coma as maçãs e não bata em nada.</p>
+
+  <div class="legenda">
+    <span><span class="tecla">W A S D</span> ou <span class="tecla">setas</span></span>
+    <span>Espaço para pausar/continuar</span>
+  </div>
+
+  <div class="placar">
+    <span>Pontos: <strong id="pontos">0</strong></span>
+    <span>Recorde: <strong id="recorde">0</strong></span>
+  </div>
+
+  <div class="quadro">
+    <canvas id="jogo" width="600" height="600" tabindex="0"></canvas>
+    <div id="telaFim" class="tela-fim escondido">
+      <p id="textoFim"></p>
+      <button id="botaoReiniciar">Jogar de novo</button>
+    </div>
+  </div>
+
+  <p class="rodape">A velocidade aumenta a cada maçã.</p>
+
+  <script src="script.js"></script>
+</body>
+</html>

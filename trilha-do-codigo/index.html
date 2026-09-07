@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trilha do Código</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="titulo">
+        <h1>🤖 Trilha do Código</h1>
+        <p class="tag">Pensamento computacional · BNCC — Competência Geral 5 (Cultura Digital)</p>
+      </div>
+      <button id="btnCriar" class="btn-fantasma">✏️ Criar desafio</button>
+    </header>
+
+    <div class="niveis" id="niveis"></div>
+
+    <div class="conceito" id="conceito">
+      <strong id="conceitoNome"></strong>
+      <span id="conceitoTexto"></span>
+    </div>
+
+    <main>
+      <section class="tabuleiro-area">
+        <canvas id="tabuleiro" width="520" height="520"></canvas>
+        <div id="feedback" class="feedback"></div>
+      </section>
+
+      <section class="painel">
+        <div class="painel-topo">
+          <h2>Programa</h2>
+          <div class="meta">
+            <span id="estrelas" class="estrelas">☆☆☆</span>
+            <span id="metaTexto" class="meta-texto"></span>
+          </div>
+        </div>
+
+        <nav id="trilha" class="trilha"></nav>
+        <ol id="programa" class="programa"></ol>
+
+        <div class="paleta" id="paleta">
+          <button data-cmd="frente">⬆️ Frente</button>
+          <button data-cmd="esq">↺ Virar esq.</button>
+          <button data-cmd="dir">↻ Virar dir.</button>
+          <button data-cmd="coletar">💎 Coletar</button>
+          <button data-cmd="repetir" class="cmd-repetir">🔁 Repetir</button>
+        </div>
+
+        <div class="controles">
+          <button id="btnRodar" class="btn-principal">▶ Rodar</button>
+          <button id="btnPasso">⏭ Passo</button>
+          <button id="btnReiniciar">⟲ Reiniciar</button>
+          <button id="btnLimpar" class="btn-fantasma">🗑 Limpar</button>
+          <label class="velocidade">
+            🐢
+            <input type="range" id="velocidade" min="120" max="700" value="360" step="20">
+            🐇
+          </label>
+        </div>
+      </section>
+    </main>
+
+    <div id="criarPainel" class="criar-painel escondido">
+      <h2>Criar desafio</h2>
+      <p>Clique nas casas do tabuleiro para montar. Depois gere um código e passe para outra turma testar.</p>
+      <div class="criar-ferramentas" id="criarFerramentas">
+        <button data-tinta="parede" class="ativo">🧱 Parede</button>
+        <button data-tinta="cristal">💎 Cristal</button>
+        <button data-tinta="objetivo">🏁 Objetivo</button>
+        <button data-tinta="robo">🤖 Robô</button>
+        <button data-tinta="apagar">🧽 Apagar</button>
+        <button data-girar="1" class="acao">🔄 Girar robô</button>
+      </div>
+      <div class="criar-codigo">
+        <button id="btnGerar" class="btn-principal">Gerar código</button>
+        <input type="text" id="codigoDesafio" placeholder="cole um código aqui para carregar" />
+        <button id="btnCarregar">Carregar</button>
+      </div>
+      <div class="criar-controles">
+        <button id="btnTestar" class="btn-principal">Testar desafio</button>
+        <button id="btnSairCriar" class="btn-fantasma">Sair do modo criar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pong</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🏓 Pong</h1>
+  <p class="subtitulo">Dois jogadores, mesmo teclado.</p>
+
+  <div class="legenda">
+    <span><span class="bolinha azul"></span> W / S</span>
+    <span><span class="bolinha laranja"></span> ↑ / ↓</span>
+    <span>Espaço para pausar/continuar</span>
+  </div>
+
+  <div class="quadro">
+    <canvas id="jogo" width="800" height="500" tabindex="0"></canvas>
+    <div id="telaFim" class="tela-fim escondido">
+      <p id="textoVencedor"></p>
+      <button id="botaoReiniciar">Jogar de novo</button>
+    </div>
+  </div>
+
+  <p class="rodape">Primeiro a 7 pontos vence.</p>
+
+  <script src="script.js"></script>
+</body>
+</html>

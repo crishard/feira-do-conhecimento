@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 4 — Mensagens Entre Janelas</title>
+  <style>
+    :root {
+      --roxo: #7c3aed; --ciano: #06b6d4; --verde: #10b981;
+      --bg: #0a0a14; --card: #13131f; --borda: #252538;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+
+    .conteudo { padding: 32px 36px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
+    .subtitulo { color: var(--muted); margin-bottom: 28px; font-size: 0.9rem; }
+    h2 { font-size: 1.05rem; color: var(--ciano); margin: 24px 0 10px; }
+    p { font-size: 0.9rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 10px; }
+    strong { color: var(--texto); }
+
+    .destaque {
+      background: #0c1a24; border: 1px solid #0e4963;
+      border-radius: 10px; padding: 12px 16px; margin: 12px 0; font-size: 0.87rem; line-height: 1.7;
+    }
+    .destaque .tit { color: var(--ciano); font-weight: 700; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+
+    .bloco-codigo {
+      background: #0d0d1a; border: 1px solid var(--borda);
+      border-radius: 8px; margin: 10px 0; overflow: hidden;
+    }
+    .bloco-codigo .cab { background: #181828; padding: 6px 14px; font-size: 0.72rem; color: var(--muted); }
+    .bloco-codigo pre { padding: 12px 14px; font-size: 0.77rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .passos { list-style: none; margin: 12px 0; }
+    .passos li {
+      display: flex; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid var(--borda); font-size: 0.88rem;
+    }
+    .passos li:last-child { border-bottom: none; }
+    .passo-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--roxo); display: flex; align-items: center;
+      justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+    }
+    .passos .desc { color: #cbd5e1; line-height: 1.6; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.88rem; }
+
+    /* DEMO */
+    .demo-lado { background: #050510; display: flex; flex-direction: column; }
+    .demo-topo {
+      padding: 14px 20px; border-bottom: 1px solid var(--borda);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .demo-topo span { font-size: 0.8rem; color: var(--muted); }
+    .btn-abrir {
+      background: var(--verde); color: white; border: none;
+      padding: 8px 18px; border-radius: 8px; cursor: pointer;
+      font-size: 0.82rem; font-family: inherit; transition: background 0.2s;
+    }
+    .btn-abrir:hover { background: #047857; }
+
+    .chat-janelas {
+      display: grid; grid-template-columns: 1fr 1fr;
+      flex: 1; gap: 0; border-bottom: 1px solid var(--borda);
+    }
+    .janela {
+      display: flex; flex-direction: column;
+      border-right: 1px solid var(--borda);
+    }
+    .janela:last-child { border-right: none; }
+    .janela-titulo {
+      padding: 10px 14px; border-bottom: 1px solid var(--borda);
+      font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    }
+    .janela-titulo .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #475569;
+    }
+    .janela-titulo .dot.online { background: var(--verde); box-shadow: 0 0 6px var(--verde); }
+    .janela-titulo.azul .dot.online { background: #60a5fa; box-shadow: 0 0 6px #60a5fa; }
+
+    .msgs {
+      flex: 1; overflow-y: auto; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 6px;
+      min-height: 200px; max-height: 280px;
+    }
+    .msg-balao {
+      max-width: 85%; padding: 7px 11px; border-radius: 10px;
+      font-size: 0.8rem; line-height: 1.5;
+    }
+    .msg-balao.enviado { align-self: flex-end; background: #1e3a5f; color: #bfdbfe; }
+    .msg-balao.recebido { align-self: flex-start; background: #1a1a2e; color: #e2e8f0; }
+    .msg-balao .remetente { font-size: 0.68rem; color: var(--muted); margin-bottom: 2px; font-weight: 700; }
+    .msg-balao.sistema { background: #131a13; color: #4ade80; align-self: center; font-style: italic; font-size: 0.75rem; }
+
+    .input-area {
+      padding: 10px 12px; border-top: 1px solid var(--borda);
+      display: flex; gap: 8px;
+    }
+    .input-chat {
+      flex: 1; background: #0d0d1a; border: 1px solid var(--borda);
+      color: var(--texto); padding: 7px 12px; border-radius: 8px;
+      font-family: inherit; font-size: 0.82rem;
+    }
+    .input-chat:focus { outline: none; border-color: var(--roxo); }
+    .btn-enviar {
+      background: var(--roxo); color: white; border: none;
+      padding: 7px 14px; border-radius: 8px; cursor: pointer;
+      font-size: 0.82rem; font-family: inherit; transition: background 0.2s;
+    }
+    .btn-enviar:hover { background: #6d28d9; }
+
+    .status-canal {
+      padding: 10px 16px; font-size: 0.75rem; color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 6px var(--verde); }
+
+    .evento-log {
+      height: 120px; overflow-y: auto; padding: 8px 14px;
+      background: #0a0a14; border-top: 1px solid var(--borda);
+    }
+    .evento-linha {
+      font-size: 0.72rem; font-family: monospace; padding: 2px 0;
+      color: #94a3b8;
+    }
+    .evento-linha .ev-tipo { margin-right: 6px; }
+    .evento-linha.envio .ev-tipo { color: #60a5fa; }
+    .evento-linha.recebido .ev-tipo { color: #10b981; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 4</div>
+    <h1>📨 Mensagens Entre Janelas</h1>
+    <p class="subtitulo">Aprenda a fazer duas abas do navegador conversarem — o coração do multiplayer!</p>
+
+    <h2>📡 O que é BroadcastChannel?</h2>
+    <p>É uma API nativa do navegador que permite que <strong>abas, janelas e workers</strong> do mesmo site se comuniquem em tempo real, sem precisar de servidor.</p>
+
+    <div class="destaque">
+      <div class="tit">🔗 Analogia do rádio</div>
+      Pensa num walkie-talkie. Você sintoniza no canal 5 e outra pessoa no canal 5. Tudo que você falar, ela ouve — e vice-versa. O BroadcastChannel é exatamente isso, mas para abas do navegador.<br><br>
+      <strong>Todos no mesmo canal recebem todas as mensagens.</strong>
+    </div>
+
+    <h2>💻 Criando um Canal</h2>
+    <div class="bloco-codigo">
+      <div class="cab">JavaScript — funciona em qualquer aba</div>
+      <pre><span class="c">// Criar/entrar no canal "meu-jogo"</span>
+<span class="c">// Qualquer aba que usar esse nome fica conectada</span>
+<span class="k">const</span> <span class="v">canal</span> = <span class="k">new</span> <span class="f">BroadcastChannel</span>(<span class="s">'meu-jogo'</span>);
+
+<span class="c">// ✉️ ENVIAR uma mensagem</span>
+canal.<span class="f">postMessage</span>({
+  tipo: <span class="s">'chat'</span>,
+  de: <span class="s">'Jogador 1'</span>,
+  texto: <span class="s">'Olá! Vamos jogar?'</span>
+});
+
+<span class="c">// 📬 RECEBER mensagens das outras abas</span>
+canal.onmessage = (<span class="v">evento</span>) => {
+  <span class="k">const</span> <span class="v">msg</span> = evento.data; <span class="c">// dados recebidos</span>
+
+  <span class="k">if</span> (<span class="v">msg</span>.tipo === <span class="s">'chat'</span>) {
+    console.log(<span class="v">msg</span>.de + <span class="s">': '</span> + <span class="v">msg</span>.texto);
+  }
+};</pre>
+    </div>
+
+    <h2>📋 Como Funciona Passo a Passo</h2>
+    <ul class="passos">
+      <li>
+        <div class="passo-num">1</div>
+        <div class="desc">As duas abas abrem o mesmo arquivo HTML e criam um canal com o <strong>mesmo nome</strong>.</div>
+      </li>
+      <li>
+        <div class="passo-num">2</div>
+        <div class="desc">Quando a aba A faz <code style="color:#86efac">canal.postMessage(dados)</code>, o navegador entrega para todas as outras abas do mesmo canal.</div>
+      </li>
+      <li>
+        <div class="passo-num">3</div>
+        <div class="desc">A aba B recebe via <code style="color:#86efac">canal.onmessage = (evento) => { ... }</code> e pode atualizar o jogo.</div>
+      </li>
+      <li>
+        <div class="passo-num">4</div>
+        <div class="desc">Isso acontece em <strong>milissegundos</strong> — rápido o suficiente para jogos em tempo real!</div>
+      </li>
+    </ul>
+
+    <h2>🆚 BroadcastChannel vs WebSocket</h2>
+    <p>Os conceitos são os mesmos! A diferença é onde o "servidor" fica:</p>
+
+    <div class="bloco-codigo">
+      <div class="cab">Comparação de código</div>
+      <pre><span class="c">// WebSocket (internet real)</span>
+<span class="k">const</span> ws = <span class="k">new</span> <span class="f">WebSocket</span>(<span class="s">'ws://meuservidor.com'</span>);
+ws.<span class="f">send</span>(JSON.stringify(dados));
+ws.onmessage = (e) => <span class="f">processar</span>(e.data);
+
+<span class="c">// BroadcastChannel (entre abas)</span>
+<span class="k">const</span> canal = <span class="k">new</span> <span class="f">BroadcastChannel</span>(<span class="s">'meu-jogo'</span>);
+canal.<span class="f">postMessage</span>(dados);
+canal.onmessage = (e) => <span class="f">processar</span>(e.data);
+
+<span class="c">// Percebeu? A ideia é IDÊNTICA!</span></pre>
+    </div>
+
+    <div class="destaque">
+      <div class="tit">💡 O que aprendemos aqui</div>
+      A API BroadcastChannel tem os mesmos conceitos de WebSocket: você cria um canal, envia mensagens com <code>postMessage</code> e recebe com <code>onmessage</code>. Os padrões que você aprende aqui se aplicam direto à programação de servidores reais!
+    </div>
+
+    <div class="nav">
+      <a href="aula3.html">← Aula 3</a>
+      <a href="aula5.html">Aula 5: Estado Compartilhado →</a>
+    </div>
+  </div>
+
+  <!-- DEMO -->
+  <div class="demo-lado">
+    <div class="demo-topo">
+      <span>🔬 Chat entre abas — mesmo arquivo, dois jogadores</span>
+      <button class="btn-abrir" onclick="abrirSegundaAba()">🪟 Abrir 2ª aba</button>
+    </div>
+
+    <div class="chat-janelas">
+      <!-- Janela P1 -->
+      <div class="janela">
+        <div class="janela-titulo azul">
+          <div class="dot online" id="dot-p1"></div>
+          Jogador 1 (você)
+        </div>
+        <div class="msgs" id="msgs-p1"></div>
+        <div class="input-area">
+          <input class="input-chat" id="input-p1" placeholder="Digite uma mensagem..." onkeydown="if(event.key==='Enter')enviarMsg(1)">
+          <button class="btn-enviar" onclick="enviarMsg(1)">→</button>
+        </div>
+      </div>
+
+      <!-- Janela P2 -->
+      <div class="janela">
+        <div class="janela-titulo">
+          <div class="dot" id="dot-p2"></div>
+          Jogador 2 (outra aba)
+        </div>
+        <div class="msgs" id="msgs-p2"></div>
+        <div class="input-area">
+          <input class="input-chat" id="input-p2" placeholder="Somente via outra aba..." disabled>
+          <button class="btn-enviar" disabled style="opacity:0.4;">→</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-canal">
+      <div class="status-dot"></div>
+      <span>Canal <strong style="color:var(--ciano)">"aula4-chat"</strong> ativo — <span id="conectados">aguardando outras abas...</span></span>
+    </div>
+
+    <div class="evento-log" id="evento-log">
+      <div class="evento-linha" style="color:#475569">// eventos do canal aparecerão aqui</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Identificador único desta aba
+  const MEU_ID = 'aba-' + Math.random().toString(36).substr(2, 6);
+  const MEU_NOME = 'Jogador 1';
+
+  // Criar o canal BroadcastChannel
+  const canal = new BroadcastChannel('aula4-chat');
+  let abrasConectadas = new Set([MEU_ID]);
+
+  // Anunciar presença
+  canal.postMessage({ tipo: 'entrou', id: MEU_ID, nome: MEU_NOME });
+
+  // Receber mensagens
+  canal.onmessage = (evento) => {
+    const msg = evento.data;
+
+    if (msg.tipo === 'chat') {
+      adicionarMsg('p2', msg.nome, msg.texto, 'recebido');
+      adicionarMsg('p1', msg.nome, msg.texto, 'recebido');
+      logEvento('recebido', `onmessage ← { tipo:"chat", de:"${msg.nome}", texto:"${msg.texto.substring(0,20)}..." }`);
+      abrasConectadas.add(msg.id);
+      atualizarConectados();
+      document.getElementById('dot-p2').className = 'dot online';
+    }
+    if (msg.tipo === 'entrou') {
+      adicionarMsg('p1', null, `${msg.nome || 'Alguém'} entrou no canal!`, 'sistema');
+      adicionarMsg('p2', null, `${msg.nome || 'Alguém'} entrou!`, 'sistema');
+      abrasConectadas.add(msg.id);
+      atualizarConectados();
+      document.getElementById('dot-p2').className = 'dot online';
+      // Responder para que a nova aba saiba que existimos
+      canal.postMessage({ tipo: 'presente', id: MEU_ID, nome: MEU_NOME });
+    }
+    if (msg.tipo === 'presente') {
+      abrasConectadas.add(msg.id);
+      atualizarConectados();
+      document.getElementById('dot-p2').className = 'dot online';
+    }
+    if (msg.tipo === 'saiu') {
+      abrasConectadas.delete(msg.id);
+      atualizarConectados();
+      adicionarMsg('p1', null, 'Outra aba foi fechada.', 'sistema');
+      if (abrasConectadas.size <= 1) document.getElementById('dot-p2').className = 'dot';
+    }
+  };
+
+  // Avisar saída
+  window.addEventListener('beforeunload', () => {
+    canal.postMessage({ tipo: 'saiu', id: MEU_ID });
+  });
+
+  function enviarMsg(jogador) {
+    const input = document.getElementById(`input-p${jogador}`);
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    const dados = { tipo: 'chat', id: MEU_ID, nome: MEU_NOME, texto };
+    canal.postMessage(dados);
+    adicionarMsg('p1', 'Você', texto, 'enviado');
+    logEvento('envio', `postMessage → { tipo:"chat", texto:"${texto.substring(0,20)}${texto.length>20?'...':''}" }`);
+
+    input.value = '';
+  }
+
+  function adicionarMsg(container, remetente, texto, tipo) {
+    const msgs = document.getElementById(`msgs-${container}`);
+    const el = document.createElement('div');
+    el.className = `msg-balao ${tipo}`;
+    if (tipo === 'sistema') {
+      el.textContent = texto;
+    } else {
+      if (remetente) {
+        const r = document.createElement('div');
+        r.className = 'remetente';
+        r.textContent = remetente;
+        el.appendChild(r);
+      }
+      el.appendChild(document.createTextNode(texto));
+    }
+    msgs.appendChild(el);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function logEvento(tipo, texto) {
+    const log = document.getElementById('evento-log');
+    const entry = document.createElement('div');
+    entry.className = `evento-linha ${tipo}`;
+    const ts = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+    entry.innerHTML = `<span class="ev-tipo">[${ts}] ${tipo === 'envio' ? '→ ENVIOU' : '← RECEBEU'}</span>${texto}`;
+    log.insertBefore(entry, log.firstChild);
+    if (log.children.length > 20) log.removeChild(log.lastChild);
+  }
+
+  function atualizarConectados() {
+    const n = abrasConectadas.size;
+    document.getElementById('conectados').textContent =
+      n <= 1 ? 'só você — abra outra aba!' : `${n} abas conectadas`;
+  }
+
+  function abrirSegundaAba() {
+    const url = window.location.href;
+    const novaAba = window.open(url, '_blank');
+    if (!novaAba) alert('Seu navegador bloqueou o pop-up! Abra manualmente uma nova aba com este mesmo endereço.');
+  }
+
+  // Mensagem inicial
+  adicionarMsg('p1', null, 'Canal "aula4-chat" criado! Abra outra aba para conversar.', 'sistema');
+
+  document.getElementById('input-p1').addEventListener('keydown', e => {
+    if (e.key === 'Enter') enviarMsg(1);
+  });
+</script>
+</body>
+</html>

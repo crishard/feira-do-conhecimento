@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula 1 — Vértices, Arestas e Faces</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .glossario { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .gloss-card { background: var(--card); border: 1px solid var(--borda); border-radius: 9px; padding: 12px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+    .gloss-card:hover { border-color: var(--laranja); }
+    .gloss-card.ativo { border-color: var(--laranja); background: #1c0e00; }
+    .gloss-card .ic { font-size: 1.6rem; margin-bottom: 5px; }
+    .gloss-card h3 { font-size: 0.82rem; margin-bottom: 3px; }
+    .gloss-card p { font-size: 0.72rem; color: var(--muted); margin: 0; }
+    .contador-display {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0;
+    }
+    .cont-item { background: var(--card); border: 1px solid var(--borda); border-radius: 8px; padding: 10px; text-align: center; }
+    .cont-item .num { font-size: 1.8rem; font-weight: 900; font-family: monospace; }
+    .cont-item .lab { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ───── PAINEL ───── -->
+<div class="painel">
+  <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 1</div>
+  <div class="aula-num-badge">Aula 1 de 7 · Básico</div>
+  <h1>🔺 Vértices, Arestas e Faces</h1>
+  <p class="subtitulo">Todo objeto 3D é uma ilusão matemática feita de pontos no espaço, linhas entre eles e triângulos que formam a superfície.</p>
+
+  <h2>📐 Os 3 Blocos Fundamentais</h2>
+  <p>Clique nos cards abaixo para destacar cada componente no modelo ao lado:</p>
+
+  <div class="glossario">
+    <div class="gloss-card ativo" id="btn-v" onclick="destacar('vertices')">
+      <div class="ic">🟠</div>
+      <h3>Vértice</h3>
+      <p>Um ponto no espaço (x, y, z)</p>
+    </div>
+    <div class="gloss-card" id="btn-a" onclick="destacar('arestas')">
+      <div class="ic">📏</div>
+      <h3>Aresta</h3>
+      <p>Linha entre 2 vértices</p>
+    </div>
+    <div class="gloss-card" id="btn-f" onclick="destacar('faces')">
+      <div class="ic">🟦</div>
+      <h3>Face</h3>
+      <p>Polígono (triângulo ou quad)</p>
+    </div>
+  </div>
+
+  <div class="contador-display">
+    <div class="cont-item">
+      <div class="num" id="cnt-v" style="color:#fb923c">8</div>
+      <div class="lab">Vértices</div>
+    </div>
+    <div class="cont-item">
+      <div class="num" id="cnt-a" style="color:#60a5fa">12</div>
+      <div class="lab">Arestas</div>
+    </div>
+    <div class="cont-item">
+      <div class="num" id="cnt-f" style="color:#4ade80">6</div>
+      <div class="lab">Faces</div>
+    </div>
+  </div>
+
+  <h2>📦 Um Cubo por Dentro</h2>
+  <p>Um cubo simples tem:</p>
+  <table class="tabela">
+    <tr><th>Componente</th><th>Qtd</th><th>O que é</th></tr>
+    <tr><td>Vértices</td><td>8</td><td>Os 8 cantos do cubo</td></tr>
+    <tr><td>Arestas</td><td>12</td><td>As 12 bordas (4 por eixo)</td></tr>
+    <tr><td>Faces (quads)</td><td>6</td><td>As 6 faces planas</td></tr>
+    <tr><td>Triângulos</td><td>12</td><td>Cada quad = 2 triângulos</td></tr>
+  </table>
+
+  <h2>🤔 Por que Triângulos?</h2>
+  <p>A GPU (placa de vídeo) só processa triângulos. Um quad (4 lados) é dividido em 2 triângulos internamente. Modeladores usam quads por conveniência, mas o hardware sempre vê triângulos.</p>
+
+  <div class="caixa-dica">
+    <div class="tit">💡 Mesh = malha</div>
+    Em inglês, o conjunto de vértices + arestas + faces é chamado de <strong>mesh</strong> (malha). É o arquivo que você exporta do Blender para o jogo, por exemplo.
+  </div>
+
+  <h2>💻 No Código (Three.js)</h2>
+  <div class="bloco">
+    <div class="cab">JavaScript</div>
+    <pre><span class="c">// Um cubo é uma "geometria"</span>
+<span class="c">// Three.js já cria os vértices/faces pra você</span>
+<span class="k">const</span> <span class="v">geometria</span> = <span class="k">new</span> <span class="f">THREE.BoxGeometry</span>(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>);
+
+<span class="c">// Para ver a malha wireframe (arestas)</span>
+<span class="k">const</span> <span class="v">matWire</span> = <span class="k">new</span> <span class="f">THREE.MeshBasicMaterial</span>({
+  wireframe: <span class="k">true</span>,
+  color: <span class="s">'#06b6d4'</span>
+});
+
+<span class="c">// Inspecionar: quantos triângulos tem?</span>
+console.log(geometria.attributes.position.count / <span class="n">3</span>);
+<span class="c">// Um cubo: 12 triângulos (2 por face × 6 faces)</span></pre>
+  </div>
+
+  <div class="sep"></div>
+  <p>Use o mouse para <strong>orbitar a câmera</strong> — clique e arraste. Role o scroll para dar zoom.</p>
+
+  <div class="nav">
+    <a href="index.html">← Início</a>
+    <a href="aula2.html">Aula 2: Transformações →</a>
+  </div>
+</div>
+
+<!-- ───── VIEWPORT ───── -->
+<div class="viewport" id="vp">
+  <div class="controles-painel">
+    <div class="ctrl-grupo">
+      <label>Objeto</label>
+      <select id="sel-objeto" onchange="trocarObjeto()">
+        <option value="cubo">Cubo</option>
+        <option value="esfera">Esfera</option>
+        <option value="cilindro">Cilindro</option>
+        <option value="torus">Torus (rosquinha)</option>
+      </select>
+    </div>
+    <div class="sep" style="margin:6px 0"></div>
+    <button class="btn-ctrl ativo" id="btn-wire" onclick="toggleWireframe()">📐 Wireframe: ON</button>
+    <button class="btn-ctrl"        id="btn-verts" onclick="toggleVertices()">🟠 Vértices: OFF</button>
+    <button class="btn-ctrl"        id="btn-solid" onclick="toggleSolid()">🟦 Sólido: OFF</button>
+    <div class="sep" style="margin:6px 0"></div>
+    <button class="btn-ctrl" onclick="explodir()">💥 Explodir malha</button>
+    <button class="btn-ctrl" onclick="resetar()">↺ Resetar</button>
+  </div>
+  <div class="info-viewport">
+    <span id="info-geo">Cubo · 8v · 12a · 6f</span>
+    <span>🖱️ Arrastar = orbitar · Scroll = zoom</span>
+  </div>
+</div>
+
+</div><!-- layout -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const vp = document.getElementById('vp');
+const vpW = () => window.innerWidth - document.querySelector('.painel').offsetWidth;
+const vpH = () => window.innerHeight;
+
+
+// CENA
+const cena = new THREE.Scene();
+cena.background = new THREE.Color('#03030a');
+
+const camera = new THREE.PerspectiveCamera(55, vpW()/vpH(), 0.1, 100);
+camera.position.set(2.5, 2, 2.5);
+camera.lookAt(0, 0, 0);
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch(e) {
+  document.getElementById('vp').innerHTML = '<div style="color:#f97316;padding:30px;font-family:monospace">❌ WebGL não iniciou: ' + e + '</div>';
+  throw e;
+}
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(vpW(), vpH());
+renderer.shadowMap.enabled = true;
+vp.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+
+// LUZES
+const amb = new THREE.AmbientLight('#ffffff', 0.5);
+cena.add(amb);
+const dir = new THREE.DirectionalLight('#fffbe6', 1.4);
+dir.position.set(4, 8, 4);
+dir.castShadow = true;
+cena.add(dir);
+
+// GRADE
+const grade = new THREE.GridHelper(8, 16, '#1c1c2e', '#13131e');
+cena.add(grade);
+
+// OBJETOS
+let meshSolido, meshWire, pontosGroup;
+let mostrando = { wire: true, verts: false, solid: false };
+let explodiuFlag = false;
+let fragmentos = [];
+
+const INFOS = {
+  cubo:      { v:8,  a:12, f:6  },
+  esfera:    { v:482, a:'~1k', f:480 },
+  cilindro:  { v:64, a:'~128', f:64 },
+  torus:     { v:576, a:'~1k', f:576 },
+};
+
+function criarGeo(tipo) {
+  if (tipo === 'cubo')     return new THREE.BoxGeometry(1.4, 1.4, 1.4);
+  if (tipo === 'esfera')   return new THREE.SphereGeometry(0.85, 16, 12);
+  if (tipo === 'cilindro') return new THREE.CylinderGeometry(0.7, 0.7, 1.5, 16);
+  if (tipo === 'torus')    return new THREE.TorusGeometry(0.8, 0.3, 12, 24);
+}
+
+function removerMeshes() {
+  if (meshSolido) cena.remove(meshSolido);
+  if (meshWire)   cena.remove(meshWire);
+  if (pontosGroup) cena.remove(pontosGroup);
+  fragmentos.forEach(f => cena.remove(f));
+  fragmentos = [];
+  explodiuFlag = false;
+}
+
+function criarMeshes(tipo) {
+  removerMeshes();
+  const geo = criarGeo(tipo);
+
+  // Sólido
+  const matSolido = new THREE.MeshStandardMaterial({ color: '#f97316', roughness: 0.4, metalness: 0.2, transparent: true, opacity: 0.7 });
+  meshSolido = new THREE.Mesh(geo, matSolido);
+  meshSolido.castShadow = true;
+  meshSolido.visible = mostrando.solid;
+  cena.add(meshSolido);
+
+  // Wireframe
+  const wGeo = new THREE.EdgesGeometry(geo);
+  const wMat = new THREE.LineBasicMaterial({ color: '#06b6d4' });
+  meshWire = new THREE.LineSegments(wGeo, wMat);
+  meshWire.visible = mostrando.wire;
+  cena.add(meshWire);
+
+  // Vértices como pontos
+  pontosGroup = new THREE.Group();
+  const pos = geo.attributes.position;
+  const vistos = new Set();
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const key = `${x.toFixed(3)},${y.toFixed(3)},${z.toFixed(3)}`;
+    if (vistos.has(key)) continue;
+    vistos.add(key);
+    const pGeo = new THREE.SphereGeometry(0.04, 6, 6);
+    const pMat = new THREE.MeshBasicMaterial({ color: '#fb923c' });
+    const pt = new THREE.Mesh(pGeo, pMat);
+    pt.position.set(x, y, z);
+    pontosGroup.add(pt);
+  }
+  pontosGroup.visible = mostrando.verts;
+  cena.add(pontosGroup);
+
+  // Atualizar info
+  const inf = INFOS[tipo];
+  document.getElementById('cnt-v').textContent = inf.v;
+  document.getElementById('cnt-a').textContent = inf.a;
+  document.getElementById('cnt-f').textContent = inf.f;
+  document.getElementById('info-geo').textContent = `${tipo.charAt(0).toUpperCase()+tipo.slice(1)} · ${inf.v}v · ${inf.a}a · ${inf.f}f`;
+}
+
+criarMeshes('cubo');
+
+function trocarObjeto() {
+  const tipo = document.getElementById('sel-objeto').value;
+  criarMeshes(tipo);
+}
+
+function toggleWireframe() {
+  mostrando.wire = !mostrando.wire;
+  if (meshWire) meshWire.visible = mostrando.wire;
+  document.getElementById('btn-wire').textContent = `📐 Wireframe: ${mostrando.wire ? 'ON' : 'OFF'}`;
+  document.getElementById('btn-wire').classList.toggle('ativo', mostrando.wire);
+}
+
+function toggleVertices() {
+  mostrando.verts = !mostrando.verts;
+  if (pontosGroup) pontosGroup.visible = mostrando.verts;
+  document.getElementById('btn-verts').textContent = `🟠 Vértices: ${mostrando.verts ? 'ON' : 'OFF'}`;
+  document.getElementById('btn-verts').classList.toggle('ativo', mostrando.verts);
+}
+
+function toggleSolid() {
+  mostrando.solid = !mostrando.solid;
+  if (meshSolido) meshSolido.visible = mostrando.solid;
+  document.getElementById('btn-solid').textContent = `🟦 Sólido: ${mostrando.solid ? 'ON' : 'OFF'}`;
+  document.getElementById('btn-solid').classList.toggle('ativo', mostrando.solid);
+}
+
+function explodir() {
+  if (explodiuFlag) return;
+  explodiuFlag = true;
+  const tipo = document.getElementById('sel-objeto').value;
+  const geo = criarGeo(tipo);
+  const pos = geo.attributes.position;
+  const usados = new Set();
+
+  // Para cada face (grupo de 3 vértices = triângulo)
+  for (let i = 0; i < pos.count; i += 3) {
+    const triGeo = new THREE.BufferGeometry();
+    const verts = new Float32Array(9);
+    for (let j = 0; j < 3; j++) {
+      verts[j*3]   = pos.getX(i+j);
+      verts[j*3+1] = pos.getY(i+j);
+      verts[j*3+2] = pos.getZ(i+j);
+    }
+    triGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+    triGeo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(Math.random(), 0.8, 0.55), side: THREE.DoubleSide, roughness: 0.5 });
+    const tri = new THREE.Mesh(triGeo, mat);
+    // Direção de explosão = centróide do triângulo
+    const cx = (verts[0]+verts[3]+verts[6])/3;
+    const cy = (verts[1]+verts[4]+verts[7])/3;
+    const cz = (verts[2]+verts[5]+verts[8])/3;
+    tri._vel = new THREE.Vector3(cx, cy, cz).normalize().multiplyScalar(0.025 + Math.random()*0.02);
+    tri._rot = new THREE.Vector3((Math.random()-.5)*.04, (Math.random()-.5)*.04, (Math.random()-.5)*.04);
+    cena.add(tri);
+    fragmentos.push(tri);
+  }
+
+  if (meshSolido) meshSolido.visible = false;
+  if (meshWire) meshWire.visible = false;
+  if (pontosGroup) pontosGroup.visible = false;
+}
+
+function resetar() {
+  mostrando = { wire: true, verts: false, solid: false };
+  document.getElementById('btn-wire').textContent = '📐 Wireframe: ON';
+  document.getElementById('btn-verts').textContent = '🟠 Vértices: OFF';
+  document.getElementById('btn-solid').textContent = '🟦 Sólido: OFF';
+  document.getElementById('btn-wire').classList.add('ativo');
+  document.getElementById('btn-verts').classList.remove('ativo');
+  document.getElementById('btn-solid').classList.remove('ativo');
+  criarMeshes(document.getElementById('sel-objeto').value);
+}
+
+function destacar(tipo) {
+  document.querySelectorAll('.gloss-card').forEach(c => c.classList.remove('ativo'));
+  if (tipo === 'vertices') {
+    document.getElementById('btn-v').classList.add('ativo');
+    mostrando.verts = true; mostrando.wire = false; mostrando.solid = false;
+  } else if (tipo === 'arestas') {
+    document.getElementById('btn-a').classList.add('ativo');
+    mostrando.wire = true; mostrando.verts = false; mostrando.solid = false;
+  } else {
+    document.getElementById('btn-f').classList.add('ativo');
+    mostrando.solid = true; mostrando.wire = true; mostrando.verts = false;
+  }
+  if (meshWire) meshWire.visible = mostrando.wire;
+  if (pontosGroup) pontosGroup.visible = mostrando.verts;
+  if (meshSolido) meshSolido.visible = mostrando.solid;
+  document.getElementById('btn-wire').classList.toggle('ativo', mostrando.wire);
+  document.getElementById('btn-verts').classList.toggle('ativo', mostrando.verts);
+  document.getElementById('btn-solid').classList.toggle('ativo', mostrando.solid);
+  document.getElementById('btn-wire').textContent = `📐 Wireframe: ${mostrando.wire?'ON':'OFF'}`;
+  document.getElementById('btn-verts').textContent = `🟠 Vértices: ${mostrando.verts?'ON':'OFF'}`;
+  document.getElementById('btn-solid').textContent = `🟦 Sólido: ${mostrando.solid?'ON':'OFF'}`;
+}
+
+function animar() {
+  requestAnimationFrame(animar);
+  controls.update();
+  fragmentos.forEach(f => {
+    f.position.add(f._vel);
+    f.rotation.x += f._rot.x;
+    f.rotation.y += f._rot.y;
+    f.rotation.z += f._rot.z;
+  });
+  renderer.render(cena, camera);
+}
+animar();
+
+window.addEventListener('resize', () => {
+  camera.aspect = vpW()/vpH();
+  camera.updateProjectionMatrix();
+  renderer.setSize(vpW(), vpH());
+});
+</script>
+</body>
+</html>

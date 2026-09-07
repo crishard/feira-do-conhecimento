@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 6 — 🏆 Jogo: "Foge do Cubo!"</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0ff; overflow: hidden; }
+    .layout { display: grid; grid-template-columns: 340px 1fr; height: 100vh; }
+
+    /* PAINEL */
+    .painel { overflow-y: auto; padding: 24px; border-right: 1px solid #2d2d4e; font-size: 0.82rem; }
+    h1 { font-size: 1.3rem; color: #7c3aed; margin-bottom: 2px; }
+    .aula-num { font-size: 0.7rem; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .secao { margin-top: 20px; padding-top: 16px; border-top: 1px solid #2d2d4e; }
+    .secao h2 { font-size: 0.95rem; color: #06b6d4; margin-bottom: 8px; }
+    p { line-height: 1.6; color: #c0c0d8; margin-bottom: 8px; }
+    pre {
+      background: #12121f; border: 1px solid #2d2d4e; border-radius: 6px;
+      padding: 10px; font-size: 0.72rem; overflow-x: auto; line-height: 1.5; margin: 8px 0;
+    }
+    .comment { color: #6b7280; }
+    .keyword { color: #c084fc; }
+    .string { color: #86efac; }
+    .number { color: #fb923c; }
+    .func { color: #60a5fa; }
+    .conceito {
+      background: #1a1a2e; border-left: 3px solid #7c3aed;
+      padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 8px 0;
+    }
+    .nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 16px; border-top: 1px solid #2d2d4e; }
+    .nav a { color: #7c3aed; text-decoration: none; }
+
+    /* JOGO */
+    #jogo { position: relative; background: #050510; }
+    canvas { display: block; }
+
+    /* HUD */
+    #hud {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 20px; pointer-events: none; z-index: 10;
+      background: linear-gradient(to bottom, rgba(5,5,16,0.8), transparent);
+    }
+    .hud-bloco { text-align: center; }
+    .hud-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; }
+    .hud-valor { font-size: 1.4rem; font-weight: bold; color: #e0e0ff; }
+    #vidas-display { display: flex; gap: 4px; }
+    .vida-icon { width: 16px; height: 16px; background: #ef4444; border-radius: 50%; }
+    .vida-icon.perdida { background: #2d2d4e; }
+
+    /* OVERLAYS */
+    .overlay {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(5,5,16,0.92); z-index: 20;
+    }
+    .overlay h2 { font-size: 2rem; margin-bottom: 8px; }
+    .overlay p { color: #9ca3af; margin-bottom: 24px; font-size: 0.9rem; text-align: center; }
+    .btn-jogo {
+      background: #7c3aed; color: white; border: none;
+      padding: 12px 32px; border-radius: 8px; font-size: 1rem; cursor: pointer;
+      transition: background 0.2s; font-family: inherit;
+    }
+    .btn-jogo:hover { background: #6d28d9; }
+    .nivel-badge {
+      margin-top: 12px; padding: 4px 12px; border-radius: 99px;
+      background: #1a1a2e; font-size: 0.8rem; color: #7c3aed;
+    }
+
+    /* Mensagem de dano */
+    #msg-dano {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 2rem; font-weight: bold; color: #ef4444;
+      pointer-events: none; z-index: 15; opacity: 0; transition: opacity 0.1s;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <!-- PAINEL DE CÓDIGO -->
+  <div class="painel">
+    <div class="aula-num">Aula 6 de 6 — Projeto Final</div>
+    <h1>🏆 Foge do Cubo!</h1>
+
+    <div class="secao">
+      <h2>🎮 Como Jogar</h2>
+      <p><strong>WASD</strong> ou <strong>setas</strong> — mover</p>
+      <p>Colete as <strong>estrelas douradas</strong> (+10 pts)</p>
+      <p>Desvie dos <strong>cubos inimigos</strong> (vermelho = toca = -1 vida)</p>
+      <p>Sobreviva e alcance <strong>500 pontos!</strong></p>
+    </div>
+
+    <div class="secao">
+      <h2>🏗️ Estrutura do Jogo</h2>
+      <div class="conceito">
+        Um jogo completo precisa de:<br>
+        <strong>Estado</strong> — pontos, vidas, nível<br>
+        <strong>Entidades</strong> — jogador, inimigos, coletáveis<br>
+        <strong>Sistema de colisão</strong> — para cada tipo<br>
+        <strong>Spawner</strong> — cria inimigos ao longo do tempo<br>
+        <strong>UI/HUD</strong> — exibe informações ao jogador<br>
+        <strong>Estados de tela</strong> — menu, jogando, game over
+      </div>
+    </div>
+
+    <div class="secao">
+      <h2>💻 Spawner de Inimigos</h2>
+      <pre><span class="comment">// Criar um inimigo em posição aleatória</span>
+<span class="keyword">function</span> <span class="func">spawnInimigo</span>() {
+  <span class="keyword">const</span> geo = <span class="keyword">new</span> <span class="func">THREE.BoxGeometry</span>(<span class="number">1</span>,<span class="number">1</span>,<span class="number">1</span>);
+  <span class="keyword">const</span> mat = <span class="keyword">new</span> <span class="func">THREE.MeshStandardMaterial</span>({
+    color: <span class="string">'#ef4444'</span>
+  });
+  <span class="keyword">const</span> inimigo = <span class="keyword">new</span> <span class="func">THREE.Mesh</span>(geo, mat);
+
+  <span class="comment">// Aparecer nas bordas do mapa</span>
+  <span class="keyword">const</span> lado = Math.<span class="func">floor</span>(Math.<span class="func">random</span>() * <span class="number">4</span>);
+  <span class="keyword">if</span> (lado === <span class="number">0</span>) inimigo.position.<span class="func">set</span>( LIMITE, <span class="number">0.5</span>, <span class="func">rand</span>());
+  <span class="keyword">if</span> (lado === <span class="number">1</span>) inimigo.position.<span class="func">set</span>(-LIMITE, <span class="number">0.5</span>, <span class="func">rand</span>());
+  <span class="keyword">if</span> (lado === <span class="number">2</span>) inimigo.position.<span class="func">set</span>(<span class="func">rand</span>(), <span class="number">0.5</span>,  LIMITE);
+  <span class="keyword">if</span> (lado === <span class="number">3</span>) inimigo.position.<span class="func">set</span>(<span class="func">rand</span>(), <span class="number">0.5</span>, -LIMITE);
+
+  <span class="comment">// Velocidade em direção ao jogador</span>
+  <span class="keyword">const</span> dir = jogador.position
+    .<span class="func">clone</span>()
+    .<span class="func">sub</span>(inimigo.position)
+    .<span class="func">normalize</span>();
+  inimigo._vel = dir.<span class="func">multiplyScalar</span>(velocidade);
+
+  cena.<span class="func">add</span>(inimigo);
+  inimigos.<span class="func">push</span>(inimigo);
+}</pre>
+    </div>
+
+    <div class="secao">
+      <h2>💡 Padrões Usados Neste Jogo</h2>
+      <p>• <strong>Object Pool</strong> — reutilizar objetos ao invés de criar/destruir</p>
+      <p>• <strong>State Machine</strong> — "menu", "jogando", "game over"</p>
+      <p>• <strong>Delta time</strong> — velocidade consistente em qualquer FPS</p>
+      <p>• <strong>Lerp na câmera</strong> — movimento suave e elástico</p>
+      <p>• <strong>Spawn nas bordas</strong> — inimigos sempre aparecem longe do jogador</p>
+    </div>
+
+    <div class="nav">
+      <a href="aula5.html">← Aula 5</a>
+      <a href="index.html">🏠 Início</a>
+    </div>
+  </div>
+
+  <!-- JOGO -->
+  <div id="jogo">
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-bloco">
+        <div class="hud-label">Pontos</div>
+        <div class="hud-valor" id="hud-pontos">0</div>
+      </div>
+      <div class="hud-bloco">
+        <div class="hud-label">Vidas</div>
+        <div id="vidas-display">
+          <div class="vida-icon" id="v1"></div>
+          <div class="vida-icon" id="v2"></div>
+          <div class="vida-icon" id="v3"></div>
+        </div>
+      </div>
+      <div class="hud-bloco">
+        <div class="hud-label">Nível</div>
+        <div class="hud-valor" id="hud-nivel">1</div>
+      </div>
+    </div>
+
+    <!-- Mensagem de dano -->
+    <div id="msg-dano">-1 vida!</div>
+
+    <!-- Overlay de início -->
+    <div class="overlay" id="overlay-inicio">
+      <h2>🎮 Foge do Cubo!</h2>
+      <p>Colete estrelas douradas e desvie dos cubos vermelhos.<br>Alcance 500 pontos para vencer!</p>
+      <button class="btn-jogo" onclick="iniciarJogo()">▶ Jogar</button>
+      <div class="nivel-badge">WASD / Setas para mover</div>
+    </div>
+
+    <!-- Overlay de game over -->
+    <div class="overlay" id="overlay-gameover" style="display:none;">
+      <h2 style="color:#ef4444">💀 Game Over</h2>
+      <p id="msg-gameover">Você sobreviveu por 0 segundos!</p>
+      <button class="btn-jogo" onclick="reiniciarJogo()">↺ Tentar de Novo</button>
+    </div>
+
+    <!-- Overlay de vitória -->
+    <div class="overlay" id="overlay-vitoria" style="display:none;">
+      <h2 style="color:#f59e0b">🏆 Você Venceu!</h2>
+      <p id="msg-vitoria">Parabéns! Você alcançou 500 pontos!</p>
+      <button class="btn-jogo" onclick="reiniciarJogo()">↺ Jogar Novamente</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
+<script>
+  // ============================================================
+  // CONFIGURAÇÃO DA CENA
+  // ============================================================
+  const container = document.getElementById('jogo');
+
+  const cena = new THREE.Scene();
+  cena.background = new THREE.Color('#050510');
+  cena.fog = new THREE.Fog('#050510', 25, 45);
+
+  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(0, 12, 14);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.shadowMap.enabled = true;
+  container.insertBefore(renderer.domElement, container.querySelector('#hud'));
+
+  // Luzes
+  cena.add(new THREE.AmbientLight('#334466', 1));
+  const sol = new THREE.DirectionalLight('#fffbe6', 1.5);
+  sol.position.set(10, 20, 10);
+  sol.castShadow = true;
+  cena.add(sol);
+
+  // Luz de ponto colorida (efeito)
+  const luzPonto = new THREE.PointLight('#7c3aed', 3, 15);
+  cena.add(luzPonto);
+
+  // ============================================================
+  // MAPA
+  // ============================================================
+  const LIMITE = 12;
+
+  const chao = new THREE.Mesh(
+    new THREE.PlaneGeometry(LIMITE * 2, LIMITE * 2),
+    new THREE.MeshStandardMaterial({ color: '#12121f' })
+  );
+  chao.rotation.x = -Math.PI / 2;
+  chao.receiveShadow = true;
+  cena.add(chao);
+  cena.add(new THREE.GridHelper(LIMITE * 2, 24, '#1d1d30', '#1a1a2e'));
+
+  // Paredes invisíveis (visuais)
+  function criarParede(x, z, rx, ry, rz) {
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(LIMITE * 2, 3),
+      new THREE.MeshStandardMaterial({ color: '#1d1d30', transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+    );
+    m.position.set(x, 1.5, z);
+    m.rotation.set(rx, ry, rz);
+    cena.add(m);
+  }
+  criarParede(0, -LIMITE, 0, 0, 0);
+  criarParede(0,  LIMITE, 0, Math.PI, 0);
+  criarParede(-LIMITE, 0, 0, Math.PI/2, 0);
+  criarParede( LIMITE, 0, 0, -Math.PI/2, 0);
+
+  // ============================================================
+  // JOGADOR
+  // ============================================================
+  const jogador = new THREE.Mesh(
+    new THREE.SphereGeometry(0.65, 24, 24),
+    new THREE.MeshStandardMaterial({ color: '#60a5fa', roughness: 0.1, metalness: 0.9 })
+  );
+  jogador.position.set(0, 0.65, 0);
+  jogador.castShadow = true;
+  cena.add(jogador);
+
+  // Trail (rastro)
+  const trailPontos = [];
+  const MAX_TRAIL = 20;
+  for (let i = 0; i < MAX_TRAIL; i++) {
+    const t = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 8, 8),
+      new THREE.MeshBasicMaterial({ color: '#60a5fa', transparent: true, opacity: 0 })
+    );
+    cena.add(t);
+    trailPontos.push(t);
+  }
+  let trailIdx = 0;
+
+  // ============================================================
+  // ESTADO DO JOGO
+  // ============================================================
+  let estado = 'menu'; // 'menu' | 'jogando' | 'gameover' | 'vitoria'
+  let pontos = 0;
+  let vidas = 3;
+  let nivel = 1;
+  let tempoJogo = 0;
+  let invencivel = false;
+  let tempoSpawn = 0;
+  let tempoInvencivel = 0;
+
+  const inimigos = [];
+  const estrelas = [];
+
+  // Velocidade base dos inimigos por nível
+  function velocidadeInimigo() {
+    return 2.5 + nivel * 0.8;
+  }
+  function intervaloSpawn() {
+    return Math.max(0.6, 2.0 - nivel * 0.15);
+  }
+
+  // ============================================================
+  // SPAWN DE INIMIGOS
+  // ============================================================
+  function rand() { return (Math.random() - 0.5) * (LIMITE * 2 - 2); }
+
+  function spawnInimigo() {
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    const mat = new THREE.MeshStandardMaterial({ color: '#ef4444', roughness: 0.4, metalness: 0.3 });
+    const inimigo = new THREE.Mesh(geo, mat);
+
+    const lado = Math.floor(Math.random() * 4);
+    if (lado === 0) inimigo.position.set(LIMITE - 0.5, 0.5, rand());
+    if (lado === 1) inimigo.position.set(-LIMITE + 0.5, 0.5, rand());
+    if (lado === 2) inimigo.position.set(rand(), 0.5, LIMITE - 0.5);
+    if (lado === 3) inimigo.position.set(rand(), 0.5, -LIMITE + 0.5);
+
+    const dir = jogador.position.clone().sub(inimigo.position).normalize();
+    // Pequena variação de ângulo para não ir sempre reto
+    const ang = (Math.random() - 0.5) * 0.6;
+    dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), ang);
+
+    inimigo._vel = dir.clone().multiplyScalar(velocidadeInimigo());
+    inimigo.castShadow = true;
+    cena.add(inimigo);
+    inimigos.push(inimigo);
+  }
+
+  // ============================================================
+  // SPAWN DE ESTRELAS
+  // ============================================================
+  const geomEstrela = new THREE.OctahedronGeometry(0.45);
+  const matEstrela = new THREE.MeshStandardMaterial({ color: '#f59e0b', roughness: 0.1, metalness: 1 });
+
+  function spawnEstrela() {
+    const e = new THREE.Mesh(geomEstrela, matEstrela);
+    e.position.set(rand(), 0.6, rand());
+    e.castShadow = true;
+    cena.add(e);
+    estrelas.push(e);
+  }
+
+  // ============================================================
+  // TECLADO
+  // ============================================================
+  const teclas = {};
+  window.addEventListener('keydown', e => { teclas[e.key] = true; if (e.key !== 'F5') e.preventDefault(); });
+  window.addEventListener('keyup',   e => { teclas[e.key] = false; });
+
+  const VELOCIDADE_JOG = 9;
+
+  // ============================================================
+  // FUNÇÕES DE CONTROLE
+  // ============================================================
+  function iniciarJogo() {
+    document.getElementById('overlay-inicio').style.display = 'none';
+    estado = 'jogando';
+    clock.start();
+  }
+
+  function reiniciarJogo() {
+    // Limpar inimigos
+    inimigos.forEach(i => cena.remove(i));
+    inimigos.length = 0;
+    // Limpar estrelas
+    estrelas.forEach(e => cena.remove(e));
+    estrelas.length = 0;
+    // Reset estado
+    pontos = 0; vidas = 3; nivel = 1;
+    tempoJogo = 0; tempoSpawn = 0;
+    invencivel = false;
+    jogador.position.set(0, 0.65, 0);
+    // Esconder overlays
+    document.getElementById('overlay-gameover').style.display = 'none';
+    document.getElementById('overlay-vitoria').style.display = 'none';
+    atualizarHUD();
+    estado = 'jogando';
+    clock.start();
+  }
+
+  function atualizarHUD() {
+    document.getElementById('hud-pontos').textContent = pontos;
+    document.getElementById('hud-nivel').textContent = nivel;
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById(`v${i}`).className = 'vida-icon' + (i <= vidas ? '' : ' perdida');
+    }
+  }
+
+  function mostrarDano() {
+    const el = document.getElementById('msg-dano');
+    el.style.opacity = '1';
+    setTimeout(() => el.style.opacity = '0', 600);
+  }
+
+  function tomarDano() {
+    if (invencivel) return;
+    vidas--;
+    atualizarHUD();
+    mostrarDano();
+    invencivel = true;
+    tempoInvencivel = 0;
+    if (vidas <= 0) gameOver();
+  }
+
+  function gameOver() {
+    estado = 'gameover';
+    document.getElementById('msg-gameover').textContent =
+      `Você fez ${pontos} pontos em ${Math.floor(tempoJogo)}s. Tente chegar a 500!`;
+    document.getElementById('overlay-gameover').style.display = 'flex';
+  }
+
+  function vitoria() {
+    estado = 'vitoria';
+    document.getElementById('msg-vitoria').textContent =
+      `Incrível! ${pontos} pontos em ${Math.floor(tempoJogo)} segundos!`;
+    document.getElementById('overlay-vitoria').style.display = 'flex';
+  }
+
+  // Spawnar estrelas iniciais
+  for (let i = 0; i < 5; i++) spawnEstrela();
+  atualizarHUD();
+
+  // ============================================================
+  // GAME LOOP
+  // ============================================================
+  const clock = new THREE.Clock();
+
+  function gameLoop() {
+    requestAnimationFrame(gameLoop);
+    const delta = Math.min(clock.getDelta(), 0.05); // limitar delta
+    const t = clock.getElapsedTime();
+
+    if (estado !== 'jogando') {
+      renderer.render(cena, camera);
+      return;
+    }
+
+    tempoJogo += delta;
+
+    // Nível aumenta a cada 30 segundos
+    nivel = Math.min(10, 1 + Math.floor(tempoJogo / 30));
+    document.getElementById('hud-nivel').textContent = nivel;
+
+    // --- SPAWN ---
+    tempoSpawn += delta;
+    if (tempoSpawn >= intervaloSpawn()) {
+      spawnInimigo();
+      tempoSpawn = 0;
+    }
+
+    // Manter 5 estrelas no mapa
+    while (estrelas.length < 5) spawnEstrela();
+
+    // --- JOGADOR ---
+    let movendo = false;
+    if (teclas['ArrowLeft']  || teclas['a'] || teclas['A']) { jogador.position.x -= VELOCIDADE_JOG * delta; movendo = true; }
+    if (teclas['ArrowRight'] || teclas['d'] || teclas['D']) { jogador.position.x += VELOCIDADE_JOG * delta; movendo = true; }
+    if (teclas['ArrowUp']    || teclas['w'] || teclas['W']) { jogador.position.z -= VELOCIDADE_JOG * delta; movendo = true; }
+    if (teclas['ArrowDown']  || teclas['s'] || teclas['S']) { jogador.position.z += VELOCIDADE_JOG * delta; movendo = true; }
+
+    // Limitar ao mapa
+    jogador.position.x = Math.max(-LIMITE + 0.7, Math.min(LIMITE - 0.7, jogador.position.x));
+    jogador.position.z = Math.max(-LIMITE + 0.7, Math.min(LIMITE - 0.7, jogador.position.z));
+
+    // Rotação da esfera ao mover
+    if (movendo) {
+      if (teclas['ArrowLeft']  || teclas['a'] || teclas['A']) jogador.rotation.z += 4 * delta;
+      if (teclas['ArrowRight'] || teclas['d'] || teclas['D']) jogador.rotation.z -= 4 * delta;
+      if (teclas['ArrowUp']    || teclas['w'] || teclas['W']) jogador.rotation.x += 4 * delta;
+      if (teclas['ArrowDown']  || teclas['s'] || teclas['S']) jogador.rotation.x -= 4 * delta;
+    }
+
+    // Trail
+    if (movendo) {
+      trailPontos[trailIdx].position.copy(jogador.position);
+      trailPontos[trailIdx].material.opacity = 0.6;
+      trailIdx = (trailIdx + 1) % MAX_TRAIL;
+    }
+    trailPontos.forEach(tp => { tp.material.opacity *= 0.85; });
+
+    // Invencibilidade
+    if (invencivel) {
+      tempoInvencivel += delta;
+      jogador.visible = Math.floor(tempoInvencivel * 8) % 2 === 0;
+      if (tempoInvencivel > 1.5) { invencivel = false; jogador.visible = true; }
+    }
+
+    // Luz de ponto segue o jogador
+    luzPonto.position.set(jogador.position.x, 2, jogador.position.z);
+
+    // --- INIMIGOS ---
+    for (let i = inimigos.length - 1; i >= 0; i--) {
+      const ini = inimigos[i];
+      ini.position.add(ini._vel.clone().multiplyScalar(delta));
+      ini.rotation.y += 2 * delta;
+      ini.rotation.x += 1.5 * delta;
+
+      // Bounce nas paredes
+      if (ini.position.x > LIMITE - 0.5 || ini.position.x < -LIMITE + 0.5) ini._vel.x *= -1;
+      if (ini.position.z > LIMITE - 0.5 || ini.position.z < -LIMITE + 0.5) ini._vel.z *= -1;
+
+      // Colisão com jogador
+      const dist = ini.position.distanceTo(jogador.position);
+      if (dist < 1.2) {
+        tomarDano();
+        // Empurrar inimigo para trás
+        const dir = ini.position.clone().sub(jogador.position).normalize();
+        ini._vel = dir.multiplyScalar(velocidadeInimigo() * 1.5);
+      }
+
+      // Remover inimigos velhos demais (> 30s de vida)
+      if (!ini._nascido) ini._nascido = tempoJogo;
+      if (tempoJogo - ini._nascido > 30) {
+        cena.remove(ini);
+        inimigos.splice(i, 1);
+      }
+    }
+
+    // --- ESTRELAS ---
+    for (let i = estrelas.length - 1; i >= 0; i--) {
+      const e = estrelas[i];
+      e.rotation.y += 2 * delta;
+      e.rotation.x += 1 * delta;
+      e.position.y = 0.6 + Math.sin(t * 2 + i) * 0.3;
+
+      const dist = e.position.distanceTo(jogador.position);
+      if (dist < 1.1) {
+        cena.remove(e);
+        estrelas.splice(i, 1);
+        pontos += 10;
+        atualizarHUD();
+        if (pontos >= 500) { vitoria(); return; }
+      }
+    }
+
+    // --- CÂMERA ---
+    const alvo = new THREE.Vector3(
+      jogador.position.x * 0.3,
+      12,
+      jogador.position.z * 0.3 + 14
+    );
+    camera.position.lerp(alvo, 0.06);
+    camera.lookAt(jogador.position.x * 0.1, 0, jogador.position.z * 0.1);
+
+    renderer.render(cena, camera);
+  }
+  gameLoop();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+</script>
+</body>
+</html>

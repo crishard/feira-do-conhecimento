@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Do JavaScript ao 3D — Primeira Cena</title>
+  <style>
+    :root {
+      --laranja: #f97316; --ciano: #06b6d4; --verde: #10b981;
+      --roxo: #8b5cf6; --rosa: #ec4899; --amarelo: #eab308;
+      --bg: #060609; --card: #0e0e16; --borda: #1c1c2e;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+
+    .layout { display: grid; grid-template-columns: 400px 1fr; height: 100vh; }
+
+    /* PAINEL */
+    .painel { padding: 26px 28px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; }
+    .breadcrumb a { color: var(--laranja); text-decoration: none; }
+
+    h1 { font-size: 1.4rem; font-weight: 900; margin-bottom: 4px; line-height: 1.2; }
+    .subtitulo { color: var(--muted); font-size: 0.86rem; margin-bottom: 22px; line-height: 1.6; }
+    h2 { font-size: 0.95rem; color: var(--ciano); margin: 20px 0 8px; display: flex; align-items: center; gap: 7px; }
+    p  { font-size: 0.85rem; line-height: 1.8; color: #cbd5e1; margin-bottom: 8px; }
+    strong { color: var(--texto); }
+    code { background: #13131f; padding: 1px 5px; border-radius: 4px; font-size: 0.82em; color: #86efac; font-family: monospace; }
+
+    /* BLOCOS DE CÓDIGO */
+    .bloco { background: #0b0b17; border: 1px solid var(--borda); border-radius: 8px; margin: 10px 0; overflow: hidden; }
+    .bloco .cab { background: #141421; padding: 5px 14px; font-size: 0.7rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+    .bloco pre { padding: 12px 14px; font-size: 0.77rem; line-height: 1.7; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    /* CAIXAS */
+    .caixa-conexao {
+      background: #0c1009; border: 1px solid #1a3a10; border-radius: 9px;
+      padding: 11px 15px; margin: 10px 0; font-size: 0.84rem; line-height: 1.7;
+    }
+    .caixa-conexao .tit { color: #4ade80; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .caixa-info { background: #0c1a24; border: 1px solid #0e4963; border-radius: 9px; padding: 11px 15px; margin: 10px 0; font-size: 0.84rem; line-height: 1.7; }
+    .caixa-info .tit { color: var(--ciano); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+
+    /* PASSO A PASSO */
+    .steps { counter-reset: step; }
+    .step {
+      display: flex; gap: 12px; margin-bottom: 6px;
+      background: var(--card); border: 1px solid var(--borda);
+      border-radius: 9px; padding: 12px 14px;
+    }
+    .step-num {
+      counter-increment: step;
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      background: var(--laranja); color: #000; font-size: 0.72rem;
+      font-weight: 900; display: flex; align-items: center; justify-content: center;
+    }
+    .step-body { flex: 1; }
+    .step-body .titulo { font-size: 0.84rem; font-weight: 700; margin-bottom: 3px; }
+    .step-body .desc { font-size: 0.78rem; color: #94a3b8; line-height: 1.6; }
+
+    /* LINHA DE CONCEITO */
+    .linha-conceito { display: flex; align-items: stretch; gap: 0; margin: 6px 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--borda); }
+    .lc-js { background: #0d1809; padding: 8px 11px; font-size: 0.76rem; flex: 1; font-family: monospace; color: #86efac; border-right: 1px solid var(--borda); }
+    .lc-seta { background: #12121e; padding: 8px 6px; font-size: 0.7rem; color: var(--muted); display: flex; align-items: center; }
+    .lc-3d { background: #0c1a24; padding: 8px 11px; font-size: 0.76rem; flex: 1; font-family: monospace; color: #67e8f9; }
+
+    /* CONTROLES */
+    .ctrl { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .ctrl label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .ctrl input[type=range] { width: 100%; accent-color: var(--laranja); }
+    .ctrl-row { display: flex; gap: 8px; }
+    .ctrl-row .ctrl { flex: 1; }
+    .btn {
+      background: #12121e; border: 1px solid var(--borda); color: var(--texto);
+      padding: 7px 12px; border-radius: 7px; cursor: pointer; font-size: 0.8rem;
+      font-family: inherit; transition: background 0.15s; width: 100%; margin-bottom: 5px;
+      text-align: left;
+    }
+    .btn:hover { background: #1c0e00; border-color: var(--laranja); }
+    .btn.on { background: #0d1809; border-color: #14532d; color: #4ade80; }
+
+    /* SEPARADOR */
+    .sep { height: 1px; background: var(--borda); margin: 14px 0; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--laranja); text-decoration: none; font-size: 0.86rem; }
+
+    /* VIEWPORT */
+    .viewport { background: #02020a; position: relative; overflow: hidden; height: 100vh; }
+    .viewport canvas { display: block; }
+
+    /* CONTROLES FLUTUANTES */
+    .painel-3d {
+      position: absolute; top: 12px; right: 12px; z-index: 10;
+      background: rgba(6,6,9,0.92); border: 1px solid var(--borda);
+      border-radius: 10px; padding: 14px; min-width: 200px;
+      backdrop-filter: blur(4px);
+    }
+    .painel-3d h3 { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .ctrl-mini { margin-bottom: 8px; }
+    .ctrl-mini label { font-size: 0.68rem; color: var(--muted); display: block; margin-bottom: 3px; }
+    .ctrl-mini input[type=range] { width: 100%; accent-color: var(--laranja); }
+    .ctrl-mini select, .ctrl-mini input[type=color] {
+      width: 100%; background: #12121e; border: 1px solid var(--borda);
+      color: var(--texto); padding: 4px 8px; border-radius: 6px;
+      font-size: 0.78rem; font-family: inherit;
+    }
+    .btn-mini {
+      width: 100%; background: #12121e; border: 1px solid var(--borda);
+      color: var(--texto); padding: 6px 10px; border-radius: 7px;
+      cursor: pointer; font-size: 0.76rem; font-family: inherit;
+      text-align: left; margin-bottom: 5px;
+    }
+    .btn-mini:hover { background: #1e1e3a; }
+    .btn-mini.on { background: #0d1809; border-color: #14532d; color: #4ade80; }
+
+    .info-bar {
+      position: absolute; bottom: 10px; left: 12px; right: 12px;
+      font-size: 0.7rem; color: var(--muted); display: flex; justify-content: space-between;
+      pointer-events: none; z-index: 10;
+    }
+
+    /* BADGE */
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 0.7rem; font-weight: 700; }
+    .badge-js  { background: #1c1609; color: #fde68a; border: 1px solid #3d2b0a; }
+    .badge-3d  { background: #0c1a24; color: #67e8f9; border: 1px solid #0e4963; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- PAINEL -->
+<div class="painel">
+  <div class="breadcrumb"><a href="index.html">← Curso</a> / Intro</div>
+  <h1>🧊 Do JavaScript ao 3D</h1>
+  <p class="subtitulo">Tudo que você acabou de aprender já é o suficiente para criar sua primeira cena 3D. Veja como cada conceito vira código real no Three.js.</p>
+
+  <!-- CONEXÃO CONCEITOS -->
+  <h2>🔗 Seus Conceitos → Código 3D</h2>
+  <p>Olha como o que você aprendeu hoje aparece direto no Three.js:</p>
+
+  <div class="linha-conceito">
+    <div class="lc-js">let posX = 2.5;</div>
+    <div class="lc-seta">→</div>
+    <div class="lc-3d">cubo.position.x = 2.5</div>
+  </div>
+  <div class="linha-conceito">
+    <div class="lc-js">const cor = "#f97316";</div>
+    <div class="lc-seta">→</div>
+    <div class="lc-3d">material.color.set('#f97316')</div>
+  </div>
+  <div class="linha-conceito">
+    <div class="lc-js">if (vida > 0) { ... }</div>
+    <div class="lc-seta">→</div>
+    <div class="lc-3d">if (inimigo.vida > 0) ...</div>
+  </div>
+  <div class="linha-conceito">
+    <div class="lc-js">while (true) { ... }</div>
+    <div class="lc-seta">→</div>
+    <div class="lc-3d">requestAnimationFrame(loop)</div>
+  </div>
+  <div class="linha-conceito">
+    <div class="lc-js">function mover(obj) { ... }</div>
+    <div class="lc-seta">→</div>
+    <div class="lc-3d">function animar() { ... }</div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- OS 3 INGREDIENTES -->
+  <h2>🧩 Os 3 Ingredientes de Qualquer Cena 3D</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <div class="titulo">Cena — o "mundo"</div>
+        <div class="desc">Um objeto que guarda todos os outros objetos. Pensa como um array onde você dá <code>.add()</code> em tudo.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <div class="titulo">Câmera — os "olhos"</div>
+        <div class="desc">Define de onde e como você enxerga a cena. Tem posição (x, y, z) e campo de visão (FOV).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <div class="titulo">Renderer — o "pintor"</div>
+        <div class="desc">Pega a cena + câmera e desenha no canvas usando WebGL. É ele que faz o loop de animação.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- CÓDIGO COMPLETO -->
+  <h2>💻 O Código Completo — Linha a Linha</h2>
+
+  <div class="bloco">
+    <div class="cab">
+      <span>primeira-cena.html</span>
+      <span class="badge badge-js">JavaScript</span>
+    </div>
+    <pre><span class="c">// ① CENA — o mundo que vai conter tudo</span>
+<span class="k">const</span> <span class="v">cena</span> = <span class="k">new</span> <span class="f">THREE.Scene</span>();
+cena.background = <span class="k">new</span> <span class="f">THREE.Color</span>(<span class="s">'#0a0a1a'</span>);
+
+<span class="c">// ② CÂMERA — os olhos do jogador</span>
+<span class="c">// PerspectiveCamera(fov, aspecto, perto, longe)</span>
+<span class="k">const</span> <span class="v">camera</span> = <span class="k">new</span> <span class="f">THREE.PerspectiveCamera</span>(
+  <span class="n">60</span>,                <span class="c">// campo de visão (graus)</span>
+  <span class="n">largura</span> / <span class="n">altura</span>,  <span class="c">// proporção da tela</span>
+  <span class="n">0.1</span>,               <span class="c">// distância mínima</span>
+  <span class="n">100</span>                <span class="c">// distância máxima</span>
+);
+camera.position.set(<span class="n">0</span>, <span class="n">2</span>, <span class="n">6</span>); <span class="c">// posição no espaço</span>
+camera.lookAt(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>);       <span class="c">// olha para a origem</span>
+
+<span class="c">// ③ RENDERER — o motor que desenha tudo</span>
+<span class="k">const</span> <span class="v">renderer</span> = <span class="k">new</span> <span class="f">THREE.WebGLRenderer</span>({ antialias: <span class="k">true</span> });
+renderer.<span class="f">setSize</span>(<span class="v">largura</span>, <span class="v">altura</span>);
+document.body.<span class="f">appendChild</span>(renderer.domElement); <span class="c">// coloca na página</span>
+
+<span class="c">// ④ OBJETO — geometria + material = mesh</span>
+<span class="k">const</span> <span class="v">geometria</span> = <span class="k">new</span> <span class="f">THREE.BoxGeometry</span>(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>); <span class="c">// forma</span>
+<span class="k">const</span> <span class="v">material</span>  = <span class="k">new</span> <span class="f">THREE.MeshStandardMaterial</span>({
+  color: <span class="s">'#f97316'</span>  <span class="c">// cor laranja</span>
+});
+<span class="k">const</span> <span class="v">cubo</span> = <span class="k">new</span> <span class="f">THREE.Mesh</span>(<span class="v">geometria</span>, <span class="v">material</span>);
+cena.<span class="f">add</span>(<span class="v">cubo</span>); <span class="c">// ← adiciona na cena (igual array.push)</span>
+
+<span class="c">// ⑤ LUZ — sem luz, tudo fica preto</span>
+<span class="k">const</span> <span class="v">luz</span> = <span class="k">new</span> <span class="f">THREE.DirectionalLight</span>(<span class="s">'#ffffff'</span>, <span class="n">1.5</span>);
+luz.position.<span class="f">set</span>(<span class="n">5</span>, <span class="n">8</span>, <span class="n">5</span>);
+cena.<span class="f">add</span>(luz);
+cena.<span class="f">add</span>(<span class="k">new</span> <span class="f">THREE.AmbientLight</span>(<span class="s">'#ffffff'</span>, <span class="n">0.4</span>));
+
+<span class="c">// ⑥ LOOP — igual um while(true), roda para sempre</span>
+<span class="k">function</span> <span class="f">animar</span>() {
+  <span class="f">requestAnimationFrame</span>(<span class="f">animar</span>); <span class="c">// chama de novo no próximo frame</span>
+  cubo.rotation.y += <span class="n">0.01</span>;      <span class="c">// gira um pouco a cada frame</span>
+  renderer.<span class="f">render</span>(<span class="v">cena</span>, <span class="v">camera</span>); <span class="c">// desenha tudo na tela</span>
+}
+<span class="f">animar</span>(); <span class="c">// inicia o loop</span></pre>
+  </div>
+
+  <div class="caixa-conexao">
+    <div class="tit">🔗 Conexão com o que você aprendeu</div>
+    <strong>Variável</strong> → <code>const cubo</code>, <code>const material</code><br>
+    <strong>Objeto</strong> → <code>{ color: '#f97316' }</code> é um objeto JS<br>
+    <strong>Função</strong> → <code>function animar()</code> é a função de loop<br>
+    <strong>Loop</strong> → <code>requestAnimationFrame</code> = o <code>while(true)</code> do 3D<br>
+    <strong>Método</strong> → <code>cena.add(cubo)</code> = como <code>array.push(item)</code>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- COMO VISUALIZAR -->
+  <h2>👀 Como Visualizar — 2 Formas</h2>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <div class="titulo">Direto no Navegador (mais fácil)</div>
+        <div class="desc">Salva o código num arquivo <code>.html</code> → clica duas vezes → abre no Chrome/Firefox. Igual você está vendo agora.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-body">
+        <div class="titulo">CodePen / JSFiddle (online)</div>
+        <div class="desc">Acessa <strong>codepen.io</strong> → cola o código → resultado aparece ao lado. Zero instalação, compartilha com link.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="caixa-info">
+    <div class="tit">📦 Estrutura mínima do arquivo HTML</div>
+    <code>&lt;script src="three.min.js"&gt;&lt;/script&gt;</code><br>
+    <code>&lt;script&gt;</code> seu código JS aqui <code>&lt;/script&gt;</code><br><br>
+    O Three.js pode ser carregado pelo CDN — não precisa instalar nada.
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- BRINQUE AO LADO -->
+  <h2>🎮 Agora é Sua Vez — Altere ao Vivo</h2>
+  <p>Use os controles na cena ao lado para ver como cada propriedade afeta o objeto:</p>
+
+  <div class="ctrl-row">
+    <div class="ctrl">
+      <label>Rotação Y (velocidade)</label>
+      <input type="range" id="ctrl-rot" min="0" max="5" step="0.1" value="1" oninput="atualizar()">
+    </div>
+    <div class="ctrl">
+      <label>Escala</label>
+      <input type="range" id="ctrl-scale" min="0.2" max="3" step="0.05" value="1" oninput="atualizar()">
+    </div>
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl">
+      <label>Pos X</label>
+      <input type="range" id="ctrl-px" min="-3" max="3" step="0.1" value="0" oninput="atualizar()">
+    </div>
+    <div class="ctrl">
+      <label>Pos Y</label>
+      <input type="range" id="ctrl-py" min="-2" max="3" step="0.1" value="0" oninput="atualizar()">
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <label>Cor do objeto</label>
+    <input type="color" id="ctrl-cor" value="#f97316" oninput="atualizar()" style="width:100%;height:32px;border:1px solid var(--borda);border-radius:7px;background:none;cursor:pointer;padding:2px;">
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+    <button class="btn" id="btn-wire" onclick="toggleWire()">📐 Wireframe: OFF</button>
+    <button class="btn" id="btn-luz" onclick="toggleLuz()">💡 Luz: ON</button>
+    <button class="btn" onclick="trocarForma('cubo')">📦 Cubo</button>
+    <button class="btn" onclick="trocarForma('esfera')">⚽ Esfera</button>
+    <button class="btn" onclick="trocarForma('cilindro')">🥫 Cilindro</button>
+    <button class="btn" onclick="trocarForma('torus')">🍩 Torus</button>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- PRÓXIMOS PASSOS -->
+  <h2>🚀 Próximos Passos</h2>
+  <p>Com isso você já sabe criar e mover objetos 3D. As próximas aulas do curso vão mais fundo em cada parte:</p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin:8px 0">
+    <tr style="background:#141421">
+      <th style="padding:7px 10px;text-align:left;color:var(--laranja);border-bottom:1px solid var(--borda)">Aula</th>
+      <th style="padding:7px 10px;text-align:left;color:var(--laranja);border-bottom:1px solid var(--borda)">O que você vai aprender</th>
+    </tr>
+    <tr><td style="padding:6px 10px;border-bottom:1px solid #12121e">Aula 1</td><td style="padding:6px 10px;border-bottom:1px solid #12121e;color:#94a3b8">A estrutura de qualquer mesh (vértices, faces)</td></tr>
+    <tr><td style="padding:6px 10px;border-bottom:1px solid #12121e">Aula 2</td><td style="padding:6px 10px;border-bottom:1px solid #12121e;color:#94a3b8">Mover, girar e escalar com precisão</td></tr>
+    <tr><td style="padding:6px 10px;border-bottom:1px solid #12121e">Aula 3</td><td style="padding:6px 10px;border-bottom:1px solid #12121e;color:#94a3b8">Construir formas complexas com primitivas</td></tr>
+    <tr><td style="padding:6px 10px">Aula 4–7</td><td style="padding:6px 10px;color:#94a3b8">Texturas, materiais PBR, iluminação, projeto final</td></tr>
+  </table>
+
+  <div class="nav">
+    <span></span>
+    <a href="aula1.html">Aula 1: Vértices →</a>
+  </div>
+</div>
+
+<!-- VIEWPORT -->
+<div class="viewport" id="vp">
+  <div class="painel-3d">
+    <h3>🧪 Experimente</h3>
+    <div class="ctrl-mini">
+      <label>Forma</label>
+      <select id="sel-forma" onchange="trocarForma(this.value)">
+        <option value="cubo">📦 Cubo</option>
+        <option value="esfera">⚽ Esfera</option>
+        <option value="cilindro">🥫 Cilindro</option>
+        <option value="torus">🍩 Torus</option>
+        <option value="cone">🔺 Cone</option>
+      </select>
+    </div>
+    <div class="ctrl-mini">
+      <label>Cor</label>
+      <input type="color" id="ctrl-cor2" value="#f97316" oninput="sincCor(this.value)">
+    </div>
+    <button class="btn-mini" id="btn-wire2" onclick="toggleWire()">📐 Wireframe: OFF</button>
+    <button class="btn-mini" id="btn-girar" onclick="toggleGirar()">▶ Girar: ON</button>
+    <button class="btn-mini" id="btn-grade" onclick="toggleGrade()">⊞ Grade: ON</button>
+  </div>
+  <div class="info-bar">
+    <span id="info-obj">Cubo · posição (0, 0, 0) · escala 1x</span>
+    <span>🖱️ Arrastar = orbitar</span>
+  </div>
+</div>
+
+</div><!-- layout -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const vp = document.getElementById('vp');
+const vpW = () => window.innerWidth - document.querySelector('.painel').offsetWidth;
+const vpH = () => window.innerHeight;
+
+// ① CENA
+const cena = new THREE.Scene();
+cena.background = new THREE.Color('#04040c');
+
+// ② CÂMERA
+const camera = new THREE.PerspectiveCamera(55, vpW()/vpH(), 0.1, 100);
+camera.position.set(0, 2, 6);
+camera.lookAt(0, 0, 0);
+
+// ③ RENDERER
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch(e) {
+  vp.innerHTML = '<div style="color:#f97316;padding:30px;font-family:monospace">❌ WebGL indisponível: ' + e + '</div>';
+  throw e;
+}
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(vpW(), vpH());
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+vp.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 0, 0);
+
+// ⑤ LUZES
+const luzDir = new THREE.DirectionalLight('#ffffff', 1.5);
+luzDir.position.set(5, 8, 5);
+luzDir.castShadow = true;
+const luzAmb = new THREE.AmbientLight('#ffffff', 0.4);
+cena.add(luzDir, luzAmb);
+
+// GRADE (ajuda a entender o espaço 3D)
+const grade = new THREE.GridHelper(10, 20, '#1c1c2e', '#12121e');
+grade.position.y = -0.8;
+cena.add(grade);
+
+// PISO
+const piso = new THREE.Mesh(
+  new THREE.PlaneGeometry(10, 10),
+  new THREE.MeshStandardMaterial({ color: '#0a0a16', roughness: 0.9 })
+);
+piso.rotation.x = -Math.PI / 2;
+piso.position.y = -0.8;
+piso.receiveShadow = true;
+cena.add(piso);
+
+// ④ OBJETO PRINCIPAL
+let objAtual;
+let formaAtual = 'cubo';
+let corAtual   = '#f97316';
+let wireframe  = false;
+let girando    = true;
+
+function criarGeo(tipo) {
+  if (tipo === 'cubo')     return new THREE.BoxGeometry(1.4, 1.4, 1.4);
+  if (tipo === 'esfera')   return new THREE.SphereGeometry(0.9, 48, 32);
+  if (tipo === 'cilindro') return new THREE.CylinderGeometry(0.6, 0.6, 1.6, 32);
+  if (tipo === 'torus')    return new THREE.TorusGeometry(0.7, 0.28, 24, 80);
+  if (tipo === 'cone')     return new THREE.ConeGeometry(0.7, 1.6, 32);
+}
+
+function criarObjeto(tipo) {
+  if (objAtual) cena.remove(objAtual);
+  const geo = criarGeo(tipo);
+  const mat = new THREE.MeshStandardMaterial({
+    color: corAtual,
+    roughness: 0.35,
+    metalness: 0.2,
+    wireframe: wireframe,
+  });
+  objAtual = new THREE.Mesh(geo, mat);
+  objAtual.castShadow = true;
+  objAtual.receiveShadow = true;
+  cena.add(objAtual);
+  formaAtual = tipo;
+}
+
+criarObjeto('cubo');
+
+// ─── CONTROLES DO PAINEL ───
+function atualizar() {
+  if (!objAtual) return;
+  const vel  = parseFloat(document.getElementById('ctrl-rot').value);
+  const sc   = parseFloat(document.getElementById('ctrl-scale').value);
+  const px   = parseFloat(document.getElementById('ctrl-px').value);
+  const py   = parseFloat(document.getElementById('ctrl-py').value);
+  const cor  = document.getElementById('ctrl-cor').value;
+
+  objAtual.position.set(px, py, 0);
+  objAtual.scale.setScalar(sc);
+  corAtual = cor;
+  objAtual.material.color.set(cor);
+  document.getElementById('ctrl-cor2').value = cor;
+
+  velocidadeRot = vel * 0.005;
+
+  const nome = formaAtual.charAt(0).toUpperCase() + formaAtual.slice(1);
+  document.getElementById('info-obj').textContent =
+    `${nome} · pos (${px.toFixed(1)}, ${py.toFixed(1)}, 0) · escala ${sc.toFixed(1)}x`;
+}
+
+function sincCor(v) {
+  corAtual = v;
+  if (objAtual) objAtual.material.color.set(v);
+  document.getElementById('ctrl-cor').value = v;
+}
+
+function trocarForma(tipo) {
+  criarObjeto(tipo);
+  document.getElementById('sel-forma').value = tipo;
+  const nome = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+  document.getElementById('info-obj').textContent = `${nome} · criado!`;
+}
+
+let wireOn = false;
+function toggleWire() {
+  wireOn = !wireOn;
+  if (objAtual) objAtual.material.wireframe = wireOn;
+  const lbl = wireOn ? '📐 Wireframe: ON' : '📐 Wireframe: OFF';
+  document.getElementById('btn-wire').textContent  = lbl;
+  document.getElementById('btn-wire2').textContent = lbl;
+  document.getElementById('btn-wire').classList.toggle('on', wireOn);
+  document.getElementById('btn-wire2').classList.toggle('on', wireOn);
+}
+
+let luzOn = true;
+function toggleLuz() {
+  luzOn = !luzOn;
+  luzDir.visible = luzOn;
+  document.getElementById('btn-luz').textContent = luzOn ? '💡 Luz: ON' : '💡 Luz: OFF';
+  document.getElementById('btn-luz').classList.toggle('on', luzOn);
+}
+
+let girarOn = true;
+function toggleGirar() {
+  girarOn = !girarOn;
+  document.getElementById('btn-girar').textContent = girarOn ? '▶ Girar: ON' : '▶ Girar: OFF';
+  document.getElementById('btn-girar').classList.toggle('on', girarOn);
+}
+
+let gradeOn = true;
+function toggleGrade() {
+  gradeOn = !gradeOn;
+  grade.visible = gradeOn;
+  piso.visible  = gradeOn;
+  document.getElementById('btn-grade').textContent = gradeOn ? '⊞ Grade: ON' : '⊞ Grade: OFF';
+  document.getElementById('btn-grade').classList.toggle('on', gradeOn);
+}
+
+// ⑥ LOOP DE ANIMAÇÃO
+let velocidadeRot = 0.005;
+function animar() {
+  requestAnimationFrame(animar);
+  controls.update();
+  if (girarOn && objAtual) {
+    objAtual.rotation.y += velocidadeRot * parseFloat(document.getElementById('ctrl-rot').value);
+  }
+  renderer.render(cena, camera);
+}
+animar();
+
+window.addEventListener('resize', () => {
+  camera.aspect = vpW() / vpH();
+  camera.updateProjectionMatrix();
+  renderer.setSize(vpW(), vpH());
+});
+</script>
+</body>
+</html>

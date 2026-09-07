@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 2 — Objetos, Materiais e Luzes</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0ff; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+    .painel { overflow-y: auto; padding: 32px; border-right: 1px solid #2d2d4e; }
+    .visualizador { position: relative; background: #050510; }
+    canvas { display: block; }
+    h1 { font-size: 1.5rem; color: #7c3aed; margin-bottom: 4px; }
+    .aula-num { font-size: 0.75rem; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .secao { margin-top: 28px; padding-top: 20px; border-top: 1px solid #2d2d4e; }
+    .secao h2 { font-size: 1.05rem; color: #06b6d4; margin-bottom: 12px; }
+    p { font-size: 0.9rem; line-height: 1.7; color: #c0c0d8; margin-bottom: 10px; }
+    pre {
+      background: #12121f; border: 1px solid #2d2d4e; border-radius: 8px;
+      padding: 16px; font-size: 0.78rem; overflow-x: auto; line-height: 1.6; margin: 12px 0;
+    }
+    .comment { color: #6b7280; }
+    .keyword { color: #c084fc; }
+    .string { color: #86efac; }
+    .number { color: #fb923c; }
+    .func { color: #60a5fa; }
+    .conceito {
+      background: #1a1a2e; border-left: 3px solid #7c3aed;
+      padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.88rem;
+    }
+    .tabela { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
+    .tabela th { background: #1a1a2e; padding: 8px 12px; text-align: left; color: #7c3aed; border-bottom: 1px solid #2d2d4e; }
+    .tabela td { padding: 8px 12px; border-bottom: 1px solid #1a1a2e; color: #c0c0d8; }
+    .tabela tr:hover td { background: #1a1a2e; }
+    .nav { display: flex; justify-content: space-between; margin-top: 32px; padding-top: 20px; border-top: 1px solid #2d2d4e; }
+    .nav a { color: #7c3aed; text-decoration: none; font-size: 0.88rem; }
+    .label-canvas {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(0,0,0,0.6); padding: 4px 10px;
+      border-radius: 6px; font-size: 0.75rem; color: #9ca3af; pointer-events: none;
+    }
+    .controles {
+      position: absolute; bottom: 16px; left: 0; right: 0;
+      display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+    }
+    .btn {
+      background: #1a1a2e; border: 1px solid #2d2d4e; color: #e0e0ff;
+      padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #7c3aed; }
+    .btn.ativo { background: #7c3aed; border-color: #7c3aed; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div class="painel">
+    <div class="aula-num">Aula 2 de 6</div>
+    <h1>Objetos, Materiais e Luzes</h1>
+
+    <div class="secao">
+      <h2>🔷 Geometrias — As Formas do Mundo 3D</h2>
+      <p>O Three.js oferece várias formas prontas. Clique nos botões ao lado para ver cada uma delas!</p>
+
+      <table class="tabela">
+        <tr><th>Geometria</th><th>Código</th><th>Uso comum</th></tr>
+        <tr><td>Cubo</td><td>BoxGeometry(w, h, d)</td><td>Paredes, caixas, plataformas</td></tr>
+        <tr><td>Esfera</td><td>SphereGeometry(r, seg)</td><td>Bolas, planetas, personagens</td></tr>
+        <tr><td>Cilindro</td><td>CylinderGeometry(r, r, h)</td><td>Árvores, colunas</td></tr>
+        <tr><td>Cone</td><td>ConeGeometry(r, h, seg)</td><td>Chapéu, montanha</td></tr>
+        <tr><td>Plano</td><td>PlaneGeometry(w, h)</td><td>Chão, parede, água</td></tr>
+        <tr><td>Torus</td><td>TorusGeometry(r, tube)</td><td>Anel, pneu, donuts 🍩</td></tr>
+      </table>
+    </div>
+
+    <div class="secao">
+      <h2>🎨 Materiais — A Aparência dos Objetos</h2>
+      <p>O material determina como o objeto <em>parece</em>. Diferentes materiais reagem à luz de formas diferentes:</p>
+
+      <div class="conceito">
+        <strong>MeshBasicMaterial</strong> — Sem reação à luz. Sempre aparece com a cor pura. Útil para HUDs e ícones.<br><br>
+        <strong>MeshStandardMaterial</strong> — Física baseada (PBR). Reage à luz de forma realista. Use na maioria dos casos.<br><br>
+        <strong>MeshPhongMaterial</strong> — Mais leve que o Standard. Bom brilho especular (reflexo de luz).<br><br>
+        <strong>MeshWireframeGeometry</strong> — Mostra só as arestas (wireframe). Ótimo para debug.
+      </div>
+
+      <pre><span class="comment">// Material básico — não precisa de luz</span>
+<span class="keyword">const</span> matBasico = <span class="keyword">new</span> <span class="func">THREE.MeshBasicMaterial</span>({
+  color: <span class="string">'#ff6600'</span>,
+  wireframe: <span class="keyword">false</span> <span class="comment">// true = mostra só arestas</span>
+});
+
+<span class="comment">// Material realista — precisa de luz na cena</span>
+<span class="keyword">const</span> matRealistico = <span class="keyword">new</span> <span class="func">THREE.MeshStandardMaterial</span>({
+  color: <span class="string">'#7c3aed'</span>,
+  roughness: <span class="number">0.3</span>,  <span class="comment">// 0 = espelho, 1 = fosco</span>
+  metalness: <span class="number">0.8</span>   <span class="comment">// 0 = plástico, 1 = metal</span>
+});</pre>
+    </div>
+
+    <div class="secao">
+      <h2>💡 Luzes — Iluminando o Mundo</h2>
+      <p>Sem luz, objetos com MeshStandardMaterial aparecem completamente pretos. Existem vários tipos de luz:</p>
+
+      <table class="tabela">
+        <tr><th>Tipo de Luz</th><th>Comportamento</th></tr>
+        <tr><td>AmbientLight</td><td>Ilumina tudo igualmente, sem direção. Sem sombra.</td></tr>
+        <tr><td>DirectionalLight</td><td>Como o sol — raios paralelos, projeta sombras.</td></tr>
+        <tr><td>PointLight</td><td>Como uma lâmpada — irradia em todas as direções.</td></tr>
+        <tr><td>SpotLight</td><td>Como um holofote — cone de luz direcionável.</td></tr>
+      </table>
+
+      <pre><span class="comment">// Luz ambiente (iluminação base)</span>
+<span class="keyword">const</span> ambiente = <span class="keyword">new</span> <span class="func">THREE.AmbientLight</span>(<span class="string">'#ffffff'</span>, <span class="number">0.4</span>);
+cena.<span class="func">add</span>(ambiente);
+
+<span class="comment">// Luz direcional (como o sol)</span>
+<span class="keyword">const</span> sol = <span class="keyword">new</span> <span class="func">THREE.DirectionalLight</span>(<span class="string">'#fffbe6'</span>, <span class="number">1.2</span>);
+sol.position.<span class="func">set</span>(<span class="number">10</span>, <span class="number">20</span>, <span class="number">10</span>);
+cena.<span class="func">add</span>(sol);
+
+<span class="comment">// Luz pontual (como uma lâmpada)</span>
+<span class="keyword">const</span> lampada = <span class="keyword">new</span> <span class="func">THREE.PointLight</span>(<span class="string">'#60a5fa'</span>, <span class="number">2</span>, <span class="number">20</span>);
+lampada.position.<span class="func">set</span>(<span class="number">0</span>, <span class="number">3</span>, <span class="number">0</span>);
+cena.<span class="func">add</span>(lampada);</pre>
+    </div>
+
+    <div class="secao">
+      <h2>📐 Posicionando Objetos no Espaço 3D</h2>
+      <p>No espaço 3D, cada objeto tem uma posição nos eixos X, Y e Z:</p>
+
+      <div class="conceito">
+        <strong>X</strong> → Esquerda (-) e Direita (+)<br>
+        <strong>Y</strong> → Baixo (-) e Cima (+)<br>
+        <strong>Z</strong> → Para longe (-) e Para perto (+)
+      </div>
+
+      <pre><span class="comment">// Posicionamento</span>
+objeto.position.<span class="func">set</span>(<span class="number">2</span>, <span class="number">0</span>, -<span class="number">3</span>); <span class="comment">// x=2, y=0, z=-3</span>
+
+<span class="comment">// Rotação (em radianos — não graus!)</span>
+objeto.rotation.y = Math.PI / <span class="number">4</span>; <span class="comment">// 45 graus</span>
+
+<span class="comment">// Escala</span>
+objeto.scale.<span class="func">set</span>(<span class="number">2</span>, <span class="number">0.5</span>, <span class="number">1</span>); <span class="comment">// 2x largo, 0.5x alto, normal no z</span></pre>
+    </div>
+
+    <div class="nav">
+      <a href="aula1.html">← Aula 1</a>
+      <a href="aula3.html">Aula 3: Animação →</a>
+    </div>
+  </div>
+
+  <!-- VISUALIZADOR 3D -->
+  <div class="visualizador" id="visualizador">
+    <div class="label-canvas">▶ Clique nos botões para trocar a forma e o material</div>
+    <div class="controles">
+      <button class="btn ativo" onclick="trocarForma('cubo')">Cubo</button>
+      <button class="btn" onclick="trocarForma('esfera')">Esfera</button>
+      <button class="btn" onclick="trocarForma('cilindro')">Cilindro</button>
+      <button class="btn" onclick="trocarForma('cone')">Cone</button>
+      <button class="btn" onclick="trocarForma('torus')">Torus</button>
+      <button class="btn" onclick="trocarMaterial('basic')">Sem Luz</button>
+      <button class="btn" onclick="trocarMaterial('standard')">Realístico</button>
+      <button class="btn" onclick="trocarMaterial('wireframe')">Wireframe</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
+<script>
+  const container = document.getElementById('visualizador');
+
+  const cena = new THREE.Scene();
+  cena.background = new THREE.Color('#050510');
+
+  const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(0, 2, 5);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.insertBefore(renderer.domElement, container.querySelector('.controles'));
+
+  // Luzes
+  cena.add(new THREE.AmbientLight('#ffffff', 0.4));
+  const sol = new THREE.DirectionalLight('#fffbe6', 1.5);
+  sol.position.set(5, 10, 5);
+  cena.add(sol);
+  const lampada = new THREE.PointLight('#60a5fa', 3, 20);
+  lampada.position.set(-3, 2, 2);
+  cena.add(lampada);
+
+  // Grade
+  const grade = new THREE.GridHelper(10, 10, '#1a1a2e', '#1a1a2e');
+  grade.position.y = -1.5;
+  cena.add(grade);
+
+  // Objeto atual
+  let meshAtual;
+  let tipoMaterial = 'standard';
+
+  const cores = ['#7c3aed', '#06b6d4', '#f59e0b', '#ef4444', '#10b981'];
+  let corIdx = 0;
+
+  function criarMaterial(tipo) {
+    if (tipo === 'basic')     return new THREE.MeshBasicMaterial({ color: cores[corIdx] });
+    if (tipo === 'wireframe') return new THREE.MeshStandardMaterial({ color: cores[corIdx], wireframe: true });
+    return new THREE.MeshStandardMaterial({ color: cores[corIdx], roughness: 0.3, metalness: 0.5 });
+  }
+
+  function trocarForma(tipo) {
+    document.querySelectorAll('.btn').forEach(b => {
+      if (['Cubo','Esfera','Cilindro','Cone','Torus'].includes(b.textContent))
+        b.classList.remove('ativo');
+    });
+    event.target.classList.add('ativo');
+
+    if (meshAtual) cena.remove(meshAtual);
+    corIdx = (corIdx + 1) % cores.length;
+
+    let geo;
+    if (tipo === 'cubo')     geo = new THREE.BoxGeometry(2, 2, 2);
+    if (tipo === 'esfera')   geo = new THREE.SphereGeometry(1.2, 32, 32);
+    if (tipo === 'cilindro') geo = new THREE.CylinderGeometry(0.8, 0.8, 2.5, 32);
+    if (tipo === 'cone')     geo = new THREE.ConeGeometry(1, 2.5, 32);
+    if (tipo === 'torus')    geo = new THREE.TorusGeometry(1.2, 0.4, 16, 100);
+
+    meshAtual = new THREE.Mesh(geo, criarMaterial(tipoMaterial));
+    cena.add(meshAtual);
+  }
+
+  function trocarMaterial(tipo) {
+    tipoMaterial = tipo;
+    if (meshAtual) {
+      meshAtual.material = criarMaterial(tipo);
+    }
+  }
+
+  // Inicializar com cubo
+  const geo0 = new THREE.BoxGeometry(2, 2, 2);
+  meshAtual = new THREE.Mesh(geo0, criarMaterial('standard'));
+  cena.add(meshAtual);
+
+  function animar() {
+    requestAnimationFrame(animar);
+    if (meshAtual) {
+      meshAtual.rotation.x += 0.006;
+      meshAtual.rotation.y += 0.01;
+    }
+    renderer.render(cena, camera);
+  }
+  animar();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+</script>
+</body>
+</html>

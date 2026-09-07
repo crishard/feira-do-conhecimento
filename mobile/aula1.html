@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Aula 1 — Desktop vs. Mobile</title>
+  <style>
+    :root {
+      --roxo: #8b5cf6; --ciano: #06b6d4; --verde: #10b981;
+      --bg: #050510; --card: #0f0f1e; --borda: #1e1e3a;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+
+    .layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+    @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
+
+    .conteudo { padding: 28px 32px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    @media (max-width: 768px) { .conteudo { max-height: none; border-right: none; border-bottom: 1px solid var(--borda); } }
+
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 10px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+    h2 { font-size: 1rem; color: var(--ciano); margin: 22px 0 10px; display: flex; align-items: center; gap: 8px; }
+    p { font-size: 0.88rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 10px; }
+    strong { color: var(--texto); }
+
+    .comparacao {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .comp-card {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .comp-card .titulo {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--borda);
+    }
+    .comp-card.desktop .titulo { color: #60a5fa; }
+    .comp-card.mobile  .titulo { color: #4ade80; }
+    .comp-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      padding: 4px 0;
+      border-bottom: 1px solid #13131f;
+    }
+    .comp-item:last-child { border-bottom: none; }
+    .comp-item .ic { font-size: 0.9rem; flex-shrink: 0; }
+
+    .bloco {
+      background: #0d0d1a;
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+    .bloco .cab {
+      background: #181828;
+      padding: 6px 14px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .bloco pre { padding: 14px; font-size: 0.77rem; line-height: 1.65; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .aviso {
+      background: #0d1f0d;
+      border: 1px solid #14532d;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+    .aviso .t { color: #4ade80; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.88rem; }
+
+    /* DEMO */
+    .demo { background: #030308; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+    .demo-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--borda);
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .demo-area { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 16px; overflow-y: auto; }
+
+    .input-box {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 12px;
+      padding: 16px;
+      flex: 1;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+    }
+    .input-box .titulo-box {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .titulo-box.desktop { color: #60a5fa; }
+    .titulo-box.mobile  { color: #4ade80; }
+
+    #area-mouse, #area-touch {
+      flex: 1;
+      background: #0a0a14;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+      min-height: 120px;
+    }
+    .dot {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .dot.mouse-dot { background: #60a5fa; box-shadow: 0 0 12px #60a5fa80; }
+    .dot.touch-dot { background: #4ade80; box-shadow: 0 0 16px #4ade8080; width: 28px; height: 28px; }
+
+    .coordenadas {
+      font-size: 0.75rem;
+      font-family: monospace;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .coordenadas span { color: var(--texto); }
+
+    .eventos-log {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 12px;
+      padding: 12px 16px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .eventos-log .t { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .ev-linha {
+      font-size: 0.75rem;
+      font-family: monospace;
+      padding: 3px 0;
+      border-bottom: 1px solid #0f0f1e;
+      display: flex;
+      gap: 8px;
+    }
+    .ev-linha .tipo { width: 90px; flex-shrink: 0; }
+    .ev-mouse  .tipo { color: #60a5fa; }
+    .ev-touch  .tipo { color: #4ade80; }
+    .ev-key    .tipo { color: #c084fc; }
+    .ev-linha .dado { color: #94a3b8; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .stat-mini {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-mini .val { font-size: 1.4rem; font-weight: 800; font-family: monospace; }
+    .stat-mini .lab { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 1</div>
+    <h1>📲 Desktop vs. Mobile</h1>
+    <p class="sub">Antes de criar jogos mobile, entenda o que muda quando vai pro celular.</p>
+
+    <h2>🖥️ vs 📱 — As Diferenças Principais</h2>
+
+    <div class="comparacao">
+      <div class="comp-card desktop">
+        <div class="titulo">🖥️ Desktop</div>
+        <div class="comp-item"><span class="ic">🖱️</span> Mouse com precisão de pixels</div>
+        <div class="comp-item"><span class="ic">⌨️</span> Teclado com todas as teclas</div>
+        <div class="comp-item"><span class="ic">📐</span> Tela grande e fixa</div>
+        <div class="comp-item"><span class="ic">⚡</span> CPU/GPU mais poderosa</div>
+        <div class="comp-item"><span class="ic">🔋</span> Sem problema de bateria</div>
+        <div class="comp-item"><span class="ic">📡</span> Conexão estável (cabo)</div>
+      </div>
+      <div class="comp-card mobile">
+        <div class="titulo">📱 Mobile</div>
+        <div class="comp-item"><span class="ic">👆</span> Toque com os dedos (grosseiros)</div>
+        <div class="comp-item"><span class="ic">🕹️</span> Controles virtuais na tela</div>
+        <div class="comp-item"><span class="ic">🔄</span> Tela pequena + rotação</div>
+        <div class="comp-item"><span class="ic">🐢</span> Hardware mais limitado</div>
+        <div class="comp-item"><span class="ic">🔋</span> Bateria é um recurso!</div>
+        <div class="comp-item"><span class="ic">🌐</span> Wi-Fi, dados, pode cair</div>
+      </div>
+    </div>
+
+    <h2>📐 Viewport — O Tamanho da Tela</h2>
+    <p>A primeira coisa num jogo mobile é garantir que ele preenche a tela corretamente. A tag <code style="color:#86efac">&lt;meta viewport&gt;</code> é obrigatória:</p>
+
+    <div class="bloco">
+      <div class="cab">HTML — No &lt;head&gt; de toda página mobile</div>
+      <pre><span class="c">&lt;!-- SEM isso, o celular mostra a página em zoom de desktop --&gt;</span>
+&lt;meta name=<span class="s">"viewport"</span>
+  content=<span class="s">"width=device-width,  </span><span class="c">← usa a largura real do celular</span><span class="s">
+           initial-scale=1.0,   </span><span class="c">← começa sem zoom</span><span class="s">
+           user-scalable=no"</span>  <span class="c">← impede zoom acidental ao jogar</span>
+&gt;
+
+<span class="c">&lt;!-- Canvas que preenche a tela toda --&gt;</span>
+&lt;style&gt;
+  canvas {
+    width: 100vw;   <span class="c">/* 100% da largura da tela */</span>
+    height: 100vh;  <span class="c">/* 100% da altura da tela */</span>
+    display: block;
+    touch-action: none; <span class="c">/* impede scroll acidental */</span>
+  }
+&lt;/style&gt;</pre>
+    </div>
+
+    <h2>👆 Mouse vs. Touch — O Código Muda</h2>
+    <p>No desktop você usa <code style="color:#c084fc">mousemove</code>. No mobile você usa <code style="color:#4ade80">touchmove</code>. Mas pode suportar os dois ao mesmo tempo:</p>
+
+    <div class="bloco">
+      <div class="cab">JavaScript — compatível com desktop e mobile</div>
+      <pre><span class="c">// Pegar a posição independente do dispositivo</span>
+<span class="k">function</span> <span class="f">getPosicao</span>(evento) {
+  <span class="c">// Touch: evento.touches[0] = primeiro dedo</span>
+  <span class="k">if</span> (evento.touches) {
+    <span class="k">return</span> {
+      x: evento.touches[<span class="n">0</span>].clientX,
+      y: evento.touches[<span class="n">0</span>].clientY
+    };
+  }
+  <span class="c">// Mouse: direto no evento</span>
+  <span class="k">return</span> { x: evento.clientX, y: evento.clientY };
+}
+
+<span class="c">// Registrar AMBOS os tipos de evento</span>
+canvas.addEventListener(<span class="s">'mousemove'</span>, <span class="f">getPosicao</span>);
+canvas.addEventListener(<span class="s">'touchmove'</span>, <span class="f">getPosicao</span>);</pre>
+    </div>
+
+    <div class="aviso">
+      <div class="t">💡 Regra de Ouro</div>
+      Sempre desenvolva pensando em touch primeiro. Um jogo que funciona com o dedo geralmente também funciona com o mouse. O contrário NÃO é verdade!
+    </div>
+
+    <h2>📏 Tamanho dos Botões</h2>
+    <p>O dedo humano ocupa entre <strong>44px e 70px</strong>. Botões menores causam erros de toque. Essa é a regra da Apple e do Google para design mobile:</p>
+
+    <div class="bloco">
+      <div class="cab">CSS — Tamanho mínimo de toque</div>
+      <pre><span class="c">/* Mínimo 44px × 44px (recomendação Apple/Google) */</span>
+.botao-jogo {
+  min-width: <span class="n">60</span>px;
+  min-height: <span class="n">60</span>px;
+  border-radius: <span class="n">50</span>%;
+  <span class="c">/* padding aumenta a área clicável sem mudar visual */</span>
+  padding: <span class="n">12</span>px;
+  font-size: <span class="n">1.5</span>rem;
+}</pre>
+    </div>
+
+    <div class="nav">
+      <a href="index.html">← Início</a>
+      <a href="aula2.html">Aula 2: Touch Events →</a>
+    </div>
+  </div>
+
+  <!-- DEMO -->
+  <div class="demo">
+    <div class="demo-header">
+      <span>▶ Interaja com as áreas abaixo — mouse ou dedo!</span>
+      <span id="dispositivo">🖥️ Desktop</span>
+    </div>
+    <div class="demo-area">
+
+      <div class="stats-row">
+        <div class="stat-mini">
+          <div class="val" id="stat-w" style="color:#60a5fa">--</div>
+          <div class="lab">Tela Largura</div>
+        </div>
+        <div class="stat-mini">
+          <div class="val" id="stat-h" style="color:#4ade80">--</div>
+          <div class="lab">Tela Altura</div>
+        </div>
+        <div class="stat-mini">
+          <div class="val" id="stat-dpr" style="color:#fb923c">--</div>
+          <div class="lab">Pixel Ratio</div>
+        </div>
+      </div>
+
+      <div class="input-box">
+        <div class="titulo-box desktop">🖥️ Área do Mouse</div>
+        <div id="area-mouse">
+          <div class="dot mouse-dot" id="dot-mouse" style="opacity:0; left:50%; top:50%;"></div>
+        </div>
+        <div class="coordenadas">Mouse: x=<span id="mx">--</span>, y=<span id="my">--</span> | Botão: <span id="mbtn">nenhum</span></div>
+      </div>
+
+      <div class="input-box">
+        <div class="titulo-box mobile">📱 Área Touch (use o dedo no celular!)</div>
+        <div id="area-touch">
+          <!-- pontos de toque criados dinamicamente -->
+        </div>
+        <div class="coordenadas">Toques ativos: <span id="n-toques">0</span> | Último: x=<span id="tx">--</span>, y=<span id="ty">--</span></div>
+      </div>
+
+      <div class="eventos-log" id="log-eventos">
+        <div class="t">Log de Eventos</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Info do dispositivo
+  document.getElementById('stat-w').textContent = window.innerWidth;
+  document.getElementById('stat-h').textContent = window.innerHeight;
+  document.getElementById('stat-dpr').textContent = window.devicePixelRatio || 1;
+  if ('ontouchstart' in window) {
+    document.getElementById('dispositivo').textContent = '📱 Mobile!';
+  }
+
+  let logCount = 0;
+  function addLog(tipo, dado, classe) {
+    const log = document.getElementById('log-eventos');
+    const linha = document.createElement('div');
+    linha.className = `ev-linha ${classe}`;
+    linha.innerHTML = `<span class="tipo">${tipo}</span><span class="dado">${dado}</span>`;
+    log.appendChild(linha);
+    log.scrollTop = log.scrollHeight;
+    if (log.querySelectorAll('.ev-linha').length > 20) {
+      log.querySelectorAll('.ev-linha')[0].remove();
+    }
+    logCount++;
+  }
+
+  // MOUSE
+  const areaMouse = document.getElementById('area-mouse');
+  const dotMouse  = document.getElementById('dot-mouse');
+  let mouseDown = false;
+
+  areaMouse.addEventListener('mousemove', (e) => {
+    const rect = areaMouse.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    dotMouse.style.left  = x + 'px';
+    dotMouse.style.top   = y + 'px';
+    dotMouse.style.opacity = '1';
+    document.getElementById('mx').textContent = Math.round(x);
+    document.getElementById('my').textContent = Math.round(y);
+    if (logCount % 5 === 0) addLog('mousemove', `x:${Math.round(x)} y:${Math.round(y)}`, 'ev-mouse');
+  });
+  areaMouse.addEventListener('mouseleave', () => { dotMouse.style.opacity = '0'; });
+  areaMouse.addEventListener('mousedown', (e) => {
+    mouseDown = true;
+    document.getElementById('mbtn').textContent = ['Esq','Meio','Dir'][e.button] || e.button;
+    addLog('mousedown', `botão: ${['esquerdo','meio','direito'][e.button]}`, 'ev-mouse');
+  });
+  areaMouse.addEventListener('mouseup', (e) => {
+    mouseDown = false;
+    document.getElementById('mbtn').textContent = 'nenhum';
+    addLog('mouseup', `botão liberado`, 'ev-mouse');
+  });
+
+  // TOUCH
+  const areaTouch = document.getElementById('area-touch');
+  const touchDots = {};
+
+  function getTouchPos(t, rect) {
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+
+  areaTouch.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const rect = areaTouch.getBoundingClientRect();
+    Array.from(e.changedTouches).forEach(t => {
+      const { x, y } = getTouchPos(t, rect);
+      const dot = document.createElement('div');
+      dot.className = 'dot touch-dot';
+      dot.style.left = x + 'px';
+      dot.style.top  = y + 'px';
+      dot.style.opacity = '0.9';
+      areaTouch.appendChild(dot);
+      touchDots[t.identifier] = dot;
+    });
+    document.getElementById('n-toques').textContent = e.touches.length;
+    addLog('touchstart', `${e.changedTouches.length} dedo(s)`, 'ev-touch');
+  }, { passive: false });
+
+  areaTouch.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const rect = areaTouch.getBoundingClientRect();
+    Array.from(e.changedTouches).forEach(t => {
+      const { x, y } = getTouchPos(t, rect);
+      const dot = touchDots[t.identifier];
+      if (dot) { dot.style.left = x + 'px'; dot.style.top = y + 'px'; }
+      document.getElementById('tx').textContent = Math.round(x);
+      document.getElementById('ty').textContent = Math.round(y);
+    });
+    document.getElementById('n-toques').textContent = e.touches.length;
+    if (logCount % 8 === 0) addLog('touchmove', `${e.touches.length} dedo(s) ativos`, 'ev-touch');
+  }, { passive: false });
+
+  areaTouch.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(t => {
+      const dot = touchDots[t.identifier];
+      if (dot) { dot.style.opacity = '0'; setTimeout(() => dot.remove(), 300); delete touchDots[t.identifier]; }
+    });
+    document.getElementById('n-toques').textContent = e.touches.length;
+    addLog('touchend', `liberou dedo`, 'ev-touch');
+  }, { passive: false });
+
+  // Teclado
+  window.addEventListener('keydown', (e) => {
+    addLog('keydown', `tecla: "${e.key}"`, 'ev-key');
+  });
+
+  window.addEventListener('resize', () => {
+    document.getElementById('stat-w').textContent = window.innerWidth;
+    document.getElementById('stat-h').textContent = window.innerHeight;
+  });
+
+  addLog('system', 'Mexa na área de Mouse ou Touch!', 'ev-key');
+</script>
+</body>
+</html>

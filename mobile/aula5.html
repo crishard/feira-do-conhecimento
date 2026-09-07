@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Aula 5 — Performance e Vibração</title>
+  <style>
+    :root {
+      --roxo: #8b5cf6; --ciano: #06b6d4; --verde: #10b981; --laranja: #f97316;
+      --vermelho: #ef4444;
+      --bg: #050510; --card: #0f0f1e; --borda: #1e1e3a;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+    .layout { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
+    @media (max-width: 768px) { .layout { grid-template-columns: 1fr; height: auto; } }
+
+    .conteudo { padding: 24px 28px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .sub { color: var(--muted); font-size: 0.87rem; margin-bottom: 22px; }
+    h2 { font-size: 0.98rem; color: var(--ciano); margin: 20px 0 8px; }
+    p { font-size: 0.87rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 8px; }
+    strong { color: var(--texto); }
+
+    .bloco { background: #0d0d1a; border: 1px solid var(--borda); border-radius: 8px; margin: 10px 0; overflow: hidden; }
+    .bloco .cab { background: #181828; padding: 6px 14px; font-size: 0.72rem; color: var(--muted); }
+    .bloco pre { padding: 12px 14px; font-size: 0.76rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .dica-verde { background: #0d1f0d; border: 1px solid #14532d; border-radius: 8px; padding: 10px 14px; margin: 10px 0; font-size: 0.84rem; line-height: 1.65; }
+    .dica-verde .t { color: #4ade80; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .dica-laranja { background: #1a0f00; border: 1px solid #78350f; border-radius: 8px; padding: 10px 14px; margin: 10px 0; font-size: 0.84rem; line-height: 1.65; }
+    .dica-laranja .t { color: var(--laranja); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.85rem; }
+
+    /* DEMO */
+    .demo { background: #030308; display: flex; flex-direction: column; overflow: hidden; }
+    .demo-header { padding: 10px 16px; border-bottom: 1px solid var(--borda); font-size: 0.78rem; color: var(--muted); flex-shrink: 0; }
+    #canvas-perf { flex: 1; display: block; touch-action: none; }
+
+    .controles-perf {
+      padding: 12px 16px;
+      border-top: 1px solid var(--borda);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .btn-perf {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      color: var(--texto);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .btn-perf:hover { background: #1e1e3a; }
+    .btn-perf.verde { background: #052e16; border-color: #14532d; color: #4ade80; }
+    .btn-perf.vermelho { background: #1c0505; border-color: #7f1d1d; color: #fca5a5; }
+    .btn-perf.roxo { background: #1e1040; border-color: #4c1d95; color: #a78bfa; }
+
+    .metricas {
+      padding: 8px 16px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 0.75rem;
+      font-family: monospace;
+      border-top: 1px solid var(--borda);
+      flex-shrink: 0;
+    }
+    .metrica { display: flex; gap: 4px; align-items: center; }
+    .metrica .lab { color: var(--muted); }
+    .metrica .val { font-weight: 700; }
+    .metrica .val.bom { color: #4ade80; }
+    .metrica .val.medio { color: #fb923c; }
+    .metrica .val.ruim { color: #ef4444; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 5</div>
+    <h1>⚡ Performance e Vibração</h1>
+    <p class="sub">Jogos mobile precisam ser leves. Veja os principais truques e a Vibration API.</p>
+
+    <h2>📳 Vibração — Feedback Tátil</h2>
+    <p>O celular pode vibrar quando o jogador toma dano, coleta um item ou ganha. É uma única linha de código:</p>
+
+    <div class="bloco">
+      <div class="cab">JavaScript — Vibration API</div>
+      <pre><span class="c">// Vibrar por 100ms (um toque curto)</span>
+navigator.<span class="f">vibrate</span>(<span class="n">100</span>);
+
+<span class="c">// Vibrar por 200ms (coleta item)</span>
+navigator.<span class="f">vibrate</span>(<span class="n">200</span>);
+
+<span class="c">// Padrão: vibra 100ms, pausa 50ms, vibra 100ms (dano)</span>
+navigator.<span class="f">vibrate</span>([<span class="n">100</span>, <span class="n">50</span>, <span class="n">100</span>]);
+
+<span class="c">// Padrão de vitória: três toques rápidos</span>
+navigator.<span class="f">vibrate</span>([<span class="n">50</span>, <span class="n">30</span>, <span class="n">50</span>, <span class="n">30</span>, <span class="n">100</span>]);
+
+<span class="c">// Parar a vibração</span>
+navigator.<span class="f">vibrate</span>(<span class="n">0</span>);</pre>
+    </div>
+
+    <div class="dica-laranja">
+      <div class="t">⚠️ Safari / iOS</div>
+      A Vibration API não funciona no Safari (iPhone). Funciona no Chrome Android e Firefox. Sempre verifique antes de usar!<br><br>
+      <code style="color:#c084fc">if</code> (<code style="color:#fde68a">navigator.vibrate</code>) { <code style="color:#60a5fa">navigator.vibrate</code>(<code style="color:#fb923c">100</code>); }
+    </div>
+
+    <h2>🚀 Truques de Performance</h2>
+    <p>Celulares têm hardware mais limitado. Esses truques fazem seu jogo rodar a 60 FPS mesmo em aparelhos modestos:</p>
+
+    <div class="bloco">
+      <div class="cab">1. Limpar só o necessário (evite fillRect no canvas inteiro)</div>
+      <pre><span class="c">// ❌ Lento: redesenha tudo</span>
+ctx.clearRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+<span class="c">// ✅ Rápido: limpa só onde os objetos estavam</span>
+ctx.clearRect(jogador.x - <span class="n">20</span>, jogador.y - <span class="n">20</span>, <span class="n">40</span>, <span class="n">40</span>);</pre>
+    </div>
+
+    <div class="bloco">
+      <div class="cab">2. Off-screen Canvas — pré-renderizar objetos estáticos</div>
+      <pre><span class="c">// Criar um canvas fora da tela para o cenário</span>
+<span class="k">const</span> <span class="v">offscreen</span> = document.<span class="f">createElement</span>(<span class="s">'canvas'</span>);
+<span class="k">const</span> <span class="v">octx</span> = offscreen.getContext(<span class="s">'2d'</span>);
+
+<span class="c">// Desenhar o cenário UMA VEZ</span>
+<span class="f">desenharCenario</span>(octx);
+
+<span class="c">// No game loop, copiar o canvas pré-desenhado</span>
+<span class="c">// É MUITO mais rápido que redesenhar</span>
+ctx.<span class="f">drawImage</span>(offscreen, <span class="n">0</span>, <span class="n">0</span>);</pre>
+    </div>
+
+    <div class="bloco">
+      <div class="cab">3. Object pooling — reutilizar objetos</div>
+      <pre><span class="c">// ❌ Lento: criar e destruir objetos</span>
+tiros.push(<span class="k">new</span> <span class="f">Tiro</span>(x, y)); <span class="c">// cria objeto</span>
+tiros.<span class="f">splice</span>(i, <span class="n">1</span>);           <span class="c">// destrói — GC lento!</span>
+
+<span class="c">// ✅ Rápido: reutilizar objetos inativos</span>
+<span class="k">const</span> <span class="v">pool</span> = Array.from({ length: <span class="n">50</span> },
+  () => ({ x:<span class="n">0</span>, y:<span class="n">0</span>, ativo:<span class="k">false</span> })
+);
+
+<span class="k">function</span> <span class="f">atirar</span>(x, y) {
+  <span class="c">// Pegar um tiro inativo do pool</span>
+  <span class="k">const</span> <span class="v">t</span> = pool.<span class="f">find</span>(<span class="v">t</span> => !<span class="v">t</span>.ativo);
+  <span class="k">if</span> (!<span class="v">t</span>) <span class="k">return</span>; <span class="c">// pool cheio</span>
+  <span class="v">t</span>.x = x; <span class="v">t</span>.y = y; <span class="v">t</span>.ativo = <span class="k">true</span>;
+}</pre>
+    </div>
+
+    <div class="dica-verde">
+      <div class="t">✅ Regra geral de performance mobile</div>
+      Mantenha o game loop abaixo de 16ms por frame. Use <code>ctx.drawImage</code> ao invés de redesenhar primitivas. Evite criar objetos no loop. Reduza sombras e filtros CSS no canvas.
+    </div>
+
+    <div class="nav">
+      <a href="aula4.html">← Aula 4</a>
+      <a href="aula6.html">🏆 Projeto Final →</a>
+    </div>
+  </div>
+
+  <!-- DEMO -->
+  <div class="demo" id="demo">
+    <div class="demo-header">⚡ Benchmark de partículas — teste a performance do seu dispositivo</div>
+    <canvas id="canvas-perf"></canvas>
+
+    <div class="metricas">
+      <div class="metrica"><span class="lab">FPS:</span><span class="val" id="m-fps" style="color:#4ade80">--</span></div>
+      <div class="metrica"><span class="lab">Partículas:</span><span class="val" id="m-partic" style="color:#60a5fa">0</span></div>
+      <div class="metrica"><span class="lab">Frame:</span><span class="val" id="m-frame" style="color:#fb923c">--ms</span></div>
+      <div class="metrica"><span class="lab">Vibração:</span><span class="val" id="m-vib" style="color:#c084fc">--</span></div>
+    </div>
+
+    <div class="controles-perf">
+      <button class="btn-perf verde" onclick="addParticulas(100)">+ 100 partículas</button>
+      <button class="btn-perf verde" onclick="addParticulas(500)">+ 500 partículas</button>
+      <button class="btn-perf vermelho" onclick="resetarParticulas()">Zerar</button>
+      <button class="btn-perf roxo" onclick="vibrarTeste(100)">📳 Vibrar 100ms</button>
+      <button class="btn-perf roxo" onclick="vibrarTeste([100,50,100])">📳 Duplo</button>
+      <button class="btn-perf roxo" onclick="vibrarTeste([50,30,50,30,100])">📳 Vitória</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('canvas-perf');
+  const ctx = canvas.getContext('2d');
+  const demo = document.getElementById('demo');
+
+  function resize() {
+    canvas.width  = demo.clientWidth;
+    canvas.height = demo.clientHeight - 110;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const particulas = [];
+
+  function addParticulas(n) {
+    for (let i = 0; i < n; i++) {
+      particulas.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 3,
+        vy: (Math.random() - 0.5) * 3,
+        r: 2 + Math.random() * 4,
+        cor: `hsl(${Math.random()*360},80%,60%)`,
+        vida: 0.95 + Math.random() * 0.04
+      });
+    }
+    document.getElementById('m-partic').textContent = particulas.length;
+  }
+
+  function resetarParticulas() {
+    particulas.length = 0;
+    document.getElementById('m-partic').textContent = 0;
+  }
+
+  function vibrarTeste(padrao) {
+    if (navigator.vibrate) {
+      navigator.vibrate(padrao);
+      document.getElementById('m-vib').textContent = '✅ Vibrou!';
+      setTimeout(() => document.getElementById('m-vib').textContent = 'Suportado', 1000);
+    } else {
+      document.getElementById('m-vib').textContent = '❌ Não suportado';
+    }
+  }
+
+  // Verificar suporte à vibração
+  document.getElementById('m-vib').textContent = navigator.vibrate ? '✅ Disponível' : '❌ Não disponível';
+
+  let frames = 0, lastTime = performance.now(), fpsAtual = 60;
+
+  function gameLoop(ts) {
+    requestAnimationFrame(gameLoop);
+    const t0 = performance.now();
+    const W = canvas.width, H = canvas.height;
+
+    ctx.fillStyle = 'rgba(3,3,8,0.2)'; // fade em vez de clear total = efeito de trilha
+    ctx.fillRect(0, 0, W, H);
+
+    for (const p of particulas) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+      ctx.fillStyle = p.cor;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // FPS
+    frames++;
+    const agora = performance.now();
+    if (agora - lastTime >= 500) {
+      fpsAtual = Math.round(frames * 1000 / (agora - lastTime));
+      frames = 0; lastTime = agora;
+      const elFPS = document.getElementById('m-fps');
+      elFPS.textContent = fpsAtual;
+      elFPS.className = 'val ' + (fpsAtual >= 55 ? 'bom' : fpsAtual >= 30 ? 'medio' : 'ruim');
+    }
+
+    const frameTime = performance.now() - t0;
+    document.getElementById('m-frame').textContent = frameTime.toFixed(1) + 'ms';
+  }
+
+  addParticulas(100);
+  gameLoop(0);
+</script>
+</body>
+</html>

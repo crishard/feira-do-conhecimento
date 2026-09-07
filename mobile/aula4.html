@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Aula 4 — Acelerômetro</title>
+  <style>
+    :root {
+      --roxo: #8b5cf6; --ciano: #06b6d4; --verde: #10b981; --laranja: #f97316;
+      --bg: #050510; --card: #0f0f1e; --borda: #1e1e3a;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+    .layout { display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+    @media (max-width: 768px) { .layout { grid-template-columns: 1fr; height: auto; } }
+
+    .conteudo { padding: 24px 28px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .sub { color: var(--muted); font-size: 0.87rem; margin-bottom: 22px; }
+    h2 { font-size: 0.98rem; color: var(--ciano); margin: 20px 0 8px; }
+    p { font-size: 0.87rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 8px; }
+    strong { color: var(--texto); }
+
+    .bloco { background: #0d0d1a; border: 1px solid var(--borda); border-radius: 8px; margin: 10px 0; overflow: hidden; }
+    .bloco .cab { background: #181828; padding: 6px 14px; font-size: 0.72rem; color: var(--muted); }
+    .bloco pre { padding: 12px 14px; font-size: 0.76rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .eixos {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px; margin: 12px 0;
+    }
+    .eixo-card { background: var(--card); border: 1px solid var(--borda); border-radius: 10px; padding: 12px; text-align: center; }
+    .eixo-card .letra { font-size: 1.4rem; font-weight: 900; margin-bottom: 4px; }
+    .eixo-card .X { color: #ef4444; }
+    .eixo-card .Y { color: #4ade80; }
+    .eixo-card .Z { color: #60a5fa; }
+    .eixo-card .desc { font-size: 0.75rem; color: var(--muted); }
+
+    .aviso { background: #1a0f00; border: 1px solid #78350f; border-radius: 8px; padding: 10px 14px; margin: 10px 0; font-size: 0.83rem; line-height: 1.65; }
+    .aviso .t { color: var(--laranja); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.85rem; }
+
+    /* DEMO */
+    .demo { background: #030308; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+    .demo-header { padding: 10px 16px; border-bottom: 1px solid var(--borda); font-size: 0.78rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    #canvas-acel { flex: 1; display: block; touch-action: none; }
+
+    .sensores-hud {
+      position: absolute; top: 50px; left: 12px;
+      background: rgba(5,5,16,0.85); border: 1px solid var(--borda);
+      border-radius: 10px; padding: 10px 14px;
+      font-family: monospace; font-size: 0.76rem;
+      pointer-events: none; z-index: 10; min-width: 160px;
+    }
+    .sensor-linha { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+    .sensor-linha .eixo-n { font-weight: 700; }
+    .sensor-linha .x-c { color: #ef4444; }
+    .sensor-linha .y-c { color: #4ade80; }
+    .sensor-linha .z-c { color: #60a5fa; }
+    .sensor-linha .val { color: var(--texto); min-width: 60px; text-align: right; }
+
+    .barra-sensor { height: 4px; background: #1e1e3a; border-radius: 2px; margin-top: 2px; overflow: hidden; }
+    .barra-fill { height: 100%; border-radius: 2px; transition: width 0.1s; }
+
+    .overlay-acel {
+      position: absolute; inset: 0; z-index: 20;
+      background: rgba(3,3,8,0.92);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .overlay-acel h2 { font-size: 1.4rem; margin-bottom: 8px; }
+    .overlay-acel p { color: var(--muted); max-width: 320px; text-align: center; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.6; }
+    .btn-ativar { background: var(--verde); color: white; border: none; padding: 12px 28px; border-radius: 10px; font-size: 1rem; cursor: pointer; font-family: inherit; margin-bottom: 10px; }
+    .btn-mouse { background: transparent; border: 1px solid var(--borda); color: var(--muted); padding: 8px 20px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 4</div>
+    <h1>🌀 Acelerômetro — Incline para Mover</h1>
+    <p class="sub">Controle o jogo inclinando o celular — como nos jogos de labirinto e corrida!</p>
+
+    <h2>O que é o Acelerômetro?</h2>
+    <p>O celular tem um sensor chamado <strong>acelerômetro</strong> que detecta a inclinação e aceleração do aparelho nos 3 eixos:</p>
+
+    <div class="eixos">
+      <div class="eixo-card">
+        <div class="letra X">X</div>
+        <div class="desc">Inclinação<br>esquerda/direita</div>
+      </div>
+      <div class="eixo-card">
+        <div class="letra Y">Y</div>
+        <div class="desc">Inclinação<br>frente/trás</div>
+      </div>
+      <div class="eixo-card">
+        <div class="letra Z">Z</div>
+        <div class="desc">Rotação<br>sobre si mesmo</div>
+      </div>
+    </div>
+
+    <h2>A API DeviceOrientation</h2>
+    <div class="bloco">
+      <div class="cab">JavaScript</div>
+      <pre><span class="c">// Pedir permissão (necessário no iOS 13+)</span>
+<span class="k">async function</span> <span class="f">ativarAcelerometro</span>() {
+  <span class="c">// iOS exige permissão explícita</span>
+  <span class="k">if</span> (DeviceOrientationEvent.requestPermission) {
+    <span class="k">const</span> <span class="v">res</span> = <span class="k">await</span> DeviceOrientationEvent
+      .<span class="f">requestPermission</span>();
+    <span class="k">if</span> (res !== <span class="s">'granted'</span>) <span class="k">return</span>;
+  }
+
+  <span class="c">// Ouvir o evento de orientação</span>
+  window.addEventListener(<span class="s">'deviceorientation'</span>, (<span class="v">e</span>) => {
+    <span class="c">// Valores em graus (-180 a 180)</span>
+    <span class="k">const</span> <span class="v">incX</span> = e.gamma; <span class="c">// esq/dir (-90 a 90)</span>
+    <span class="k">const</span> <span class="v">incY</span> = e.beta;  <span class="c">// cima/baixo (-180 a 180)</span>
+
+    <span class="c">// Normalizar para -1 a 1 (usando 45° como máximo)</span>
+    bola.ax = <span class="f">Math.max</span>(-<span class="n">1</span>, <span class="f">Math.min</span>(<span class="n">1</span>, <span class="v">incX</span> / <span class="n">45</span>));
+    bola.ay = <span class="f">Math.max</span>(-<span class="n">1</span>, <span class="f">Math.min</span>(<span class="n">1</span>, (<span class="v">incY</span> - <span class="n">30</span>) / <span class="n">45</span>));
+    <span class="c">// -30 porque o celular fica levemente inclinado</span>
+  });
+}</pre>
+    </div>
+
+    <h2>Usando no Jogo</h2>
+    <div class="bloco">
+      <div class="cab">JavaScript — física da bola</div>
+      <pre><span class="c">// bola.ax e bola.ay = aceleração da inclinação</span>
+<span class="k">const</span> GRAVIDADE = <span class="n">0.5</span>;
+
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop);
+
+  <span class="c">// Aceleração baseada na inclinação</span>
+  bola.vx += bola.ax * GRAVIDADE;
+  bola.vy += bola.ay * GRAVIDADE;
+
+  <span class="c">// Atrito (amortecimento)</span>
+  bola.vx *= <span class="n">0.95</span>;
+  bola.vy *= <span class="n">0.95</span>;
+
+  bola.x += bola.vx;
+  bola.y += bola.vy;
+
+  <span class="f">desenhar</span>();
+}</pre>
+    </div>
+
+    <div class="aviso">
+      <div class="t">⚠️ iOS 13+ precisa de permissão</div>
+      No iPhone, o acesso ao acelerômetro exige que o usuário clique num botão primeiro. O demo tem esse botão. No Android, funciona direto.
+    </div>
+
+    <p>No demo ao lado, incline o celular para rolar a bola! No PC, <strong>mova o mouse</strong> para simular a inclinação.</p>
+
+    <div class="nav">
+      <a href="aula3.html">← Aula 3</a>
+      <a href="aula5.html">Aula 5: Performance →</a>
+    </div>
+  </div>
+
+  <!-- DEMO -->
+  <div class="demo" id="demo">
+    <div class="demo-header">
+      <span>🌀 Incline o celular ou mova o mouse</span>
+      <span id="modo-acel">🖥️ Mouse</span>
+    </div>
+
+    <div class="sensores-hud" id="sensores-hud">
+      <div class="sensor-linha"><span class="eixo-n x-c">X (gamma)</span><span class="val" id="v-gamma">0.0°</span></div>
+      <div class="barra-sensor"><div class="barra-fill" id="b-gamma" style="background:#ef4444;width:50%"></div></div>
+      <div class="sensor-linha" style="margin-top:6px"><span class="eixo-n y-c">Y (beta)</span><span class="val" id="v-beta">0.0°</span></div>
+      <div class="barra-sensor"><div class="barra-fill" id="b-beta" style="background:#4ade80;width:50%"></div></div>
+      <div class="sensor-linha" style="margin-top:8px; border-top:1px solid #1e1e3a; padding-top:6px">
+        <span style="color:var(--muted)">ax</span><span class="val" id="v-ax">0.00</span>
+      </div>
+      <div class="sensor-linha">
+        <span style="color:var(--muted)">ay</span><span class="val" id="v-ay">0.00</span>
+      </div>
+    </div>
+
+    <canvas id="canvas-acel"></canvas>
+
+    <div class="overlay-acel" id="overlay-acel">
+      <div style="font-size:3rem;margin-bottom:12px">🌀</div>
+      <h2>Acelerômetro</h2>
+      <p>No celular: ative o sensor e incline o aparelho para rolar a bola.<br>No PC: o mouse simula a inclinação.</p>
+      <button class="btn-ativar" onclick="ativarAcel()">📱 Ativar Sensor (celular)</button>
+      <button class="btn-mouse" onclick="modoPCAtivo()">🖥️ Usar Mouse (PC)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('canvas-acel');
+  const ctx = canvas.getContext('2d');
+  const demo = document.getElementById('demo');
+
+  function resize() {
+    canvas.width  = demo.clientWidth;
+    canvas.height = demo.clientHeight - 40;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Bola física
+  const bola = { x: 0, y: 0, vx: 0, vy: 0, r: 22, ax: 0, ay: 0, cor: '#8b5cf6' };
+  const GRAV = 0.45, ATRITO = 0.96;
+  const buracos = [];
+  const coletaveis = [];
+  let pontos = 0, emJogo = false;
+  let modoMouse = false;
+
+  function inicializarNivel() {
+    bola.x = canvas.width / 2; bola.y = canvas.height / 2;
+    bola.vx = 0; bola.vy = 0;
+    buracos.length = 0;
+    coletaveis.length = 0;
+    for (let i = 0; i < 5; i++) {
+      buracos.push({ x: 80 + Math.random() * (canvas.width - 160), y: 80 + Math.random() * (canvas.height - 160), r: 20 });
+    }
+    for (let i = 0; i < 8; i++) {
+      coletaveis.push({ x: 40 + Math.random() * (canvas.width - 80), y: 40 + Math.random() * (canvas.height - 80), r: 10 });
+    }
+  }
+
+  async function ativarAcel() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+      try {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res !== 'granted') { alert('Permissão negada!'); return; }
+      } catch(e) {}
+    }
+    window.addEventListener('deviceorientation', (e) => {
+      const gamma = e.gamma || 0; // -90 a 90
+      const beta  = e.beta  || 0; // -180 a 180
+      bola.ax = Math.max(-1, Math.min(1, gamma / 45));
+      bola.ay = Math.max(-1, Math.min(1, (beta - 30) / 45));
+      document.getElementById('v-gamma').textContent = gamma.toFixed(1) + '°';
+      document.getElementById('v-beta').textContent  = beta.toFixed(1)  + '°';
+      document.getElementById('b-gamma').style.width = (50 + gamma/1.8) + '%';
+      document.getElementById('b-beta').style.width  = (50 + (beta-30)/3.6) + '%';
+      document.getElementById('v-ax').textContent = bola.ax.toFixed(2);
+      document.getElementById('v-ay').textContent = bola.ay.toFixed(2);
+      document.getElementById('modo-acel').textContent = '📱 Acelerômetro';
+    });
+    iniciarJogo();
+  }
+
+  function modoPCAtivo() {
+    modoMouse = true;
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      const mx = e.clientX - rect.left - cx;
+      const my = e.clientY - rect.top  - cy;
+      bola.ax = Math.max(-1, Math.min(1, mx / (cx * 0.8)));
+      bola.ay = Math.max(-1, Math.min(1, my / (cy * 0.8)));
+      document.getElementById('v-gamma').textContent = (bola.ax * 45).toFixed(1) + '°';
+      document.getElementById('v-beta').textContent  = (bola.ay * 45).toFixed(1) + '°';
+      document.getElementById('b-gamma').style.width = (50 + bola.ax * 50) + '%';
+      document.getElementById('b-beta').style.width  = (50 + bola.ay * 50) + '%';
+      document.getElementById('v-ax').textContent = bola.ax.toFixed(2);
+      document.getElementById('v-ay').textContent = bola.ay.toFixed(2);
+    });
+    iniciarJogo();
+  }
+
+  function iniciarJogo() {
+    document.getElementById('overlay-acel').style.display = 'none';
+    inicializarNivel();
+    emJogo = true;
+    gameLoop();
+  }
+
+  const estrelaParticulas = [];
+
+  function gameLoop() {
+    if (!emJogo) return;
+    requestAnimationFrame(gameLoop);
+    const W = canvas.width, H = canvas.height;
+
+    // Física
+    bola.vx += bola.ax * GRAV;
+    bola.vy += bola.ay * GRAV;
+    bola.vx *= ATRITO; bola.vy *= ATRITO;
+    bola.x += bola.vx; bola.y += bola.vy;
+
+    // Paredes (rebate)
+    if (bola.x < bola.r) { bola.x = bola.r; bola.vx *= -0.6; }
+    if (bola.x > W - bola.r) { bola.x = W - bola.r; bola.vx *= -0.6; }
+    if (bola.y < bola.r) { bola.y = bola.r; bola.vy *= -0.6; }
+    if (bola.y > H - bola.r) { bola.y = H - bola.r; bola.vy *= -0.6; }
+
+    // Buracos
+    for (const b of buracos) {
+      if (Math.hypot(bola.x - b.x, bola.y - b.y) < b.r + bola.r * 0.5) {
+        bola.x = W / 2; bola.y = H / 2; bola.vx = 0; bola.vy = 0;
+      }
+    }
+
+    // Coletáveis
+    for (let i = coletaveis.length - 1; i >= 0; i--) {
+      if (Math.hypot(bola.x - coletaveis[i].x, bola.y - coletaveis[i].y) < bola.r + coletaveis[i].r) {
+        coletaveis.splice(i, 1); pontos += 10;
+        if (coletaveis.length === 0) inicializarNivel();
+      }
+    }
+
+    // DRAW
+    ctx.fillStyle = '#030308'; ctx.fillRect(0, 0, W, H);
+
+    // Grade de labirinto (visual)
+    ctx.strokeStyle = '#10181f'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 36) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 36) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    // Coletáveis
+    coletaveis.forEach(c => {
+      ctx.fillStyle = '#f59e0b'; ctx.shadowBlur = 8; ctx.shadowColor = '#f59e0b80';
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // Buracos
+    buracos.forEach(b => {
+      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+      grad.addColorStop(0, '#000000');
+      grad.addColorStop(1, '#1e0030');
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = '#4c1d95'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#6d28d9'; ctx.font = '14px serif'; ctx.textAlign = 'center';
+      ctx.fillText('🕳️', b.x, b.y + 6);
+    });
+
+    // Bola com sombra
+    ctx.shadowBlur = 18; ctx.shadowColor = '#8b5cf680';
+    ctx.fillStyle = '#8b5cf6';
+    ctx.beginPath(); ctx.arc(bola.x, bola.y, bola.r, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Indicador de aceleração
+    if (Math.abs(bola.ax) > 0.05 || Math.abs(bola.ay) > 0.05) {
+      const nx = bola.x + bola.ax * 40, ny = bola.y + bola.ay * 40;
+      ctx.strokeStyle = 'rgba(139,92,246,0.5)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bola.x, bola.y); ctx.lineTo(nx, ny); ctx.stroke();
+    }
+
+    // Pontos
+    ctx.fillStyle = 'rgba(5,5,16,0.7)'; ctx.beginPath();
+    ctx.roundRect(W/2 - 60, 6, 120, 32, 8); ctx.fill();
+    ctx.fillStyle = '#f59e0b'; ctx.font = 'bold 14px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText(`⭐ ${pontos} pontos`, W/2, 27);
+  }
+</script>
+</body>
+</html>

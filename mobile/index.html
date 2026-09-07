@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desenvolvimento de Jogos para Mobile</title>
+  <style>
+    :root {
+      --verde: #10b981; --roxo: #8b5cf6; --laranja: #f97316;
+      --ciano: #06b6d4; --rosa: #ec4899;
+      --bg: #050510; --card: #0f0f1e; --borda: #1e1e3a;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--texto);
+      min-height: 100vh;
+    }
+
+    /* HERO */
+    .hero {
+      padding: 60px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse, #8b5cf620, transparent 70%);
+      pointer-events: none;
+    }
+    .celular-icon {
+      font-size: 4rem;
+      display: block;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 0 24px #8b5cf640);
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #8b5cf6, #ec4899, #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 560px;
+      margin: 0 auto 24px;
+      line-height: 1.7;
+    }
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+    .tag {
+      padding: 5px 14px;
+      border-radius: 99px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .tag.a { background: #1a1040; color: #a78bfa; }
+    .tag.b { background: #0d1f15; color: #34d399; }
+    .tag.c { background: #1a0f00; color: #fb923c; }
+    .tag.d { background: #1a0814; color: #f472b6; }
+
+    /* AVISO DE CELULAR */
+    .aviso-cel {
+      max-width: 700px;
+      margin: 0 auto 40px;
+      background: #0c1a24;
+      border: 1px solid #0e4963;
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .aviso-cel .ic { font-size: 1.6rem; flex-shrink: 0; }
+    .aviso-cel h3 { font-size: 0.9rem; color: var(--ciano); margin-bottom: 4px; }
+    .aviso-cel p { font-size: 0.83rem; color: var(--muted); line-height: 1.6; }
+
+    /* GRADE DE AULAS */
+    .grade {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .aula-card {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 16px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .aula-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 16px 16px 0 0;
+    }
+    .aula-card.c1::before { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+    .aula-card.c2::before { background: linear-gradient(90deg, #06b6d4, #10b981); }
+    .aula-card.c3::before { background: linear-gradient(90deg, #f97316, #f59e0b); }
+    .aula-card.c4::before { background: linear-gradient(90deg, #ec4899, #8b5cf6); }
+    .aula-card.c5::before { background: linear-gradient(90deg, #10b981, #06b6d4); }
+    .aula-card.c6::before { background: linear-gradient(90deg, #f97316, #ef4444); }
+
+    .aula-card:hover {
+      transform: translateY(-4px);
+      border-color: #8b5cf6;
+    }
+    .aula-num {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .aula-emoji { font-size: 2.2rem; margin-bottom: 10px; display: block; }
+    .aula-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .aula-card p { font-size: 0.83rem; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+    .aula-demo {
+      font-size: 0.75rem;
+      color: var(--ciano);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .nivel-tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .n-base { background: #052e16; color: #4ade80; }
+    .n-medio { background: #1a1040; color: #a78bfa; }
+    .n-avancado { background: #1a0814; color: #f472b6; }
+    .n-projeto { background: #1a0f00; color: #fb923c; }
+
+    /* RODAPÉ */
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-top: 1px solid var(--borda);
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <span class="celular-icon">📱</span>
+    <h1>Jogos para Mobile</h1>
+    <p>Aprenda a criar jogos que rodam no celular — usando touch, acelerômetro e vibração. Os demos funcionam no seu celular agora mesmo!</p>
+    <div class="hero-tags">
+      <span class="tag a">Sem instalar nada</span>
+      <span class="tag b">Funciona no celular</span>
+      <span class="tag c">6 aulas práticas</span>
+      <span class="tag d">Touch + Sensores</span>
+    </div>
+
+    <div class="aviso-cel">
+      <div class="ic">📲</div>
+      <div>
+        <h3>Dica: abra no celular!</h3>
+        <p>Todos os demos desta série foram feitos para funcionar no celular. Abra este link no browser do seu smartphone e experimente os controles touch de verdade. No PC, o mouse simula o toque.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grade">
+    <a class="aula-card c1" href="aula1.html">
+      <div class="aula-num">Aula 1</div>
+      <span class="aula-emoji">📲</span>
+      <span class="nivel-tag n-base">Básico</span>
+      <h2>Desktop vs. Mobile — As Diferenças</h2>
+      <p>Por que um jogo de PC não funciona no celular? Tela pequena, sem teclado, sem mouse — tudo muda.</p>
+      <div class="aula-demo">▶ Demo: compare input touch vs mouse</div>
+    </a>
+
+    <a class="aula-card c2" href="aula2.html">
+      <div class="aula-num">Aula 2</div>
+      <span class="aula-emoji">👆</span>
+      <span class="nivel-tag n-base">Básico</span>
+      <h2>Touch Events — O Toque na Tela</h2>
+      <p>Como capturar toques, arrastar o dedo e reconhecer gestos. Os eventos touchstart, touchmove e touchend.</p>
+      <div class="aula-demo">▶ Demo: desenhe na tela com o dedo</div>
+    </a>
+
+    <a class="aula-card c3" href="aula3.html">
+      <div class="aula-num">Aula 3</div>
+      <span class="aula-emoji">🕹️</span>
+      <span class="nivel-tag n-medio">Intermediário</span>
+      <h2>Joystick Virtual e Botões</h2>
+      <p>Crie um joystick analógico na tela e botões de ação. O controle padrão de qualquer jogo mobile.</p>
+      <div class="aula-demo">▶ Demo: jogo com joystick virtual</div>
+    </a>
+
+    <a class="aula-card c4" href="aula4.html">
+      <div class="aula-num">Aula 4</div>
+      <span class="aula-emoji">🌀</span>
+      <span class="nivel-tag n-medio">Intermediário</span>
+      <h2>Acelerômetro — Incline para Mover</h2>
+      <p>Use os sensores do celular para controlar o jogo inclinando o aparelho. Como jogos de corrida de bola!</p>
+      <div class="aula-demo">▶ Demo: bola que rola com a inclinação</div>
+    </a>
+
+    <a class="aula-card c5" href="aula5.html">
+      <div class="aula-num">Aula 5</div>
+      <span class="aula-emoji">⚡</span>
+      <span class="nivel-tag n-avancado">Avançado</span>
+      <h2>Performance e Vibração</h2>
+      <p>Jogos mobile precisam ser rápidos. Vibração no acerto, otimização de canvas e truques de performance.</p>
+      <div class="aula-demo">▶ Demo: benchmark + feedback tátil</div>
+    </a>
+
+    <a class="aula-card c6" href="aula6.html">
+      <div class="aula-num">Aula 6 — Projeto Final</div>
+      <span class="aula-emoji">🏆</span>
+      <span class="nivel-tag n-projeto">Projeto Final</span>
+      <h2>"Nave Caindo!" — Jogo Mobile Completo</h2>
+      <p>Jogo completo: incline o celular ou use joystick virtual, desvie de meteoros, colete combustível.</p>
+      <div class="aula-demo">▶ Jogue no celular agora!</div>
+    </a>
+  </div>
+
+  <footer>
+    Jogos para Mobile • Abre no navegador do celular • Zero instalação
+  </footer>
+</body>
+</html>

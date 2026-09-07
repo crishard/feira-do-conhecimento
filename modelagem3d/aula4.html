@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula 4 — UV Mapping</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .uv-preview {
+      width: 100%; aspect-ratio: 1;
+      background: #0b0b17; border: 1px solid var(--borda);
+      border-radius: 8px; display: block; margin: 10px 0;
+    }
+    .modos-row { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; }
+    .modo-btn {
+      background: var(--card); border: 1px solid var(--borda); border-radius: 7px;
+      padding: 6px 12px; cursor: pointer; font-size: 0.76rem; font-family: inherit;
+      color: var(--muted); transition: background 0.15s;
+    }
+    .modo-btn:hover { background: #1c0e00; color: var(--texto); border-color: var(--laranja); }
+    .modo-btn.ativo { background: #1c0e00; border-color: var(--laranja); color: var(--laranja); }
+    .objeto-row { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; }
+    .obj-btn {
+      background: var(--card); border: 1px solid var(--borda); border-radius: 7px;
+      padding: 6px 12px; cursor: pointer; font-size: 0.76rem; font-family: inherit; color: var(--muted);
+    }
+    .obj-btn:hover, .obj-btn.ativo { border-color: var(--ciano); color: var(--ciano); background: #0c1a24; }
+    .uv-legenda { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.76rem; }
+    .uv-leg-item { display: flex; align-items: center; gap: 8px; }
+    .uv-leg-cor { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- PAINEL -->
+<div class="painel">
+  <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 4</div>
+  <div class="aula-num-badge">Aula 4 de 7 · Intermediário</div>
+  <h1>🗺️ UV Mapping</h1>
+  <p class="subtitulo">Como aplicar uma imagem 2D numa superfície 3D sem distorção? É aí que entra o UV Mapping — um dos conceitos mais importantes de modelagem!</p>
+
+  <h2>🤔 O Problema</h2>
+  <p>Imagine um cubo. Ele tem 6 faces. Mas uma textura é uma imagem plana. Como você "cola" essa imagem no cubo sem distorcer?</p>
+
+  <div class="caixa-info">
+    <div class="tit">📦 Analogia da embalagem</div>
+    Pense numa caixa de sapato. Para fazer a caixa, você começa com um papelão plano (chamado "planificação") que é dobrado. O UV Map é exatamente isso: o modelo 3D "desdobrado" numa superfície plana onde você pode pintar.
+  </div>
+
+  <h2>🗺️ O que são U e V?</h2>
+  <p>UV são as coordenadas na superfície 2D da textura — como X e Y, mas usamos U e V para não confundir com o espaço 3D. Cada vértice tem uma coordenada UV que diz qual pixel da textura pertence a ele.</p>
+
+  <div class="bloco">
+    <div class="cab">JavaScript — acessando UVs</div>
+    <pre><span class="k">const</span> <span class="v">geo</span> = <span class="k">new</span> <span class="f">THREE.BoxGeometry</span>(<span class="n">1</span>,<span class="n">1</span>,<span class="n">1</span>);
+
+<span class="c">// Coordenadas UV de cada vértice</span>
+<span class="k">const</span> <span class="v">uvs</span> = geo.attributes.uv;
+console.log(uvs.count); <span class="c">// 24 (4 vértices × 6 faces)</span>
+
+<span class="c">// Cada par (u, v) vai de 0.0 a 1.0</span>
+<span class="c">// (0,0) = canto inferior esquerdo da textura</span>
+<span class="c">// (1,1) = canto superior direito</span>
+
+<span class="c">// Aplicar textura</span>
+<span class="k">const</span> <span class="v">loader</span> = <span class="k">new</span> <span class="f">THREE.TextureLoader</span>();
+<span class="k">const</span> <span class="v">tex</span> = loader.<span class="f">load</span>(<span class="s">'textura.png'</span>);
+<span class="k">const</span> <span class="v">mat</span> = <span class="k">new</span> <span class="f">THREE.MeshStandardMaterial</span>({ map: tex });</pre>
+  </div>
+
+  <h2>🎨 Tipos de Projeção</h2>
+  <div class="modos-row">
+    <button class="modo-btn ativo" id="mb-xadrez" onclick="setTextureMode('xadrez')">♟️ Xadrez</button>
+    <button class="modo-btn" id="mb-grade"  onclick="setTextureMode('grade')">📐 Grade UV</button>
+    <button class="modo-btn" id="mb-cores"  onclick="setTextureMode('cores')">🌈 Cores</button>
+    <button class="modo-btn" id="mb-normal" onclick="setTextureMode('normal')">🌊 Normal Map</button>
+  </div>
+
+  <h2>📦 Selecionar Objeto</h2>
+  <div class="objeto-row">
+    <button class="obj-btn ativo" id="ob-cubo"   onclick="setObjeto('cubo')">Cubo</button>
+    <button class="obj-btn" id="ob-esfera"  onclick="setObjeto('esfera')">Esfera</button>
+    <button class="obj-btn" id="ob-cil"     onclick="setObjeto('cil')">Cilindro</button>
+    <button class="obj-btn" id="ob-torus"   onclick="setObjeto('torus')">Torus</button>
+  </div>
+
+  <h2>🗺️ UV Map (ao lado = projeção 2D)</h2>
+  <canvas class="uv-preview" id="uv-canvas"></canvas>
+
+  <div class="uv-legenda">
+    <div class="uv-leg-item"><div class="uv-leg-cor" style="background:#f97316"></div>Frente</div>
+    <div class="uv-leg-item"><div class="uv-leg-cor" style="background:#06b6d4"></div>Trás</div>
+    <div class="uv-leg-item"><div class="uv-leg-cor" style="background:#10b981"></div>Cima/Baixo</div>
+    <div class="uv-leg-item"><div class="uv-leg-cor" style="background:#8b5cf6"></div>Laterais</div>
+  </div>
+
+  <div class="nav">
+    <a href="aula3.html">← Aula 3</a>
+    <a href="aula5.html">Aula 5: Materiais PBR →</a>
+  </div>
+</div>
+
+<!-- VIEWPORT -->
+<div class="viewport" id="vp">
+  <div class="info-viewport">
+    <span id="info-uv">Cubo · 24 coordenadas UV</span>
+    <span>🖱️ Arrastar = orbitar</span>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const vp = document.getElementById('vp');
+const cena = new THREE.Scene();
+cena.background = new THREE.Color('#03030a');
+
+const camera = new THREE.PerspectiveCamera(55, vpW()/vpH(), 0.1, 100);
+camera.position.set(2.2, 1.8, 2.5);
+camera.lookAt(0, 0, 0);
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch(e) {
+  document.getElementById('vp').innerHTML = '<div style="color:#f97316;padding:30px;font-family:monospace">❌ WebGL não iniciou: ' + e + '</div>';
+  throw e;
+}
+renderer.setPixelRatio(window.devicePixelRatio);
+const vpW = () => window.innerWidth - document.querySelector('.painel').offsetWidth;
+const vpH = () => window.innerHeight;
+renderer.setSize(vpW(), vpH());
+vp.appendChild(renderer.domElement);
+// Reajusta após primeiro frame (garante dimensões corretas)
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+cena.add(new THREE.AmbientLight('#ffffff', 0.8));
+const dir = new THREE.DirectionalLight('#fffbe6', 1.2); dir.position.set(4,8,4); cena.add(dir);
+cena.add(new THREE.GridHelper(8, 16, '#1c1c2e', '#13131e'));
+
+let meshAtual;
+let texMode = 'xadrez';
+let objType  = 'cubo';
+
+// Gerar texturas via canvas
+function gerarTexturaXadrez(size=256, sq=32) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  for (let y=0;y<size;y+=sq) for (let x=0;x<size;x+=sq) {
+    ctx.fillStyle = ((x/sq+y/sq)%2===0)?'#2d2d4e':'#0b0b17';
+    ctx.fillRect(x,y,sq,sq);
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+
+function gerarTexturaGrade(size=256) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#0b1a2e'; ctx.fillRect(0,0,size,size);
+  ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 1;
+  for (let i=0;i<=size;i+=size/8) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,size); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(size,i); ctx.stroke(); }
+  // Labels U/V
+  ctx.fillStyle = '#fb923c'; ctx.font = 'bold 14px monospace'; ctx.textAlign='center';
+  for (let i=0;i<=8;i++) { ctx.fillText((i/8).toFixed(2), i*(size/8), 14); }
+  ctx.save(); ctx.translate(12, size/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle = '#4ade80'; ctx.fillText('V →', 0, 0); ctx.restore();
+  // Gradiente de fundo
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+
+function gerarTexturaCores(size=256) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0,0,size,size);
+  g.addColorStop(0,'#f97316'); g.addColorStop(0.33,'#8b5cf6'); g.addColorStop(0.66,'#06b6d4'); g.addColorStop(1,'#10b981');
+  ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
+  const t = new THREE.CanvasTexture(c); return t;
+}
+
+function gerarTexturaNormal(size=256) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  for (let y=0;y<size;y++) for (let x=0;x<size;x++) {
+    // Simulação simples de normal map (azul-roxo com variações)
+    const nx = Math.sin(x/20)*0.5+0.5;
+    const ny = Math.cos(y/20)*0.5+0.5;
+    const nz = 0.85;
+    ctx.fillStyle = `rgb(${Math.round(nx*255)},${Math.round(ny*255)},${Math.round(nz*255)})`;
+    ctx.fillRect(x,y,1,1);
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+const texturas = {
+  xadrez: gerarTexturaXadrez(),
+  grade:  gerarTexturaGrade(),
+  cores:  gerarTexturaCores(),
+  normal: gerarTexturaNormal(),
+};
+
+function getGeo(tipo) {
+  if (tipo==='cubo')   return new THREE.BoxGeometry(1.6,1.6,1.6);
+  if (tipo==='esfera') return new THREE.SphereGeometry(0.9, 32, 24);
+  if (tipo==='cil')    return new THREE.CylinderGeometry(0.7,0.7,1.6,32);
+  if (tipo==='torus')  return new THREE.TorusGeometry(0.9,0.35,20,40);
+}
+
+const infos = { cubo:'Cubo · 24 UV', esfera:'Esfera · 800+ UV', cil:'Cilindro · 136 UV', torus:'Torus · 1600+ UV' };
+
+function atualizarMesh() {
+  if (meshAtual) cena.remove(meshAtual);
+  const geo = getGeo(objType);
+  const tex = texuras(texMode);
+  const mat = new THREE.MeshStandardMaterial({ map: tex, roughness:0.5, metalness:0 });
+  meshAtual = new THREE.Mesh(geo, mat);
+  meshAtual.castShadow = true;
+  cena.add(meshAtual);
+  document.getElementById('info-uv').textContent = infos[objType];
+  desenharUVMap(geo);
+}
+
+function texuras(m) { return texturas[m]; }
+
+function setTextureMode(m) {
+  texMode = m;
+  document.querySelectorAll('.modo-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('mb-'+m).classList.add('ativo');
+  atualizarMesh();
+}
+
+function setObjeto(o) {
+  objType = o;
+  document.querySelectorAll('.obj-btn').forEach(b => b.classList.remove('ativo'));
+  document.getElementById('ob-'+o).classList.add('ativo');
+  atualizarMesh();
+}
+
+// Desenhar UV Map no canvas 2D
+function desenharUVMap(geo) {
+  const canvas = document.getElementById('uv-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth * window.devicePixelRatio || 256;
+  const H = canvas.height = canvas.offsetWidth * window.devicePixelRatio || 256;
+  ctx.fillStyle = '#0b0b17'; ctx.fillRect(0,0,W,H);
+
+  // Grade
+  ctx.strokeStyle = '#1c1c2e'; ctx.lineWidth = 0.5;
+  for (let i=0;i<=8;i++) {
+    const x = i*(W/8), y = i*(H/8);
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+
+  const uvAttr = geo.attributes.uv;
+  const idx    = geo.index;
+  const coresFace = ['#f97316','#06b6d4','#10b981','#8b5cf6','#ec4899','#eab308'];
+
+  if (idx) {
+    for (let i=0; i<idx.count; i+=3) {
+      const i0=idx.getX(i), i1=idx.getX(i+1), i2=idx.getX(i+2);
+      const u0=uvAttr.getX(i0)*W, v0=(1-uvAttr.getY(i0))*H;
+      const u1=uvAttr.getX(i1)*W, v1=(1-uvAttr.getY(i1))*H;
+      const u2=uvAttr.getX(i2)*W, v2=(1-uvAttr.getY(i2))*H;
+      const cor = coresFace[Math.floor(i/6) % coresFace.length];
+      ctx.fillStyle = cor + '18';
+      ctx.strokeStyle = cor + '80';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(u0,v0); ctx.lineTo(u1,v1); ctx.lineTo(u2,v2); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+  } else {
+    for (let i=0; i<uvAttr.count; i+=3) {
+      const u0=uvAttr.getX(i)*W,   v0=(1-uvAttr.getY(i))*H;
+      const u1=uvAttr.getX(i+1)*W, v1=(1-uvAttr.getY(i+1))*H;
+      const u2=uvAttr.getX(i+2)*W, v2=(1-uvAttr.getY(i+2))*H;
+      const cor = coresFace[Math.floor(i/6) % coresFace.length];
+      ctx.fillStyle = cor + '18'; ctx.strokeStyle = cor + '80'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(u0,v0); ctx.lineTo(u1,v1); ctx.lineTo(u2,v2); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+  }
+
+  ctx.fillStyle = '#fb923c80'; ctx.font = `${W*0.04}px monospace`;
+  ctx.fillText('U →', W*0.02, H*0.06);
+  ctx.save(); ctx.translate(W*0.06, H*0.98); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle = '#4ade8080'; ctx.fillText('V ↑', 0, 0); ctx.restore();
+}
+
+atualizarMesh();
+
+function animar() {
+  requestAnimationFrame(animar);
+  controls.update();
+  if (meshAtual) meshAtual.rotation.y += 0.003;
+  renderer.render(cena, camera);
+}
+animar();
+
+window.addEventListener('resize', () => {
+  camera.aspect = vpW()/vpH();
+  camera.updateProjectionMatrix();
+  renderer.setSize(vpW(), vpH());
+  desenharUVMap(getGeo(objType));
+});
+</script>
+</body>
+</html>

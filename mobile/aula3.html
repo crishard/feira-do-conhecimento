@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Aula 3 — Joystick Virtual</title>
+  <style>
+    :root {
+      --roxo: #8b5cf6; --ciano: #06b6d4; --verde: #10b981; --laranja: #f97316;
+      --bg: #050510; --card: #0f0f1e; --borda: #1e1e3a;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+    .layout { display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+    @media (max-width: 768px) { .layout { grid-template-columns: 1fr; height: auto; } }
+
+    .conteudo { padding: 24px 28px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .sub { color: var(--muted); font-size: 0.87rem; margin-bottom: 22px; }
+    h2 { font-size: 0.98rem; color: var(--ciano); margin: 20px 0 8px; }
+    p { font-size: 0.87rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 8px; }
+    strong { color: var(--texto); }
+
+    .bloco { background: #0d0d1a; border: 1px solid var(--borda); border-radius: 8px; margin: 10px 0; overflow: hidden; }
+    .bloco .cab { background: #181828; padding: 6px 14px; font-size: 0.72rem; color: var(--muted); }
+    .bloco pre { padding: 12px 14px; font-size: 0.76rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .dica { background: #0c1a24; border: 1px solid #0e4963; border-radius: 8px; padding: 10px 14px; margin: 10px 0; font-size: 0.83rem; line-height: 1.65; }
+    .dica .t { color: var(--ciano); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.85rem; }
+
+    /* DEMO JOGO */
+    .demo { background: #030308; position: relative; overflow: hidden; }
+    #canvas-jogo { display: block; touch-action: none; width: 100%; height: 100%; }
+
+    .hud-demo {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: space-between;
+      pointer-events: none; z-index: 5;
+    }
+    .hud-bloco {
+      background: rgba(5,5,16,0.8);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+    }
+    .hud-bloco .val { font-size: 1.1rem; font-weight: 700; font-family: monospace; }
+
+    .instrucao-overlay {
+      position: absolute; inset: 0;
+      background: rgba(3,3,8,0.88);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 20;
+    }
+    .instrucao-overlay h2 { font-size: 1.5rem; margin-bottom: 8px; }
+    .instrucao-overlay p { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; text-align: center; max-width: 340px; line-height: 1.6; }
+    .btn-play {
+      background: var(--roxo); color: white; border: none;
+      padding: 12px 32px; border-radius: 10px; font-size: 1rem;
+      cursor: pointer; font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 3</div>
+    <h1>🕹️ Joystick Virtual</h1>
+    <p class="sub">O controle mais comum nos jogos mobile — do PUBG ao Subway Surfers.</p>
+
+    <h2>Como Funciona um Joystick</h2>
+    <p>Um joystick virtual é basicamente uma <strong>âncora</strong> (centro) e um <strong>cabo</strong> (o ponto onde o dedo está). A direção e a força são calculadas pela distância e ângulo entre os dois:</p>
+
+    <div class="bloco">
+      <div class="cab">JavaScript — lógica completa do joystick</div>
+      <pre><span class="k">const</span> <span class="v">joy</span> = {
+  ativo: <span class="k">false</span>,
+  <span class="c">// Centro — onde o dedo tocou</span>
+  baseX: <span class="n">0</span>, baseY: <span class="n">0</span>,
+  <span class="c">// Cabo — onde o dedo está agora</span>
+  caboX: <span class="n">0</span>, caboY: <span class="n">0</span>,
+  <span class="c">// Direção normalizada (-1 a 1)</span>
+  dx: <span class="n">0</span>, dy: <span class="n">0</span>,
+  raio: <span class="n">60</span> <span class="c">// raio máximo do cabo</span>
+};
+
+canvas.addEventListener(<span class="s">'touchstart'</span>, (<span class="v">e</span>) => {
+  e.preventDefault();
+  <span class="k">const</span> <span class="v">t</span> = e.touches[<span class="n">0</span>];
+  joy.ativo = <span class="k">true</span>;
+  joy.baseX = t.clientX; <span class="c">// âncora = onde tocou</span>
+  joy.baseY = t.clientY;
+  joy.caboX = t.clientX;
+  joy.caboY = t.clientY;
+}, { passive: <span class="k">false</span> });
+
+canvas.addEventListener(<span class="s">'touchmove'</span>, (<span class="v">e</span>) => {
+  e.preventDefault();
+  <span class="k">const</span> <span class="v">t</span> = e.touches[<span class="n">0</span>];
+
+  <span class="c">// Distância do centro ao dedo</span>
+  <span class="k">const</span> <span class="v">dx</span> = t.clientX - joy.baseX;
+  <span class="k">const</span> <span class="v">dy</span> = t.clientY - joy.baseY;
+  <span class="k">const</span> <span class="v">dist</span> = Math.hypot(dx, dy);
+
+  <span class="c">// Limitar o cabo ao raio máximo</span>
+  <span class="k">if</span> (dist > joy.raio) {
+    joy.caboX = joy.baseX + (dx / dist) * joy.raio;
+    joy.caboY = joy.baseY + (dy / dist) * joy.raio;
+  } <span class="k">else</span> {
+    joy.caboX = t.clientX;
+    joy.caboY = t.clientY;
+  }
+
+  <span class="c">// Normalizar: valor entre -1 e 1</span>
+  joy.dx = (joy.caboX - joy.baseX) / joy.raio;
+  joy.dy = (joy.caboY - joy.baseY) / joy.raio;
+}, { passive: <span class="k">false</span> });
+
+canvas.addEventListener(<span class="s">'touchend'</span>, () => {
+  joy.ativo = <span class="k">false</span>;
+  joy.dx = <span class="n">0</span>; joy.dy = <span class="n">0</span>; <span class="c">// parar</span>
+});</pre>
+    </div>
+
+    <h2>Usando no Game Loop</h2>
+    <div class="bloco">
+      <div class="cab">JavaScript</div>
+      <pre><span class="k">const</span> VELOCIDADE = <span class="n">5</span>;
+
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop);
+
+  <span class="c">// joy.dx e joy.dy vão de -1 a 1</span>
+  <span class="c">// Multiplicar por VELOCIDADE dá o movimento real</span>
+  jogador.x += joy.dx * VELOCIDADE;
+  jogador.y += joy.dy * VELOCIDADE;
+
+  <span class="f">desenhar</span>();
+}</pre>
+    </div>
+
+    <div class="dica">
+      <div class="t">💡 Joystick flutuante</div>
+      No demo, o joystick aparece <strong>onde o dedo toca</strong> — não num canto fixo. Isso é chamado de "joystick dinâmico" e é mais confortável pois o jogador não precisa posicionar o dedo em lugar específico.
+    </div>
+
+    <div class="nav">
+      <a href="aula2.html">← Aula 2</a>
+      <a href="aula4.html">Aula 4: Acelerômetro →</a>
+    </div>
+  </div>
+
+  <!-- DEMO JOGO -->
+  <div class="demo" id="demo">
+    <div class="hud-demo">
+      <div class="hud-bloco">
+        🏅 Pontos: <span class="val" id="pontos">0</span>
+      </div>
+      <div class="hud-bloco" id="hud-joy">
+        Joy: <span id="joy-val">0.0, 0.0</span>
+      </div>
+    </div>
+
+    <canvas id="canvas-jogo"></canvas>
+
+    <div class="instrucao-overlay" id="overlay">
+      <h2>🕹️ Joystick Virtual</h2>
+      <p>Toque em qualquer lugar da tela para aparecer o joystick e mover o personagem. Colete as estrelas!</p>
+      <button class="btn-play" onclick="iniciar()">▶ Jogar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('canvas-jogo');
+  const ctx = canvas.getContext('2d');
+  const demo = document.getElementById('demo');
+
+  function resize() {
+    canvas.width  = demo.clientWidth;
+    canvas.height = demo.clientHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // JOYSTICK
+  const joy = { ativo: false, baseX: 0, baseY: 0, caboX: 0, caboY: 0, dx: 0, dy: 0, raio: 70, touchId: null };
+
+  // BOTÃO DE ATIRAR (canto direito)
+  const btnAtirar = { x: 0, y: 0, raio: 38, pressionado: false, touchId: null };
+
+  // JOGADOR
+  const jogador = { x: 0, y: 0, raio: 18, vx: 0, vy: 0, cor: '#8b5cf6', trilha: [] };
+  const estrelas = [];
+  const tiros = [];
+  let pontos = 0;
+  let emJogo = false;
+
+  function iniciar() {
+    document.getElementById('overlay').style.display = 'none';
+    jogador.x = canvas.width / 2;
+    jogador.y = canvas.height / 2;
+    pontos = 0;
+    emJogo = true;
+    for (let i = 0; i < 8; i++) spawnEstrela();
+    gameLoop();
+    setInterval(spawnEstrela, 2000);
+  }
+
+  function spawnEstrela() {
+    estrelas.push({
+      x: 30 + Math.random() * (canvas.width - 60),
+      y: 30 + Math.random() * (canvas.height - 60),
+      r: 8 + Math.random() * 6,
+      ang: Math.random() * Math.PI * 2
+    });
+  }
+
+  // Touch handlers
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(t => {
+      const px = t.clientX - canvas.getBoundingClientRect().left;
+      const py = t.clientY - canvas.getBoundingClientRect().top;
+
+      // Botão atirar (lado direito)
+      const distBtn = Math.hypot(px - btnAtirar.x, py - btnAtirar.y);
+      if (distBtn < btnAtirar.raio + 30 && !btnAtirar.pressionado) {
+        btnAtirar.pressionado = true;
+        btnAtirar.touchId = t.identifier;
+        atirar();
+        return;
+      }
+
+      // Joystick
+      if (!joy.ativo) {
+        joy.ativo = true;
+        joy.touchId = t.identifier;
+        joy.baseX = px; joy.baseY = py;
+        joy.caboX = px; joy.caboY = py;
+      }
+    });
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(t => {
+      if (t.identifier === joy.touchId) {
+        const px = t.clientX - canvas.getBoundingClientRect().left;
+        const py = t.clientY - canvas.getBoundingClientRect().top;
+        const dx = px - joy.baseX, dy = py - joy.baseY;
+        const dist = Math.hypot(dx, dy);
+        if (dist > joy.raio) {
+          joy.caboX = joy.baseX + (dx / dist) * joy.raio;
+          joy.caboY = joy.baseY + (dy / dist) * joy.raio;
+        } else { joy.caboX = px; joy.caboY = py; }
+        joy.dx = (joy.caboX - joy.baseX) / joy.raio;
+        joy.dy = (joy.caboY - joy.baseY) / joy.raio;
+      }
+    });
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(t => {
+      if (t.identifier === joy.touchId) { joy.ativo = false; joy.dx = 0; joy.dy = 0; joy.touchId = null; }
+      if (t.identifier === btnAtirar.touchId) { btnAtirar.pressionado = false; btnAtirar.touchId = null; }
+    });
+  }, { passive: false });
+
+  // Mouse fallback
+  let mouseJoy = false;
+  canvas.addEventListener('mousedown', (e) => {
+    const r = canvas.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    mouseJoy = true;
+    joy.ativo = true;
+    joy.baseX = px; joy.baseY = py; joy.caboX = px; joy.caboY = py;
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (!mouseJoy) return;
+    const r = canvas.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    const dx = px - joy.baseX, dy = py - joy.baseY;
+    const dist = Math.hypot(dx, dy);
+    if (dist > joy.raio) {
+      joy.caboX = joy.baseX + (dx / dist) * joy.raio;
+      joy.caboY = joy.baseY + (dy / dist) * joy.raio;
+    } else { joy.caboX = px; joy.caboY = py; }
+    joy.dx = (joy.caboX - joy.baseX) / joy.raio;
+    joy.dy = (joy.caboY - joy.baseY) / joy.raio;
+  });
+  canvas.addEventListener('mouseup', () => { mouseJoy = false; joy.ativo = false; joy.dx = 0; joy.dy = 0; });
+
+  function atirar() {
+    const ang = Math.atan2(joy.dy || -1, joy.dx || 0);
+    const spd = 9;
+    tiros.push({ x: jogador.x, y: jogador.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, vida: 60 });
+  }
+
+  function desenharJoystick() {
+    if (!joy.ativo) return;
+    // Base
+    ctx.fillStyle = 'rgba(139,92,246,0.15)';
+    ctx.strokeStyle = 'rgba(139,92,246,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(joy.baseX, joy.baseY, joy.raio, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // Cabo
+    ctx.fillStyle = 'rgba(139,92,246,0.7)';
+    ctx.strokeStyle = '#8b5cf6';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(joy.caboX, joy.caboY, joy.raio * 0.42, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // Linha
+    ctx.strokeStyle = 'rgba(139,92,246,0.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(joy.baseX, joy.baseY); ctx.lineTo(joy.caboX, joy.caboY); ctx.stroke();
+  }
+
+  function desenharBotaoAtirar() {
+    const W = canvas.width, H = canvas.height;
+    btnAtirar.x = W - 70; btnAtirar.y = H - 80;
+    ctx.fillStyle = btnAtirar.pressionado ? 'rgba(239,68,68,0.8)' : 'rgba(239,68,68,0.3)';
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(btnAtirar.x, btnAtirar.y, btnAtirar.raio, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'white'; ctx.font = 'bold 20px serif'; ctx.textAlign = 'center';
+    ctx.fillText('💥', btnAtirar.x, btnAtirar.y + 7);
+  }
+
+  const VEL = 5, ATRITO = 0.88;
+
+  function gameLoop() {
+    if (!emJogo) return;
+    requestAnimationFrame(gameLoop);
+    const W = canvas.width, H = canvas.height;
+
+    // Física
+    jogador.vx += joy.dx * VEL * 0.3;
+    jogador.vy += joy.dy * VEL * 0.3;
+    jogador.vx *= ATRITO; jogador.vy *= ATRITO;
+    jogador.x += jogador.vx; jogador.y += jogador.vy;
+    jogador.x = Math.max(jogador.raio, Math.min(W - jogador.raio, jogador.x));
+    jogador.y = Math.max(jogador.raio, Math.min(H - jogador.raio, jogador.y));
+
+    // Trilha
+    jogador.trilha.unshift({ x: jogador.x, y: jogador.y });
+    if (jogador.trilha.length > 18) jogador.trilha.pop();
+
+    // Tiros
+    for (let i = tiros.length - 1; i >= 0; i--) {
+      const t = tiros[i];
+      t.x += t.vx; t.y += t.vy; t.vida--;
+      if (t.vida <= 0 || t.x < 0 || t.x > W || t.y < 0 || t.y > H) { tiros.splice(i, 1); continue; }
+      for (let j = estrelas.length - 1; j >= 0; j--) {
+        if (Math.hypot(t.x - estrelas[j].x, t.y - estrelas[j].y) < estrelas[j].r + 6) {
+          estrelas.splice(j, 1); tiros.splice(i, 1); pontos += 5;
+          document.getElementById('pontos').textContent = pontos;
+          break;
+        }
+      }
+    }
+
+    // Coleta de estrelas por toque
+    for (let i = estrelas.length - 1; i >= 0; i--) {
+      estrelas[i].ang += 0.04;
+      if (Math.hypot(jogador.x - estrelas[i].x, jogador.y - estrelas[i].y) < jogador.raio + estrelas[i].r) {
+        estrelas.splice(i, 1); pontos += 10;
+        document.getElementById('pontos').textContent = pontos;
+      }
+    }
+
+    // HUD joy
+    document.getElementById('joy-val').textContent = `${joy.dx.toFixed(2)}, ${joy.dy.toFixed(2)}`;
+
+    // DESENHO
+    ctx.fillStyle = '#030308'; ctx.fillRect(0, 0, W, H);
+
+    // Grade
+    ctx.strokeStyle = '#13131f'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    // Estrelas
+    estrelas.forEach(e => {
+      ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.ang);
+      ctx.fillStyle = '#f59e0b'; ctx.shadowBlur = 10; ctx.shadowColor = '#f59e0b80';
+      ctx.font = `${e.r * 2}px serif`; ctx.textAlign = 'center';
+      ctx.fillText('⭐', 0, e.r * 0.7);
+      ctx.shadowBlur = 0; ctx.restore();
+    });
+
+    // Tiros
+    tiros.forEach(t => {
+      ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 8; ctx.shadowColor = '#ef444480';
+      ctx.beginPath(); ctx.arc(t.x, t.y, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // Trilha
+    jogador.trilha.forEach((p, i) => {
+      const alpha = (1 - i / jogador.trilha.length) * 0.4;
+      ctx.fillStyle = `rgba(139,92,246,${alpha})`;
+      const r = jogador.raio * (1 - i / jogador.trilha.length) * 0.6;
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(r, 1), 0, Math.PI * 2); ctx.fill();
+    });
+
+    // Jogador
+    ctx.fillStyle = '#8b5cf6'; ctx.shadowBlur = 16; ctx.shadowColor = '#8b5cf680';
+    ctx.beginPath(); ctx.arc(jogador.x, jogador.y, jogador.raio, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'white'; ctx.font = '16px serif'; ctx.textAlign = 'center';
+    ctx.fillText('🚀', jogador.x, jogador.y + 6);
+
+    desenharJoystick();
+    desenharBotaoAtirar();
+  }
+</script>
+</body>
+</html>

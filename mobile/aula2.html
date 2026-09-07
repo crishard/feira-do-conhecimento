@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Aula 2 — Touch Events</title>
+  <style>
+    :root {
+      --roxo: #8b5cf6; --ciano: #06b6d4; --verde: #10b981; --rosa: #ec4899;
+      --bg: #050510; --card: #0f0f1e; --borda: #1e1e3a;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+    .layout { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
+    @media (max-width: 768px) { .layout { grid-template-columns: 1fr; height: auto; } }
+
+    .conteudo { padding: 24px 28px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .sub { color: var(--muted); font-size: 0.87rem; margin-bottom: 22px; }
+    h2 { font-size: 0.98rem; color: var(--ciano); margin: 20px 0 8px; }
+    p { font-size: 0.87rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 8px; }
+    strong { color: var(--texto); }
+
+    .bloco { background: #0d0d1a; border: 1px solid var(--borda); border-radius: 8px; margin: 10px 0; overflow: hidden; }
+    .bloco .cab { background: #181828; padding: 6px 14px; font-size: 0.72rem; color: var(--muted); }
+    .bloco pre { padding: 12px 14px; font-size: 0.76rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .trio {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .ev-card {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+    .ev-card .nome { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--rosa); margin-bottom: 6px; }
+    .ev-card .emoji { font-size: 1.6rem; margin-bottom: 6px; }
+    .ev-card p { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.85rem; }
+
+    /* CANVAS DE DESENHO */
+    .demo { background: #030308; position: relative; display: flex; flex-direction: column; }
+    .demo-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--borda);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .demo-header span { font-size: 0.78rem; color: var(--muted); }
+
+    #canvas-desenho {
+      flex: 1;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .toolbar {
+      padding: 10px 16px;
+      border-top: 1px solid var(--borda);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .cor-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.1s;
+    }
+    .cor-btn.ativa { border-color: white; transform: scale(1.2); }
+    .espessura {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+    .espessura label { font-size: 0.75rem; color: var(--muted); }
+    .espessura input { accent-color: var(--roxo); }
+    .btn-limpar {
+      background: #1e1e3a;
+      border: 1px solid var(--borda);
+      color: var(--texto);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-family: inherit;
+    }
+    .btn-limpar:hover { background: #2d2d4e; }
+
+    .info-touch {
+      padding: 8px 16px;
+      border-top: 1px solid var(--borda);
+      font-size: 0.72rem;
+      font-family: monospace;
+      color: var(--muted);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    .info-touch span { color: var(--texto); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 2</div>
+    <h1>👆 Touch Events</h1>
+    <p class="sub">Como o navegador entrega os toques da tela para o seu código.</p>
+
+    <h2>Os 3 Eventos Essenciais</h2>
+    <div class="trio">
+      <div class="ev-card">
+        <div class="nome">touchstart</div>
+        <div class="emoji">👇</div>
+        <p>Dedo toca a tela</p>
+      </div>
+      <div class="ev-card">
+        <div class="nome">touchmove</div>
+        <div class="emoji">👉</div>
+        <p>Dedo desliza pela tela</p>
+      </div>
+      <div class="ev-card">
+        <div class="nome">touchend</div>
+        <div class="emoji">☝️</div>
+        <p>Dedo levantou da tela</p>
+      </div>
+    </div>
+
+    <h2>Como Usar na Prática</h2>
+    <div class="bloco">
+      <div class="cab">JavaScript</div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'canvas'</span>);
+
+<span class="c">// { passive: false } permite e.preventDefault()</span>
+<span class="c">// que bloqueia o scroll/zoom da página durante o jogo</span>
+canvas.addEventListener(<span class="s">'touchstart'</span>, <span class="v">e</span> => {
+  e.<span class="f">preventDefault</span>(); <span class="c">// impede scroll acidental!</span>
+
+  <span class="c">// e.touches = TODOS os dedos atualmente na tela</span>
+  <span class="c">// e.changedTouches = dedos que mudaram agora</span>
+  <span class="k">const</span> <span class="v">toque</span> = e.touches[<span class="n">0</span>]; <span class="c">// primeiro dedo</span>
+
+  console.log(<span class="v">toque</span>.clientX, <span class="v">toque</span>.clientY);
+}, { passive: <span class="k">false</span> });
+
+canvas.addEventListener(<span class="s">'touchmove'</span>, <span class="v">e</span> => {
+  e.<span class="f">preventDefault</span>();
+  <span class="k">const</span> <span class="v">toque</span> = e.touches[<span class="n">0</span>];
+  <span class="c">// mover objeto para a posição do toque</span>
+  personagem.x = <span class="v">toque</span>.clientX;
+  personagem.y = <span class="v">toque</span>.clientY;
+}, { passive: <span class="k">false</span> });
+
+canvas.addEventListener(<span class="s">'touchend'</span>, <span class="v">e</span> => {
+  <span class="c">// dedo foi levantado — parar movimento</span>
+  personagem.movendo = <span class="k">false</span>;
+});</pre>
+    </div>
+
+    <h2>Múltiplos Dedos (Multitouch)</h2>
+    <p>O celular suporta <strong>vários dedos ao mesmo tempo</strong>. Cada toque tem um <code style="color:#fb923c">identifier</code> único para você rastrear qual é qual:</p>
+
+    <div class="bloco">
+      <div class="cab">JavaScript — rastreando cada dedo</div>
+      <pre><span class="k">const</span> <span class="v">dedos</span> = {}; <span class="c">// guarda posição de cada dedo</span>
+
+canvas.addEventListener(<span class="s">'touchstart'</span>, <span class="v">e</span> => {
+  <span class="c">// Iterar sobre TODOS os dedos que tocaram agora</span>
+  Array.from(e.changedTouches).<span class="f">forEach</span>(<span class="v">t</span> => {
+    dedos[<span class="v">t</span>.identifier] = { x: <span class="v">t</span>.clientX, y: <span class="v">t</span>.clientY };
+  });
+});
+
+canvas.addEventListener(<span class="s">'touchend'</span>, <span class="v">e</span> => {
+  Array.from(e.changedTouches).<span class="f">forEach</span>(<span class="v">t</span> => {
+    <span class="k">delete</span> dedos[<span class="v">t</span>.identifier]; <span class="c">// remove dedo levantado</span>
+  });
+});
+
+<span class="c">// No game loop, você usa:</span>
+Object.values(dedos).<span class="f">forEach</span>(<span class="v">d</span> => {
+  <span class="c">// desenhar ou processar cada dedo ativo</span>
+});</pre>
+    </div>
+
+    <p>O demo ao lado é uma tela de desenho. <strong>Use o dedo no celular</strong> ou o mouse no PC. Repara como múltiplos dedos criam traços independentes!</p>
+
+    <div class="nav">
+      <a href="aula1.html">← Aula 1</a>
+      <a href="aula3.html">Aula 3: Joystick →</a>
+    </div>
+  </div>
+
+  <!-- DEMO — CANVAS DE DESENHO -->
+  <div class="demo">
+    <div class="demo-header">
+      <span>🎨 Desenhe com o dedo ou mouse — multitouch ativo!</span>
+      <span id="modo-info">🖥️</span>
+    </div>
+
+    <canvas id="canvas-desenho"></canvas>
+
+    <div class="toolbar">
+      <div class="cor-btn ativa" style="background:#ec4899" data-cor="#ec4899" onclick="setCor(this)"></div>
+      <div class="cor-btn" style="background:#60a5fa" data-cor="#60a5fa" onclick="setCor(this)"></div>
+      <div class="cor-btn" style="background:#4ade80" data-cor="#4ade80" onclick="setCor(this)"></div>
+      <div class="cor-btn" style="background:#fb923c" data-cor="#fb923c" onclick="setCor(this)"></div>
+      <div class="cor-btn" style="background:#c084fc" data-cor="#c084fc" onclick="setCor(this)"></div>
+      <div class="cor-btn" style="background:#ffffff" data-cor="#ffffff" onclick="setCor(this)"></div>
+
+      <div class="espessura">
+        <label>Espessura:</label>
+        <input type="range" id="slider-esp" min="2" max="30" value="6">
+      </div>
+
+      <button class="btn-limpar" onclick="limpar()">🗑️ Limpar</button>
+    </div>
+
+    <div class="info-touch">
+      <span>Dedos ativos: <span id="n-dedos">0</span></span>
+      <span>Traços: <span id="n-tracos">0</span></span>
+      <span>Última posição: <span id="ultima-pos">--</span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('canvas-desenho');
+  const ctx = canvas.getContext('2d');
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  let corAtual = '#ec4899';
+  let espessura = 6;
+  let tracosCount = 0;
+
+  function resize() {
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    canvas.width  = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight - 120;
+    ctx.putImageData(img, 0, 0);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.fillStyle = '#030308';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  ctx.fillStyle = '#030308';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if ('ontouchstart' in window) document.getElementById('modo-info').textContent = '📱 Mobile!';
+
+  // Estado de cada dedo/mouse
+  const caminhos = {};
+
+  function getPos(t, isTouch) {
+    const rect = canvas.getBoundingClientRect();
+    if (isTouch) return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+
+  function iniciarCaminho(id, x, y) {
+    caminhos[id] = { x, y };
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  }
+
+  function continuarCaminho(id, x, y) {
+    if (!caminhos[id]) return;
+    ctx.strokeStyle = corAtual;
+    ctx.lineWidth = espessura;
+    ctx.beginPath();
+    ctx.moveTo(caminhos[id].x, caminhos[id].y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    caminhos[id] = { x, y };
+    document.getElementById('ultima-pos').textContent = `${Math.round(x)}, ${Math.round(y)}`;
+  }
+
+  function finalizarCaminho(id) {
+    delete caminhos[id];
+    tracosCount++;
+    document.getElementById('n-tracos').textContent = tracosCount;
+  }
+
+  // TOUCH
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(t => {
+      const { x, y } = getPos(t, true);
+      iniciarCaminho(t.identifier, x, y);
+    });
+    document.getElementById('n-dedos').textContent = e.touches.length;
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(t => {
+      const { x, y } = getPos(t, true);
+      continuarCaminho(t.identifier, x, y);
+    });
+    document.getElementById('n-dedos').textContent = e.touches.length;
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(t => finalizarCaminho(t.identifier));
+    document.getElementById('n-dedos').textContent = e.touches.length;
+  }, { passive: false });
+
+  // MOUSE
+  let mouseDown = false;
+  canvas.addEventListener('mousedown', (e) => {
+    mouseDown = true;
+    const { x, y } = getPos(e, false);
+    iniciarCaminho('mouse', x, y);
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (!mouseDown) return;
+    const { x, y } = getPos(e, false);
+    continuarCaminho('mouse', x, y);
+  });
+  canvas.addEventListener('mouseup',   () => { mouseDown = false; finalizarCaminho('mouse'); });
+  canvas.addEventListener('mouseleave',() => { mouseDown = false; finalizarCaminho('mouse'); });
+
+  function setCor(btn) {
+    corAtual = btn.dataset.cor;
+    document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('ativa'));
+    btn.classList.add('ativa');
+  }
+
+  document.getElementById('slider-esp').addEventListener('input', (e) => {
+    espessura = parseInt(e.target.value);
+  });
+
+  function limpar() {
+    ctx.fillStyle = '#030308';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    tracosCount = 0;
+    document.getElementById('n-tracos').textContent = '0';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula 2 — Transformações</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .transform-group { background: var(--card); border: 1px solid var(--borda); border-radius: 10px; padding: 14px; margin: 10px 0; }
+    .transform-group .tg-titulo { font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .eixo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .eixo-row label { width: 14px; font-size: 0.78rem; font-weight: 700; font-family: monospace; flex-shrink: 0; }
+    .eixo-row label.x { color: #ef4444; }
+    .eixo-row label.y { color: #4ade80; }
+    .eixo-row label.z { color: #60a5fa; }
+    .eixo-row input[type=range] { flex: 1; accent-color: currentColor; }
+    .eixo-row .val { width: 40px; text-align: right; font-size: 0.74rem; font-family: monospace; color: var(--muted); }
+    .reset-btn { background: none; border: 1px solid var(--borda); color: var(--muted); padding: 3px 8px; border-radius: 5px; cursor: pointer; font-size: 0.72rem; font-family: inherit; }
+    .reset-btn:hover { background: #1e1e3a; }
+    .matrix-display { background: #0b0b17; border: 1px solid var(--borda); border-radius: 8px; padding: 10px 14px; font-family: monospace; font-size: 0.73rem; color: #94a3b8; line-height: 1.9; overflow-x: auto; margin: 8px 0; }
+    .matrix-display .hl { color: var(--laranja); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- PAINEL -->
+<div class="painel">
+  <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 2</div>
+  <div class="aula-num-badge">Aula 2 de 7 · Básico</div>
+  <h1>🔄 Transformações</h1>
+  <p class="subtitulo">Toda operação em modelagem 3D se resume a três coisas: <strong>mover</strong>, <strong>girar</strong> e <strong>escalar</strong>. São as transformações fundamentais.</p>
+
+  <!-- TRANSLAÇÃO -->
+  <div class="transform-group" id="tg-pos">
+    <div class="tg-titulo">📦 Translação (Position) <button class="reset-btn" onclick="resetPos()">↺</button></div>
+    <div class="eixo-row">
+      <label class="x">X</label>
+      <input type="range" id="px" min="-2" max="2" step="0.05" value="0" oninput="atualizar()">
+      <span class="val" id="vx">0.0</span>
+    </div>
+    <div class="eixo-row">
+      <label class="y">Y</label>
+      <input type="range" id="py" min="-2" max="2" step="0.05" value="0" oninput="atualizar()">
+      <span class="val" id="vy">0.0</span>
+    </div>
+    <div class="eixo-row">
+      <label class="z">Z</label>
+      <input type="range" id="pz" min="-2" max="2" step="0.05" value="0" oninput="atualizar()">
+      <span class="val" id="vz">0.0</span>
+    </div>
+  </div>
+
+  <!-- ROTAÇÃO -->
+  <div class="transform-group" id="tg-rot">
+    <div class="tg-titulo">🔄 Rotação (Rotation) <button class="reset-btn" onclick="resetRot()">↺</button></div>
+    <div class="eixo-row">
+      <label class="x">X</label>
+      <input type="range" id="rx" min="-180" max="180" step="1" value="0" oninput="atualizar()">
+      <span class="val" id="vrx">0°</span>
+    </div>
+    <div class="eixo-row">
+      <label class="y">Y</label>
+      <input type="range" id="ry" min="-180" max="180" step="1" value="0" oninput="atualizar()">
+      <span class="val" id="vry">0°</span>
+    </div>
+    <div class="eixo-row">
+      <label class="z">Z</label>
+      <input type="range" id="rz" min="-180" max="180" step="1" value="0" oninput="atualizar()">
+      <span class="val" id="vrz">0°</span>
+    </div>
+  </div>
+
+  <!-- ESCALA -->
+  <div class="transform-group" id="tg-esc">
+    <div class="tg-titulo">📐 Escala (Scale) <button class="reset-btn" onclick="resetEsc()">↺</button></div>
+    <div class="eixo-row">
+      <label class="x">X</label>
+      <input type="range" id="sx" min="0.1" max="3" step="0.05" value="1" oninput="atualizar()">
+      <span class="val" id="vsx">1.0</span>
+    </div>
+    <div class="eixo-row">
+      <label class="y">Y</label>
+      <input type="range" id="sy" min="0.1" max="3" step="0.05" value="1" oninput="atualizar()">
+      <span class="val" id="vsy">1.0</span>
+    </div>
+    <div class="eixo-row">
+      <label class="z">Z</label>
+      <input type="range" id="sz" min="0.1" max="3" step="0.05" value="1" oninput="atualizar()">
+      <span class="val" id="vsz">1.0</span>
+    </div>
+  </div>
+
+  <h2>🔢 A Matriz de Transformação</h2>
+  <p>Por baixo dos panos, todas essas operações são combinadas numa única <strong>matriz 4×4</strong>. É ela que a GPU usa para desenhar o objeto:</p>
+  <div class="matrix-display" id="matrix-display">Mova os sliders para ver a matriz</div>
+
+  <h2>💻 No Código</h2>
+  <div class="bloco">
+    <div class="cab">JavaScript — Three.js</div>
+    <pre><span class="c">// Mover (translação)</span>
+objeto.position.<span class="f">set</span>(<span class="n">1</span>, <span class="n">0.5</span>, -<span class="n">2</span>);
+objeto.position.x = <span class="n">3</span>; <span class="c">// ou um eixo só</span>
+
+<span class="c">// Rotacionar (em RADIANOS, não graus!)</span>
+objeto.rotation.y = Math.PI / <span class="n">4</span>; <span class="c">// 45°</span>
+<span class="c">// Para converter: graus * Math.PI / 180</span>
+
+<span class="c">// Escalar</span>
+objeto.scale.<span class="f">set</span>(<span class="n">2</span>, <span class="n">0.5</span>, <span class="n">1</span>); <span class="c">// esticado</span>
+objeto.scale.setScalar(<span class="n">2</span>);    <span class="c">// uniforme</span></pre>
+  </div>
+
+  <div class="caixa-atencao">
+    <div class="tit">⚠️ Ordem das Transformações Importa!</div>
+    Girar depois de mover ≠ mover depois de girar. A ordem é sempre: <strong>Escala → Rotação → Translação</strong> (SRT). Se mudar a ordem, o resultado muda!
+  </div>
+
+  <div class="nav">
+    <a href="aula1.html">← Aula 1</a>
+    <a href="aula3.html">Aula 3: Primitivas →</a>
+  </div>
+</div>
+
+<!-- VIEWPORT -->
+<div class="viewport" id="vp">
+  <div class="info-viewport">
+    <span id="info-transform">pos(0,0,0) rot(0°,0°,0°) scale(1,1,1)</span>
+    <span>🖱️ Arrastar = orbitar</span>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const vp = document.getElementById('vp');
+const vpW = () => window.innerWidth - document.querySelector('.painel').offsetWidth;
+const vpH = () => window.innerHeight;
+
+const cena = new THREE.Scene();
+cena.background = new THREE.Color('#03030a');
+
+const camera = new THREE.PerspectiveCamera(55, vpW()/vpH(), 0.1, 100);
+camera.position.set(3, 2.5, 3.5);
+camera.lookAt(0, 0, 0);
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch(e) {
+  document.getElementById('vp').innerHTML = '<div style="color:#f97316;padding:30px;font-family:monospace">❌ WebGL não iniciou: ' + e + '</div>';
+  throw e;
+}
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(vpW(), vpH());
+renderer.shadowMap.enabled = true;
+vp.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Luzes
+cena.add(new THREE.AmbientLight('#ffffff', 0.5));
+const dir = new THREE.DirectionalLight('#fffbe6', 1.5);
+dir.position.set(5, 8, 5); dir.castShadow = true;
+cena.add(dir);
+
+// Grade e eixos
+cena.add(new THREE.GridHelper(8, 16, '#1c1c2e', '#13131e'));
+
+const eixos = new THREE.AxesHelper(3);
+cena.add(eixos);
+
+// Objeto principal
+const geo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+const mat = new THREE.MeshStandardMaterial({ color: '#f97316', roughness: 0.35, metalness: 0.3 });
+const cubo = new THREE.Mesh(geo, mat);
+cubo.castShadow = true;
+cena.add(cubo);
+
+// Wireframe por cima
+const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: '#fdba74', transparent: true, opacity: 0.5 }));
+cubo.add(wire);
+
+// Fantasma (posição original)
+const geoFantasma = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+const matF = new THREE.MeshBasicMaterial({ color: '#1e1e3a', wireframe: true, transparent: true, opacity: 0.4 });
+const fantasma = new THREE.Mesh(geoFantasma, matF);
+cena.add(fantasma);
+
+// Piso receptor de sombra
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: '#0e0e16' }));
+piso.rotation.x = -Math.PI/2; piso.position.y = -1.2; piso.receiveShadow = true;
+cena.add(piso);
+
+const DEG = Math.PI / 180;
+
+function atualizar() {
+  const px = parseFloat(document.getElementById('px').value);
+  const py = parseFloat(document.getElementById('py').value);
+  const pz = parseFloat(document.getElementById('pz').value);
+  const rx = parseFloat(document.getElementById('rx').value);
+  const ry = parseFloat(document.getElementById('ry').value);
+  const rz = parseFloat(document.getElementById('rz').value);
+  const sx = parseFloat(document.getElementById('sx').value);
+  const sy = parseFloat(document.getElementById('sy').value);
+  const sz = parseFloat(document.getElementById('sz').value);
+
+  cubo.position.set(px, py, pz);
+  cubo.rotation.set(rx*DEG, ry*DEG, rz*DEG);
+  cubo.scale.set(sx, sy, sz);
+
+  document.getElementById('vx').textContent = px.toFixed(1);
+  document.getElementById('vy').textContent = py.toFixed(1);
+  document.getElementById('vz').textContent = pz.toFixed(1);
+  document.getElementById('vrx').textContent = rx + '°';
+  document.getElementById('vry').textContent = ry + '°';
+  document.getElementById('vrz').textContent = rz + '°';
+  document.getElementById('vsx').textContent = sx.toFixed(1);
+  document.getElementById('vsy').textContent = sy.toFixed(1);
+  document.getElementById('vsz').textContent = sz.toFixed(1);
+
+  document.getElementById('info-transform').textContent =
+    `pos(${px.toFixed(1)},${py.toFixed(1)},${pz.toFixed(1)}) rot(${rx}°,${ry}°,${rz}°) scale(${sx.toFixed(1)},${sy.toFixed(1)},${sz.toFixed(1)})`;
+
+  // Atualizar matriz
+  cubo.updateMatrix();
+  const m = cubo.matrix.elements;
+  document.getElementById('matrix-display').innerHTML =
+`<span style="color:#64748b">// Matriz Mundo 4×4 (coluna-maior)</span>
+[ <span class="hl">${m[0].toFixed(2)}</span>  ${m[4].toFixed(2)}  ${m[8].toFixed(2)}  <span style="color:#60a5fa">${m[12].toFixed(2)}</span> ]  ← X, tx
+[ ${m[1].toFixed(2)}  <span class="hl">${m[5].toFixed(2)}</span>  ${m[9].toFixed(2)}  <span style="color:#60a5fa">${m[13].toFixed(2)}</span> ]  ← Y, ty
+[ ${m[2].toFixed(2)}  ${m[6].toFixed(2)}  <span class="hl">${m[10].toFixed(2)}</span>  <span style="color:#60a5fa">${m[14].toFixed(2)}</span> ]  ← Z, tz
+[ ${m[3].toFixed(2)}  ${m[7].toFixed(2)}  ${m[11].toFixed(2)}  ${m[15].toFixed(2)} ]  ← perspectiva`;
+}
+
+function resetPos() { ['px','py','pz'].forEach(id => document.getElementById(id).value=0); atualizar(); }
+function resetRot() { ['rx','ry','rz'].forEach(id => document.getElementById(id).value=0); atualizar(); }
+function resetEsc() { ['sx','sy','sz'].forEach(id => document.getElementById(id).value=1); atualizar(); }
+
+atualizar();
+
+function animar() {
+  requestAnimationFrame(animar);
+  controls.update();
+  renderer.render(cena, camera);
+}
+animar();
+
+window.addEventListener('resize', () => {
+  camera.aspect = vpW()/vpH();
+  camera.updateProjectionMatrix();
+  renderer.setSize(vpW(), vpH());
+});
+</script>
+</body>
+</html>

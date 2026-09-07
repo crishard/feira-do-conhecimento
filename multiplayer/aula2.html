@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 2 — Pong para Dois Jogadores</title>
+  <style>
+    :root {
+      --roxo: #7c3aed; --ciano: #06b6d4; --verde: #10b981;
+      --bg: #0a0a14; --card: #13131f; --borda: #252538;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); height: 100vh; overflow: hidden; }
+    .layout { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
+
+    .conteudo { padding: 28px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+    .subtitulo { color: var(--muted); margin-bottom: 24px; font-size: 0.88rem; }
+    h2 { font-size: 1rem; color: var(--ciano); margin: 20px 0 8px; }
+    p { font-size: 0.86rem; line-height: 1.7; color: #cbd5e1; margin-bottom: 10px; }
+    strong { color: var(--texto); }
+
+    .bloco-codigo {
+      background: #0d0d1a; border: 1px solid var(--borda);
+      border-radius: 8px; margin: 10px 0; overflow: hidden;
+    }
+    .bloco-codigo .cab {
+      background: #181828; padding: 6px 14px;
+      font-size: 0.72rem; color: var(--muted);
+    }
+    .bloco-codigo pre { padding: 12px 14px; font-size: 0.76rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .destaque {
+      background: #0c1a24; border: 1px solid #0e4963;
+      border-radius: 8px; padding: 10px 14px; margin: 10px 0;
+      font-size: 0.83rem; line-height: 1.7;
+    }
+    .destaque .tit { color: var(--ciano); font-weight: 700; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+
+    .controles-ref {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin: 10px 0;
+    }
+    .ctrl-card {
+      background: var(--card); border: 1px solid var(--borda);
+      border-radius: 8px; padding: 10px 12px;
+    }
+    .ctrl-card .jogador { font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+    .ctrl-card .teclas { font-size: 0.85rem; font-weight: 700; }
+    .ctrl-card.p1 .teclas { color: #60a5fa; }
+    .ctrl-card.p2 .teclas { color: #f59e0b; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.85rem; }
+
+    /* JOGO */
+    .jogo-area {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #050510; position: relative;
+    }
+    canvas { display: block; border-radius: 4px; }
+    .jogo-msg {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(5,5,16,0.9); z-index: 10;
+    }
+    .jogo-msg h2 { font-size: 1.8rem; margin-bottom: 8px; }
+    .jogo-msg p { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; text-align: center; }
+    .btn-iniciar {
+      background: var(--roxo); color: white; border: none;
+      padding: 12px 32px; border-radius: 8px; font-size: 1rem;
+      cursor: pointer; font-family: inherit; transition: background 0.2s;
+    }
+    .btn-iniciar:hover { background: #6d28d9; }
+    .hud-jogo {
+      position: absolute; top: 16px; left: 0; right: 0;
+      display: flex; justify-content: center; gap: 40px;
+      pointer-events: none; z-index: 5;
+    }
+    .placar { text-align: center; }
+    .placar .nome-j { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .placar .pts { font-size: 2rem; font-weight: 800; }
+    .placar.p1 .pts { color: #60a5fa; }
+    .placar.p2 .pts { color: #f59e0b; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 2</div>
+    <h1>🏓 Seu Primeiro Jogo — Pong!</h1>
+    <p class="subtitulo">Dois jogadores, mesmo teclado, bola quicando — clássico!</p>
+
+    <div class="controles-ref">
+      <div class="ctrl-card p1">
+        <div class="jogador">Jogador 1 (azul)</div>
+        <div class="teclas">W → subir<br>S → descer</div>
+      </div>
+      <div class="ctrl-card p2">
+        <div class="jogador">Jogador 2 (amarelo)</div>
+        <div class="teclas">↑ → subir<br>↓ → descer</div>
+      </div>
+    </div>
+
+    <h2>🖼️ O Canvas — A Tela do Jogo</h2>
+    <p>O <strong>canvas</strong> é um elemento HTML que funciona como uma <em>tela em branco</em>. Você controla cada pixel usando JavaScript.</p>
+
+    <div class="bloco-codigo">
+      <div class="cab">HTML + JavaScript</div>
+      <pre><span class="c">&lt;!-- No HTML: criar o canvas --&gt;</span>
+&lt;canvas id=<span class="s">"jogo"</span> width=<span class="s">"800"</span> height=<span class="s">"500"</span>&gt;&lt;/canvas&gt;
+
+<span class="c">// No JS: pegar o "pincel" para desenhar</span>
+<span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>); <span class="c">// ctx = pincel</span>
+
+<span class="c">// Desenhar um retângulo</span>
+<span class="v">ctx</span>.fillStyle = <span class="s">'#60a5fa'</span>; <span class="c">// cor</span>
+<span class="v">ctx</span>.fillRect(<span class="n">100</span>, <span class="n">100</span>, <span class="n">20</span>, <span class="n">80</span>); <span class="c">// x, y, largura, altura</span></pre>
+    </div>
+
+    <h2>🔄 O Game Loop do Pong</h2>
+    <p>A cada frame (60x por segundo), o jogo:</p>
+
+    <div class="bloco-codigo">
+      <div class="cab">JavaScript</div>
+      <pre><span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop); <span class="c">// chama de novo</span>
+
+  <span class="c">// 1. Apagar o frame anterior</span>
+  ctx.clearRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+  <span class="c">// 2. Mover a bola</span>
+  bola.x += bola.velX;
+  bola.y += bola.velY;
+
+  <span class="c">// 3. Verificar colisões (bater nas paredes)</span>
+  <span class="k">if</span> (bola.y <= <span class="n">0</span> || bola.y >= canvas.height) {
+    bola.velY *= -<span class="n">1</span>; <span class="c">// inverte direção</span>
+  }
+
+  <span class="c">// 4. Ler teclado e mover raquetes</span>
+  <span class="k">if</span> (teclas[<span class="s">'w'</span>]) raqueteEsq.y -= <span class="n">6</span>;
+  <span class="k">if</span> (teclas[<span class="s">'s'</span>]) raqueteEsq.y += <span class="n">6</span>;
+
+  <span class="c">// 5. Desenhar tudo</span>
+  <span class="f">desenhar</span>();
+}
+<span class="f">gameLoop</span>();</pre>
+    </div>
+
+    <h2>⚡ Detectando Colisão da Bola com Raquete</h2>
+    <div class="bloco-codigo">
+      <div class="cab">JavaScript</div>
+      <pre><span class="c">// A bola colidiu com a raquete esquerda?</span>
+<span class="k">if</span> (
+  bola.x - bola.r <= raquete.x + raquete.w &&
+  bola.y >= raquete.y &&
+  bola.y <= raquete.y + raquete.h
+) {
+  bola.velX *= -<span class="n">1.05</span>; <span class="c">// rebate + acelera levemente</span>
+}</pre>
+    </div>
+
+    <div class="destaque">
+      <div class="tit">💡 O que aprendemos aqui</div>
+      Canvas, game loop, leitura de teclado, detecção de colisão, sistema de pontuação — esses são os blocos de todo jogo 2D!
+    </div>
+
+    <div class="nav">
+      <a href="aula1.html">← Aula 1</a>
+      <a href="aula3.html">Aula 3: Internet →</a>
+    </div>
+  </div>
+
+  <!-- JOGO -->
+  <div class="jogo-area" id="jogo-area">
+    <div class="hud-jogo">
+      <div class="placar p1">
+        <div class="nome-j">Jogador 1</div>
+        <div class="pts" id="pts1">0</div>
+      </div>
+      <div class="placar p2">
+        <div class="nome-j">Jogador 2</div>
+        <div class="pts" id="pts2">0</div>
+      </div>
+    </div>
+    <canvas id="canvas-pong"></canvas>
+    <div class="jogo-msg" id="msg-inicio">
+      <h2>🏓 Pong!</h2>
+      <p>Primeiro a 7 pontos vence.<br>Clique no canvas e use W/S e ↑/↓</p>
+      <button class="btn-iniciar" onclick="iniciarPong()">▶ Jogar</button>
+    </div>
+    <div class="jogo-msg" id="msg-fim" style="display:none;">
+      <h2 id="vencedor-texto">🏆 Jogador 1 venceu!</h2>
+      <p id="placar-final"></p>
+      <button class="btn-iniciar" onclick="reiniciarPong()">↺ Jogar de novo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('canvas-pong');
+  const ctx = canvas.getContext('2d');
+  const area = document.getElementById('jogo-area');
+
+  function redimensionar() {
+    canvas.width  = area.clientWidth;
+    canvas.height = area.clientHeight;
+  }
+  redimensionar();
+  window.addEventListener('resize', redimensionar);
+
+  const teclas = {};
+  window.addEventListener('keydown', e => { teclas[e.key] = true; e.preventDefault(); });
+  window.addEventListener('keyup',   e => { teclas[e.key] = false; });
+
+  const RAQUETE_H = 90, RAQUETE_W = 12, MARGEM = 20;
+
+  let bola, r1, r2, pts1, pts2, emJogo, animId;
+
+  function reset() {
+    const W = canvas.width, H = canvas.height;
+    bola = { x: W/2, y: H/2, r: 8, velX: (Math.random() > 0.5 ? 1 : -1) * 5, velY: (Math.random() - 0.5) * 6 };
+    r1   = { x: MARGEM, y: H/2 - RAQUETE_H/2, w: RAQUETE_W, h: RAQUETE_H };
+    r2   = { x: W - MARGEM - RAQUETE_W, y: H/2 - RAQUETE_H/2, w: RAQUETE_W, h: RAQUETE_H };
+    pts1 = 0; pts2 = 0;
+  }
+
+  function desenhar() {
+    const W = canvas.width, H = canvas.height;
+
+    // Fundo
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0, 0, W, H);
+
+    // Linha central
+    ctx.setLineDash([10, 10]);
+    ctx.strokeStyle = '#1e1e3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Raquetes
+    ctx.fillStyle = '#60a5fa';
+    ctx.beginPath(); ctx.roundRect(r1.x, r1.y, r1.w, r1.h, 4); ctx.fill();
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath(); ctx.roundRect(r2.x, r2.y, r2.w, r2.h, 4); ctx.fill();
+
+    // Bola
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 12; ctx.shadowColor = '#ffffff80';
+    ctx.beginPath(); ctx.arc(bola.x, bola.y, bola.r, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function colisaoRaquete(raquete) {
+    return (
+      bola.x - bola.r <= raquete.x + raquete.w &&
+      bola.x + bola.r >= raquete.x &&
+      bola.y + bola.r >= raquete.y &&
+      bola.y - bola.r <= raquete.y + raquete.h
+    );
+  }
+
+  function gameLoop() {
+    if (!emJogo) return;
+    animId = requestAnimationFrame(gameLoop);
+    const W = canvas.width, H = canvas.height;
+    const VEL_MAX = 14;
+
+    // Mover raquetes
+    const VR = 7;
+    if ((teclas['w'] || teclas['W']) && r1.y > 0)          r1.y -= VR;
+    if ((teclas['s'] || teclas['S']) && r1.y + RAQUETE_H < H) r1.y += VR;
+    if (teclas['ArrowUp']   && r2.y > 0)                   r2.y -= VR;
+    if (teclas['ArrowDown'] && r2.y + RAQUETE_H < H)       r2.y += VR;
+
+    // Mover bola
+    bola.x += bola.velX;
+    bola.y += bola.velY;
+
+    // Rebater no topo/fundo
+    if (bola.y - bola.r <= 0 || bola.y + bola.r >= H) bola.velY *= -1;
+
+    // Colisão com raquetes
+    if (colisaoRaquete(r1) && bola.velX < 0) {
+      bola.velX = Math.abs(bola.velX) * 1.05;
+      const offset = (bola.y - (r1.y + RAQUETE_H/2)) / (RAQUETE_H/2);
+      bola.velY = offset * 6;
+      if (Math.abs(bola.velX) > VEL_MAX) bola.velX = VEL_MAX;
+    }
+    if (colisaoRaquete(r2) && bola.velX > 0) {
+      bola.velX = -Math.abs(bola.velX) * 1.05;
+      const offset = (bola.y - (r2.y + RAQUETE_H/2)) / (RAQUETE_H/2);
+      bola.velY = offset * 6;
+      if (Math.abs(bola.velX) > VEL_MAX) bola.velX = -VEL_MAX;
+    }
+
+    // Ponto
+    if (bola.x < 0) {
+      pts2++;
+      document.getElementById('pts2').textContent = pts2;
+      verificarFim() || resetBola();
+    }
+    if (bola.x > W) {
+      pts1++;
+      document.getElementById('pts1').textContent = pts1;
+      verificarFim() || resetBola();
+    }
+
+    desenhar();
+  }
+
+  function resetBola() {
+    const W = canvas.width, H = canvas.height;
+    bola.x = W/2; bola.y = H/2;
+    bola.velX = (Math.random() > 0.5 ? 1 : -1) * 5;
+    bola.velY = (Math.random() - 0.5) * 6;
+  }
+
+  function verificarFim() {
+    const LIMIT = 7;
+    if (pts1 >= LIMIT || pts2 >= LIMIT) {
+      emJogo = false;
+      cancelAnimationFrame(animId);
+      const vencedor = pts1 >= LIMIT ? 'Jogador 1 🔵' : 'Jogador 2 🟡';
+      document.getElementById('vencedor-texto').textContent = `🏆 ${vencedor} venceu!`;
+      document.getElementById('placar-final').textContent = `Placar final: ${pts1} × ${pts2}`;
+      document.getElementById('msg-fim').style.display = 'flex';
+      return true;
+    }
+    return false;
+  }
+
+  function iniciarPong() {
+    document.getElementById('msg-inicio').style.display = 'none';
+    reset();
+    emJogo = true;
+    gameLoop();
+  }
+
+  function reiniciarPong() {
+    document.getElementById('msg-fim').style.display = 'none';
+    document.getElementById('pts1').textContent = '0';
+    document.getElementById('pts2').textContent = '0';
+    reset();
+    emJogo = true;
+    gameLoop();
+  }
+
+  // Desenhar tela inicial
+  reset();
+  desenhar();
+</script>
+</body>
+</html>

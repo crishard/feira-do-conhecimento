@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 3 — Animação e o Game Loop</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0ff; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+    .painel { overflow-y: auto; padding: 32px; border-right: 1px solid #2d2d4e; }
+    .visualizador { position: relative; background: #050510; }
+    canvas { display: block; }
+    h1 { font-size: 1.5rem; color: #7c3aed; margin-bottom: 4px; }
+    .aula-num { font-size: 0.75rem; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .secao { margin-top: 28px; padding-top: 20px; border-top: 1px solid #2d2d4e; }
+    .secao h2 { font-size: 1.05rem; color: #06b6d4; margin-bottom: 12px; }
+    p { font-size: 0.9rem; line-height: 1.7; color: #c0c0d8; margin-bottom: 10px; }
+    pre {
+      background: #12121f; border: 1px solid #2d2d4e; border-radius: 8px;
+      padding: 16px; font-size: 0.78rem; overflow-x: auto; line-height: 1.6; margin: 12px 0;
+    }
+    .comment { color: #6b7280; }
+    .keyword { color: #c084fc; }
+    .string { color: #86efac; }
+    .number { color: #fb923c; }
+    .func { color: #60a5fa; }
+    .conceito {
+      background: #1a1a2e; border-left: 3px solid #7c3aed;
+      padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.88rem;
+    }
+    .nav { display: flex; justify-content: space-between; margin-top: 32px; padding-top: 20px; border-top: 1px solid #2d2d4e; }
+    .nav a { color: #7c3aed; text-decoration: none; font-size: 0.88rem; }
+    .label-canvas {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(0,0,0,0.6); padding: 4px 10px;
+      border-radius: 6px; font-size: 0.75rem; color: #9ca3af; pointer-events: none; z-index: 10;
+    }
+    .fps-counter {
+      position: absolute; top: 12px; right: 12px;
+      background: rgba(0,0,0,0.6); padding: 4px 10px;
+      border-radius: 6px; font-size: 0.75rem; color: #86efac; pointer-events: none; z-index: 10;
+    }
+    .controles {
+      position: absolute; bottom: 16px; left: 0; right: 0;
+      display: flex; justify-content: center; gap: 8px;
+    }
+    .btn {
+      background: #1a1a2e; border: 1px solid #2d2d4e; color: #e0e0ff;
+      padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #7c3aed; }
+    .btn.ativo { background: #7c3aed; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div class="painel">
+    <div class="aula-num">Aula 3 de 6</div>
+    <h1>Animação e o Game Loop</h1>
+
+    <div class="secao">
+      <h2>🔄 O que é o Game Loop?</h2>
+      <p>Todo jogo roda em um <strong>loop infinito</strong>. A cada iteração do loop, o jogo:</p>
+
+      <div class="conceito">
+        1. <strong>Lê entradas</strong> — teclado, mouse, controle<br>
+        2. <strong>Atualiza o mundo</strong> — move objetos, calcula física, verifica colisões<br>
+        3. <strong>Renderiza o frame</strong> — desenha tudo na tela<br>
+        4. <strong>Repete</strong> — normalmente 60 vezes por segundo (60 FPS)
+      </div>
+
+      <p>No navegador, usamos <code>requestAnimationFrame</code> — uma função nativa que chama seu código antes de cada redesenho da tela, sincronizado com o monitor (geralmente 60fps).</p>
+    </div>
+
+    <div class="secao">
+      <h2>💻 O Loop Básico</h2>
+
+      <pre><span class="comment">// Estrutura básica de todo jogo em Three.js</span>
+
+<span class="keyword">function</span> <span class="func">gameLoop</span>() {
+  <span class="comment">// Agenda a PRÓXIMA chamada antes de fazer qualquer coisa</span>
+  <span class="func">requestAnimationFrame</span>(gameLoop);
+
+  <span class="comment">// ① Atualizar o mundo</span>
+  cubo.rotation.y += <span class="number">0.01</span>; <span class="comment">// gira um pouco a cada frame</span>
+
+  <span class="comment">// ② Renderizar (desenhar) o frame atual</span>
+  renderer.<span class="func">render</span>(cena, camera);
+}
+
+<span class="comment">// Iniciar o loop (chama uma vez; depois se auto-chama)</span>
+<span class="func">gameLoop</span>();</pre>
+
+      <div class="conceito">
+        ⚠️ <strong>Cuidado com velocidade independente de FPS!</strong><br>
+        Se você adiciona <code>0.01</code> por frame e o jogo roda a 30fps em vez de 60fps, o objeto se move na metade da velocidade. A solução é usar <strong>delta time</strong>!
+      </div>
+    </div>
+
+    <div class="secao">
+      <h2>⏱️ Delta Time — A Solução Certa</h2>
+      <p>O <strong>delta time</strong> é o tempo passado desde o último frame. Multiplicando o movimento por ele, a velocidade fica consistente em qualquer FPS:</p>
+
+      <pre><span class="keyword">const</span> clock = <span class="keyword">new</span> <span class="func">THREE.Clock</span>(); <span class="comment">// relógio do Three.js</span>
+
+<span class="keyword">function</span> <span class="func">gameLoop</span>() {
+  <span class="func">requestAnimationFrame</span>(gameLoop);
+
+  <span class="keyword">const</span> delta = clock.<span class="func">getDelta</span>(); <span class="comment">// segundos desde último frame</span>
+  <span class="comment">// ex: 0.016 em 60fps, 0.033 em 30fps</span>
+
+  <span class="comment">// Velocidade em unidades POR SEGUNDO (não por frame)</span>
+  cubo.rotation.y += <span class="number">1.0</span> * delta; <span class="comment">// 1 radiano/segundo sempre</span>
+  cubo.position.x = Math.<span class="func">sin</span>(clock.<span class="func">getElapsedTime</span>()) * <span class="number">3</span>;
+
+  renderer.<span class="func">render</span>(cena, camera);
+}
+<span class="func">gameLoop</span>();</pre>
+    </div>
+
+    <div class="secao">
+      <h2>📐 Funções Matemáticas Úteis</h2>
+      <p>Para criar animações suaves e naturais, as funções seno e cosseno são suas melhores amigas:</p>
+
+      <pre><span class="keyword">const</span> t = clock.<span class="func">getElapsedTime</span>(); <span class="comment">// tempo total em segundos</span>
+
+<span class="comment">// Oscila de -1 a +1 suavemente</span>
+objeto.position.y = Math.<span class="func">sin</span>(t) * <span class="number">2</span>;
+
+<span class="comment">// Também oscila, mas defasado</span>
+objeto.position.x = Math.<span class="func">cos</span>(t) * <span class="number">3</span>;
+
+<span class="comment">// Combinando: movimento circular!</span>
+objeto.position.x = Math.<span class="func">cos</span>(t) * <span class="number">3</span>;
+objeto.position.z = Math.<span class="func">sin</span>(t) * <span class="number">3</span>;</pre>
+
+      <p>O demo ao lado mostra esferas se movendo com seno/cosseno. Clique nos botões para ver diferentes padrões de animação!</p>
+    </div>
+
+    <div class="secao">
+      <h2>🎯 Conceito: Espaço vs Tempo</h2>
+      <div class="conceito">
+        Sempre pense em velocidade como <strong>unidades por segundo</strong>, não por frame.<br>
+        Exemplo: <code>velocidade = 5</code> → o objeto anda 5 unidades a cada segundo, independente do FPS.
+      </div>
+      <p>Isso é fundamental para criar jogos que se comportem da mesma forma em computadores lentos e rápidos.</p>
+    </div>
+
+    <div class="nav">
+      <a href="aula2.html">← Aula 2</a>
+      <a href="aula4.html">Aula 4: Controles →</a>
+    </div>
+  </div>
+
+  <!-- VISUALIZADOR -->
+  <div class="visualizador" id="visualizador">
+    <div class="label-canvas">▶ Padrões de animação com seno/cosseno</div>
+    <div class="fps-counter" id="fps">FPS: --</div>
+    <div class="controles">
+      <button class="btn ativo" onclick="setModo('circular')">Circular</button>
+      <button class="btn" onclick="setModo('onda')">Onda</button>
+      <button class="btn" onclick="setModo('espiral')">Espiral</button>
+      <button class="btn" onclick="setModo('orbita')">Órbita</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
+<script>
+  const container = document.getElementById('visualizador');
+
+  const cena = new THREE.Scene();
+  cena.background = new THREE.Color('#050510');
+  cena.fog = new THREE.FogExp2('#050510', 0.05);
+
+  const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(0, 8, 12);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.insertBefore(renderer.domElement, container.querySelector('.controles'));
+
+  cena.add(new THREE.AmbientLight('#ffffff', 0.5));
+  const luz = new THREE.DirectionalLight('#ffffff', 1);
+  luz.position.set(5, 10, 5);
+  cena.add(luz);
+
+  const grade = new THREE.GridHelper(20, 20, '#1a1a2e', '#1a1a2e');
+  cena.add(grade);
+
+  // Criar esferas
+  const N = 12;
+  const esferas = [];
+  const cores = ['#7c3aed','#06b6d4','#f59e0b','#ef4444','#10b981','#ec4899'];
+
+  for (let i = 0; i < N; i++) {
+    const geo = new THREE.SphereGeometry(0.35, 16, 16);
+    const mat = new THREE.MeshStandardMaterial({
+      color: cores[i % cores.length],
+      roughness: 0.3, metalness: 0.6
+    });
+    const esfera = new THREE.Mesh(geo, mat);
+    cena.add(esfera);
+    esferas.push(esfera);
+  }
+
+  let modo = 'circular';
+
+  function setModo(m) {
+    modo = m;
+    document.querySelectorAll('.btn').forEach(b => b.classList.remove('ativo'));
+    event.target.classList.add('ativo');
+  }
+
+  const clock = new THREE.Clock();
+  let frames = 0, lastFPS = 0;
+
+  function gameLoop() {
+    requestAnimationFrame(gameLoop);
+
+    const t = clock.getElapsedTime();
+    const delta = clock.getDelta(); // não usado aqui mas boa prática
+
+    esferas.forEach((esfera, i) => {
+      const fase = (i / N) * Math.PI * 2;
+      const raio = 3 + (i % 3);
+
+      if (modo === 'circular') {
+        esfera.position.x = Math.cos(t + fase) * raio;
+        esfera.position.z = Math.sin(t + fase) * raio;
+        esfera.position.y = Math.sin(t * 2 + fase) * 0.5;
+      } else if (modo === 'onda') {
+        esfera.position.x = (i - N/2) * 1.2;
+        esfera.position.z = 0;
+        esfera.position.y = Math.sin(t * 2 + i * 0.6) * 2;
+      } else if (modo === 'espiral') {
+        const r = 0.5 + i * 0.35;
+        esfera.position.x = Math.cos(t * 0.5 + i * 0.8) * r;
+        esfera.position.z = Math.sin(t * 0.5 + i * 0.8) * r;
+        esfera.position.y = i * 0.3 - 2 + Math.sin(t + i) * 0.3;
+      } else if (modo === 'orbita') {
+        const vel = 0.5 + i * 0.12;
+        esfera.position.x = Math.cos(t * vel + fase) * raio;
+        esfera.position.y = Math.sin(t * vel * 0.7 + fase) * 2;
+        esfera.position.z = Math.sin(t * vel + fase) * raio;
+      }
+
+      esfera.rotation.y += 0.05;
+    });
+
+    // FPS counter
+    frames++;
+    if (t - lastFPS > 0.5) {
+      document.getElementById('fps').textContent = `FPS: ${Math.round(frames / (t - lastFPS))}`;
+      frames = 0;
+      lastFPS = t;
+    }
+
+    renderer.render(cena, camera);
+  }
+  gameLoop();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+</script>
+</body>
+</html>

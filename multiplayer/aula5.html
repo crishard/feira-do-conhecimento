@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 5 — Estado Compartilhado</title>
+  <style>
+    :root {
+      --roxo: #7c3aed; --ciano: #06b6d4; --verde: #10b981;
+      --laranja: #f59e0b; --vermelho: #ef4444;
+      --bg: #0a0a14; --card: #13131f; --borda: #252538;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+    .layout { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
+
+    .conteudo { padding: 28px 32px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .subtitulo { color: var(--muted); margin-bottom: 22px; font-size: 0.87rem; }
+    h2 { font-size: 1rem; color: var(--ciano); margin: 20px 0 8px; }
+    p { font-size: 0.87rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 10px; }
+    strong { color: var(--texto); }
+
+    .problema {
+      background: #1c0a0a; border: 1px solid #7f1d1d;
+      border-radius: 10px; padding: 12px 16px; margin: 12px 0;
+    }
+    .problema .tit { color: #fca5a5; font-weight: 700; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+
+    .solucao {
+      background: #0d1f0d; border: 1px solid #14532d;
+      border-radius: 10px; padding: 12px 16px; margin: 12px 0;
+    }
+    .solucao .tit { color: #4ade80; font-weight: 700; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+
+    .bloco-codigo {
+      background: #0d0d1a; border: 1px solid var(--borda);
+      border-radius: 8px; margin: 10px 0; overflow: hidden;
+    }
+    .bloco-codigo .cab { background: #181828; padding: 6px 14px; font-size: 0.72rem; color: var(--muted); }
+    .bloco-codigo pre { padding: 12px 14px; font-size: 0.76rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.85rem; }
+
+    /* DEMO */
+    .demo { background: #050510; display: flex; flex-direction: column; position: relative; }
+    .demo-header {
+      padding: 12px 20px; border-bottom: 1px solid var(--borda);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .demo-header span { font-size: 0.78rem; color: var(--muted); }
+    .btn-nova-aba {
+      background: var(--verde); color: white; border: none;
+      padding: 7px 16px; border-radius: 8px; cursor: pointer;
+      font-size: 0.8rem; font-family: inherit;
+    }
+
+    .jogo-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+    canvas { display: block; border: 1px solid var(--borda); border-radius: 8px; }
+
+    .hud-estado {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: space-between; gap: 8px; pointer-events: none; flex-wrap: wrap;
+    }
+    .estado-card {
+      background: rgba(13,13,26,0.9); border: 1px solid var(--borda);
+      border-radius: 8px; padding: 8px 12px; font-size: 0.75rem; min-width: 140px;
+    }
+    .estado-card .titulo { color: var(--muted); margin-bottom: 4px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; }
+    .estado-card .dado { font-family: monospace; color: var(--ciano); font-size: 0.8rem; }
+
+    .msg-overlay {
+      position: absolute; inset: 0;
+      background: rgba(5,5,16,0.92); display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      z-index: 20;
+    }
+    .msg-overlay h2 { font-size: 1.4rem; margin-bottom: 8px; }
+    .msg-overlay p { color: var(--muted); font-size: 0.88rem; margin-bottom: 20px; text-align: center; max-width: 360px; }
+    .btn-comecar {
+      background: var(--roxo); color: white; border: none;
+      padding: 10px 28px; border-radius: 8px; cursor: pointer;
+      font-size: 0.95rem; font-family: inherit;
+    }
+
+    .controles-hud {
+      padding: 8px 16px; border-top: 1px solid var(--borda);
+      font-size: 0.75rem; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .ctrl-item span { color: var(--texto); }
+
+    .sync-log {
+      height: 90px; overflow-y: auto;
+      padding: 6px 14px; background: #0a0a14;
+      border-top: 1px solid var(--borda); flex-shrink: 0;
+    }
+    .sync-linha {
+      font-size: 0.7rem; font-family: monospace; padding: 2px 0; color: #94a3b8;
+    }
+    .sync-linha.enviou { color: #60a5fa; }
+    .sync-linha.recebeu { color: #10b981; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 5</div>
+    <h1>🔄 Estado Compartilhado</h1>
+    <p class="subtitulo">O maior desafio do multiplayer: como dois jogadores veem a mesma coisa?</p>
+
+    <h2>❓ O Problema da Sincronização</h2>
+    <p>Imagina que o Jogador 1 se move para a direita. O Jogador 2 precisa ver isso acontecer <strong>na tela dele</strong>. Mas como?</p>
+
+    <div class="problema">
+      <div class="tit">⚠️ Sem sincronização</div>
+      <p style="font-size:0.85rem;margin:0;color:#fca5a5;">Cada jogador só vê a si mesmo. Os mundos ficam diferentes. Cada um pensa que ganhou. Caos total! 😅</p>
+    </div>
+
+    <div class="solucao">
+      <div class="tit">✅ Com sincronização</div>
+      <p style="font-size:0.85rem;margin:0;color:#86efac;">Sempre que algo muda, você envia um pacote com o novo estado. As outras abas recebem e atualizam. Todo mundo vê a mesma coisa!</p>
+    </div>
+
+    <h2>📦 O que é "Estado do Jogo"?</h2>
+    <p>O estado é tudo que você precisa saber para desenhar o jogo num determinado momento:</p>
+
+    <div class="bloco-codigo">
+      <div class="cab">O estado do nosso jogo</div>
+      <pre><span class="c">// Estado completo do jogo</span>
+<span class="k">const</span> <span class="v">estado</span> = {
+  jogadores: {
+    <span class="s">'aba-abc123'</span>: { x: <span class="n">100</span>, y: <span class="n">200</span>, cor: <span class="s">'#60a5fa'</span>, nome: <span class="s">'J1'</span> },
+    <span class="s">'aba-xyz456'</span>: { x: <span class="n">400</span>, y: <span class="n">200</span>, cor: <span class="s">'#f59e0b'</span>, nome: <span class="s">'J2'</span> },
+  }
+};</pre>
+    </div>
+
+    <h2>🔑 Regra de Ouro: "Dono do Estado"</h2>
+    <p>Cada dado tem um <strong>dono</strong>. Só o dono pode modificá-lo. Os outros apenas lêem:</p>
+
+    <div class="bloco-codigo">
+      <div class="cab">JavaScript</div>
+      <pre><span class="c">// MEU_ID = identificador desta aba</span>
+<span class="k">const</span> <span class="v">canal</span> = <span class="k">new</span> <span class="f">BroadcastChannel</span>(<span class="s">'jogo'</span>);
+
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop);
+
+  <span class="c">// Só atualizo a minha posição (sou o dono)</span>
+  <span class="k">if</span> (teclas[<span class="s">'ArrowRight'</span>]) {
+    estado.jogadores[MEU_ID].x += <span class="n">3</span>;
+  }
+
+  <span class="c">// Envio minha posição atualizada para todos</span>
+  canal.<span class="f">postMessage</span>({
+    tipo: <span class="s">'posicao'</span>,
+    id: MEU_ID,
+    x: estado.jogadores[MEU_ID].x,
+    y: estado.jogadores[MEU_ID].y,
+  });
+
+  <span class="c">// Desenho TODOS os jogadores (incluindo o outro)</span>
+  <span class="f">desenharTodos</span>();
+}
+
+<span class="c">// Recebo a posição do outro jogador e atualizo</span>
+canal.onmessage = (<span class="v">e</span>) => {
+  <span class="k">if</span> (<span class="v">e</span>.data.tipo === <span class="s">'posicao'</span>) {
+    estado.jogadores[<span class="v">e</span>.data.id].x = <span class="v">e</span>.data.x;
+    estado.jogadores[<span class="v">e</span>.data.id].y = <span class="v">e</span>.data.y;
+  }
+};</pre>
+    </div>
+
+    <h2>🎮 Demo ao lado</h2>
+    <p>Mova o quadrado azul com <strong>WASD</strong>. Abra outra aba do mesmo arquivo e veja o outro jogador aparecer!</p>
+    <p>O log embaixo mostra cada pacote enviado/recebido em tempo real.</p>
+
+    <div class="nav">
+      <a href="aula4.html">← Aula 4</a>
+      <a href="aula6.html">🏆 Projeto Final →</a>
+    </div>
+  </div>
+
+  <!-- DEMO -->
+  <div class="demo">
+    <div class="demo-header">
+      <span>▶ WASD para mover — abra outra aba para ver o 2º jogador</span>
+      <button class="btn-nova-aba" onclick="abrirAba()">🪟 Abrir 2ª aba</button>
+    </div>
+
+    <div class="jogo-wrapper" id="jogo-wrapper">
+      <div class="hud-estado" id="hud-estado"></div>
+      <canvas id="canvas-jogo"></canvas>
+
+      <div class="msg-overlay" id="overlay">
+        <h2>🔄 Estado Compartilhado</h2>
+        <p>Você vai se mover com WASD. Na outra aba, o outro jogador usará as setas. Ambos veem os dois ao mesmo tempo!</p>
+        <button class="btn-comecar" onclick="comecar()">▶ Começar</button>
+      </div>
+    </div>
+
+    <div class="controles-hud">
+      <span>Você (azul): <span>WASD</span></span>
+      <span>Outro jogador: <span>também WASD na aba dele</span></span>
+      <span id="status-conexao">⚪ Aguardando outra aba...</span>
+    </div>
+
+    <div class="sync-log" id="sync-log">
+      <div class="sync-linha" style="color:#475569">// pacotes de sincronização aparecem aqui</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const MEU_ID = 'aba-' + Math.random().toString(36).substr(2, 6);
+  const CORES = ['#60a5fa', '#f59e0b', '#10b981', '#c084fc', '#fb923c', '#f472b6'];
+  const MINHA_COR = CORES[Math.floor(Math.random() * CORES.length)];
+
+  const canal = new BroadcastChannel('aula5-estado');
+  const canvas = document.getElementById('canvas-jogo');
+  const ctx = canvas.getContext('2d');
+  const wrapper = document.getElementById('jogo-wrapper');
+
+  const estado = { jogadores: {} };
+  const teclas = {};
+  let emJogo = false;
+  let logCount = 0;
+
+  // Meu jogador
+  estado.jogadores[MEU_ID] = {
+    x: 200 + Math.random() * 200,
+    y: 150 + Math.random() * 100,
+    cor: MINHA_COR,
+    nome: 'Você (' + MEU_ID.slice(-4) + ')',
+    eu: true
+  };
+
+  function redim() {
+    canvas.width  = Math.min(wrapper.clientWidth  - 32, 680);
+    canvas.height = Math.min(wrapper.clientHeight - 80, 400);
+  }
+  redim();
+  window.addEventListener('resize', redim);
+
+  canal.postMessage({ tipo: 'chegou', id: MEU_ID, cor: MINHA_COR, nome: 'J-' + MEU_ID.slice(-4) });
+
+  canal.onmessage = (ev) => {
+    const d = ev.data;
+
+    if (d.tipo === 'chegou' && d.id !== MEU_ID) {
+      if (!estado.jogadores[d.id]) {
+        estado.jogadores[d.id] = { x: 200, y: 200, cor: d.cor, nome: d.nome };
+      }
+      canal.postMessage({ tipo: 'presente', id: MEU_ID, cor: MINHA_COR, nome: 'J-' + MEU_ID.slice(-4), x: estado.jogadores[MEU_ID].x, y: estado.jogadores[MEU_ID].y });
+      atualizarStatus();
+      logSync('recebeu', `← chegou: novo jogador ${d.id.slice(-4)}`);
+    }
+    if (d.tipo === 'presente' && d.id !== MEU_ID) {
+      if (!estado.jogadores[d.id]) {
+        estado.jogadores[d.id] = { x: d.x || 300, y: d.y || 200, cor: d.cor, nome: d.nome };
+      }
+      atualizarStatus();
+    }
+    if (d.tipo === 'posicao' && d.id !== MEU_ID) {
+      if (!estado.jogadores[d.id]) {
+        estado.jogadores[d.id] = { x: d.x, y: d.y, cor: d.cor || '#10b981', nome: d.nome || 'Outro' };
+      } else {
+        estado.jogadores[d.id].x = d.x;
+        estado.jogadores[d.id].y = d.y;
+      }
+      logSync('recebeu', `← posicao de ${d.id.slice(-4)}: x=${Math.round(d.x)}, y=${Math.round(d.y)}`);
+    }
+    if (d.tipo === 'saiu') {
+      delete estado.jogadores[d.id];
+      atualizarStatus();
+    }
+
+    atualizarHUD();
+  };
+
+  window.addEventListener('beforeunload', () => canal.postMessage({ tipo: 'saiu', id: MEU_ID }));
+  window.addEventListener('keydown', e => { teclas[e.key] = true; });
+  window.addEventListener('keyup',   e => { teclas[e.key] = false; });
+
+  let ultimoEnvio = 0;
+
+  function gameLoop() {
+    requestAnimationFrame(gameLoop);
+    if (!emJogo) return;
+
+    const eu = estado.jogadores[MEU_ID];
+    const VEL = 3.5;
+    const LIMITE_X = canvas.width - 25;
+    const LIMITE_Y = canvas.height - 25;
+
+    let moveu = false;
+    if (teclas['w'] || teclas['W'] || teclas['ArrowUp'])    { eu.y = Math.max(25, eu.y - VEL); moveu = true; }
+    if (teclas['s'] || teclas['S'] || teclas['ArrowDown'])  { eu.y = Math.min(LIMITE_Y, eu.y + VEL); moveu = true; }
+    if (teclas['a'] || teclas['A'] || teclas['ArrowLeft'])  { eu.x = Math.max(25, eu.x - VEL); moveu = true; }
+    if (teclas['d'] || teclas['D'] || teclas['ArrowRight']) { eu.x = Math.min(LIMITE_X, eu.x + VEL); moveu = true; }
+
+    // Enviar posição (limitado a ~20 mensagens/seg)
+    const agora = Date.now();
+    if (agora - ultimoEnvio > 50) {
+      canal.postMessage({ tipo: 'posicao', id: MEU_ID, x: eu.x, y: eu.y, cor: MINHA_COR, nome: eu.nome });
+      if (moveu) logSync('enviou', `→ posicao: x=${Math.round(eu.x)}, y=${Math.round(eu.y)}`);
+      ultimoEnvio = agora;
+    }
+
+    desenhar();
+  }
+
+  function desenhar() {
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grade
+    ctx.strokeStyle = '#13131f';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    // Desenhar todos os jogadores
+    Object.entries(estado.jogadores).forEach(([id, jog]) => {
+      const S = 26;
+      ctx.fillStyle = jog.cor;
+      ctx.shadowBlur = id === MEU_ID ? 16 : 6;
+      ctx.shadowColor = jog.cor + '80';
+      ctx.beginPath();
+      ctx.roundRect(jog.x - S/2, jog.y - S/2, S, S, 6);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Borda "eu"
+      if (id === MEU_ID) {
+        ctx.strokeStyle = '#ffffff40';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Nome
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 11px Segoe UI';
+      ctx.textAlign = 'center';
+      ctx.fillText(id === MEU_ID ? 'VOCÊ' : jog.nome, jog.x, jog.y - S/2 - 6);
+    });
+  }
+
+  function atualizarHUD() {
+    const hud = document.getElementById('hud-estado');
+    hud.innerHTML = '';
+    Object.entries(estado.jogadores).forEach(([id, jog]) => {
+      const card = document.createElement('div');
+      card.className = 'estado-card';
+      card.innerHTML = `<div class="titulo" style="color:${jog.cor}">${id === MEU_ID ? '★ VOCÊ' : jog.nome}</div><div class="dado">x:${Math.round(jog.x)} y:${Math.round(jog.y)}</div>`;
+      hud.appendChild(card);
+    });
+  }
+
+  function atualizarStatus() {
+    const n = Object.keys(estado.jogadores).length;
+    const el = document.getElementById('status-conexao');
+    if (n <= 1) { el.textContent = '⚪ Só você — abra outra aba!'; el.style.color = ''; }
+    else { el.textContent = `🟢 ${n} jogadores conectados!`; el.style.color = '#4ade80'; }
+  }
+
+  function logSync(tipo, texto) {
+    logCount++;
+    if (logCount % 3 !== 0 && tipo === 'enviou') return; // reduz spam
+    const log = document.getElementById('sync-log');
+    if (log.children.length === 1 && log.children[0].style.color === 'var(--muted)') log.innerHTML = '';
+    const linha = document.createElement('div');
+    linha.className = `sync-linha ${tipo}`;
+    const ts = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+    linha.textContent = `[${ts}] ${texto}`;
+    log.insertBefore(linha, log.firstChild);
+    if (log.children.length > 15) log.removeChild(log.lastChild);
+  }
+
+  function comecar() {
+    document.getElementById('overlay').style.display = 'none';
+    emJogo = true;
+    gameLoop();
+    atualizarHUD();
+  }
+
+  function abrirAba() {
+    const novaAba = window.open(window.location.href, '_blank');
+    if (!novaAba) alert('Navegador bloqueou popup! Abra manualmente uma nova aba com este URL.');
+  }
+
+  desenhar();
+</script>
+</body>
+</html>

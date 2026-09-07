@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelagem 3D — Curso</title>
+  <style>
+    :root {
+      --laranja: #f97316; --ciano: #06b6d4; --roxo: #8b5cf6;
+      --verde: #10b981; --rosa: #ec4899; --amarelo: #eab308;
+      --bg: #060609; --card: #0e0e16; --borda: #1c1c2e;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); min-height: 100vh; }
+
+    /* HERO */
+    .hero { padding: 64px 24px 48px; text-align: center; position: relative; overflow: hidden; }
+    .hero::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 400px;
+      background: radial-gradient(ellipse, #f9731615 30%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-icon { font-size: 4.5rem; display: block; margin-bottom: 16px; filter: drop-shadow(0 0 28px #f9731650); }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; line-height: 1.15;
+      background: linear-gradient(135deg, #f97316, #eab308, #ec4899);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 14px;
+    }
+    .hero p { color: var(--muted); font-size: 1.05rem; max-width: 580px; margin: 0 auto 28px; line-height: 1.75; }
+    .hero-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
+    .tag { padding: 5px 14px; border-radius: 99px; font-size: 0.78rem; font-weight: 600; }
+    .tag.a { background: #1c0e00; color: #fb923c; }
+    .tag.b { background: #0d1f15; color: #34d399; }
+    .tag.c { background: #0f1a24; color: #67e8f9; }
+    .tag.d { background: #1a0e1f; color: #c084fc; }
+
+    /* TRILHA */
+    .trilha { max-width: 900px; margin: 0 auto; padding: 0 24px 72px; }
+
+    /* MÓDULOS */
+    .modulo { margin-bottom: 48px; }
+    .modulo-titulo {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 2px;
+      color: var(--muted); margin-bottom: 16px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--borda);
+    }
+    .modulo-titulo span { font-size: 1rem; }
+
+    .aulas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+
+    .aula-link { text-decoration: none; color: inherit; }
+    .aula-card {
+      background: var(--card); border: 1px solid var(--borda); border-radius: 14px;
+      padding: 22px; cursor: pointer; position: relative; overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s; display: block;
+    }
+    .aula-card:hover { transform: translateY(-3px); }
+    .aula-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: 14px 14px 0 0;
+    }
+    .aula-card.c1 { border-top: 3px solid #f97316; }
+    .aula-card.c2 { border-top: 3px solid #eab308; }
+    .aula-card.c3 { border-top: 3px solid #10b981; }
+    .aula-card.c4 { border-top: 3px solid #06b6d4; }
+    .aula-card.c5 { border-top: 3px solid #8b5cf6; }
+    .aula-card.c6 { border-top: 3px solid #ec4899; }
+    .aula-card.c7 { border-top: 3px solid #f97316; }
+
+    .aula-card:hover.c1 { border-color: #f97316; }
+    .aula-card:hover.c2 { border-color: #eab308; }
+    .aula-card:hover.c3 { border-color: #10b981; }
+    .aula-card:hover.c4 { border-color: #06b6d4; }
+    .aula-card:hover.c5 { border-color: #8b5cf6; }
+    .aula-card:hover.c6 { border-color: #ec4899; }
+    .aula-card:hover.c7 { border-color: #f97316; }
+
+    .card-num { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+    .card-icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+    .aula-card h2 { font-size: 0.98rem; font-weight: 700; margin-bottom: 6px; }
+    .aula-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+    .demo-badge { font-size: 0.72rem; color: var(--ciano); display: flex; align-items: center; gap: 4px; }
+    .nivel { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 0.68rem; font-weight: 600; margin-bottom: 8px; }
+    .n0 { background: #0d1f0d; color: #4ade80; }
+    .n1 { background: #1c0e00; color: #fb923c; }
+    .n2 { background: #1a0e1f; color: #c084fc; }
+    .n3 { background: #0f1a24; color: #67e8f9; }
+    .n-final { background: #1a0916; color: #f9a8d4; }
+
+    /* INFO EXTRA */
+    .info-box {
+      max-width: 900px; margin: 0 auto 40px; padding: 0 24px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;
+    }
+    .info-item { background: var(--card); border: 1px solid var(--borda); border-radius: 10px; padding: 16px; text-align: center; }
+    .info-item .ic { font-size: 1.8rem; margin-bottom: 6px; }
+    .info-item h3 { font-size: 0.88rem; margin-bottom: 3px; }
+    .info-item p { font-size: 0.78rem; color: var(--muted); }
+
+    footer { text-align: center; padding: 32px; font-size: 0.78rem; color: var(--muted); border-top: 1px solid var(--borda); }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="hero-icon">🧊</span>
+  <h1>Modelagem 3D</h1>
+  <p>Do cubo ao personagem — aprenda como objetos 3D são criados, manipulados e renderizados, com demos interativos que você controla no navegador.</p>
+  <div class="hero-tags">
+    <span class="tag a">Sem instalar nada</span>
+    <span class="tag b">7 aulas</span>
+    <span class="tag c">Three.js interativo</span>
+    <span class="tag d">Do zero</span>
+  </div>
+</div>
+
+<div class="info-box">
+  <div class="info-item"><div class="ic">📐</div><h3>Geometria</h3><p>Vértices, arestas e faces — os blocos de tudo</p></div>
+  <div class="info-item"><div class="ic">🎨</div><h3>Materiais</h3><p>PBR, texturas e como a luz interage</p></div>
+  <div class="info-item"><div class="ic">💡</div><h3>Iluminação</h3><p>Sombras realistas e tipos de luz</p></div>
+  <div class="info-item"><div class="ic">🔧</div><h3>Modificadores</h3><p>Extrudar, subdividir, curvas Bézier</p></div>
+</div>
+
+<div class="trilha">
+
+  <div class="modulo">
+    <div class="modulo-titulo"><span>📚</span> Fundamentos</div>
+    <div class="aulas-grid">
+
+      <a class="aula-link" href="aula1.html">
+        <div class="aula-card c1">
+          <div class="card-num">Aula 1</div>
+          <span class="card-icon">🔺</span>
+          <span class="nivel n0">Básico</span>
+          <h2>Vértices, Arestas e Faces</h2>
+          <p>Todo objeto 3D é feito de pontos, linhas e triângulos. Entenda a estrutura fundamental de qualquer modelo.</p>
+          <div class="demo-badge">▶ Explode um cubo e veja seus componentes</div>
+        </div>
+      </a>
+
+      <a class="aula-link" href="aula2.html">
+        <div class="aula-card c2">
+          <div class="card-num">Aula 2</div>
+          <span class="card-icon">🔄</span>
+          <span class="nivel n0">Básico</span>
+          <h2>Transformações — Mover, Rotacionar, Escalar</h2>
+          <p>As 3 operações fundamentais de qualquer software 3D. Aprenda como funciona a matemática por baixo.</p>
+          <div class="demo-badge">▶ Manipule objetos com controles ao vivo</div>
+        </div>
+      </a>
+
+      <a class="aula-link" href="aula3.html">
+        <div class="aula-card c3">
+          <div class="card-num">Aula 3</div>
+          <span class="card-icon">🏗️</span>
+          <span class="nivel n1">Intermediário</span>
+          <h2>Primitivas e Construção de Formas</h2>
+          <p>Cubo, esfera, cilindro, cone... combinando primitivas você faz qualquer coisa. Técnica "blockout".</p>
+          <div class="demo-badge">▶ Monte um personagem com primitivas</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <div class="modulo">
+    <div class="modulo-titulo"><span>🎨</span> Superfície e Aparência</div>
+    <div class="aulas-grid">
+
+      <a class="aula-link" href="aula4.html">
+        <div class="aula-card c4">
+          <div class="card-num">Aula 4</div>
+          <span class="card-icon">🗺️</span>
+          <span class="nivel n1">Intermediário</span>
+          <h2>UV Mapping — Aplicando Texturas</h2>
+          <p>Como "desdobrar" um modelo 3D numa imagem plana para pintar. A técnica por trás de todo jogo.</p>
+          <div class="demo-badge">▶ Veja o UV unwrap de objetos em tempo real</div>
+        </div>
+      </a>
+
+      <a class="aula-link" href="aula5.html">
+        <div class="aula-card c5">
+          <div class="card-num">Aula 5</div>
+          <span class="card-icon">🎨</span>
+          <span class="nivel n2">Avançado</span>
+          <h2>Materiais PBR — Realismo Físico</h2>
+          <p>Roughness, metalness, normal maps. Como funcionam os materiais realistas dos jogos modernos.</p>
+          <div class="demo-badge">▶ Editor de material ao vivo com sliders</div>
+        </div>
+      </a>
+
+      <a class="aula-link" href="aula6.html">
+        <div class="aula-card c6">
+          <div class="card-num">Aula 6</div>
+          <span class="card-icon">💡</span>
+          <span class="nivel n2">Avançado</span>
+          <h2>Iluminação e Sombras</h2>
+          <p>Ambiente, direcional, point light, spot. Como a luz transforma completamente um modelo.</p>
+          <div class="demo-badge">▶ Estúdio de iluminação interativo</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <div class="modulo">
+    <div class="modulo-titulo"><span>🏆</span> Projeto Final</div>
+    <div class="aulas-grid">
+      <a class="aula-link" href="aula7.html">
+        <div class="aula-card c7" style="border-top: 3px solid #f97316;">
+          <div class="card-num">Aula 7 — Projeto Final</div>
+          <span class="card-icon">🏆</span>
+          <span class="nivel n-final">Projeto</span>
+          <h2>Crie sua Cena 3D Completa</h2>
+          <p>Un tudo: monte uma cena com múltiplos objetos, materiais, iluminação e câmera. Um portfólio para mostrar!</p>
+          <div class="demo-badge">▶ Editor de cena completo no navegador</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<footer>Modelagem 3D • Three.js no navegador • Nenhuma instalação necessária</footer>
+
+</body>
+</html>

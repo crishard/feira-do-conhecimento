@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 1 — O que é Programar?</title>
+  <style>
+    :root {
+      --roxo: #7c3aed; --ciano: #06b6d4; --verde: #10b981;
+      --bg: #0a0a14; --card: #13131f; --borda: #252538;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+    .layout { display: grid; grid-template-columns: 1fr 420px; min-height: 100vh; }
+
+    /* CONTEÚDO */
+    .conteudo { padding: 40px 36px; overflow-y: auto; max-height: 100vh; }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 4px; }
+    .subtitulo { color: var(--muted); margin-bottom: 32px; font-size: 0.95rem; }
+
+    h2 { font-size: 1.1rem; color: var(--ciano); margin: 28px 0 12px; display: flex; align-items: center; gap: 8px; }
+    p { font-size: 0.92rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 12px; }
+    strong { color: var(--texto); }
+
+    .analogia {
+      background: #0d1f0d;
+      border: 1px solid #14532d;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+    .analogia .titulo { color: #4ade80; font-weight: 700; margin-bottom: 6px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+
+    .bloco-codigo {
+      background: #0d0d1a;
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+    .bloco-codigo .cabecalho {
+      background: #181828;
+      padding: 8px 16px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .bloco-codigo pre {
+      padding: 16px;
+      font-size: 0.8rem;
+      line-height: 1.65;
+      overflow-x: auto;
+    }
+    .c  { color: #475569; }  /* comment */
+    .k  { color: #c084fc; }  /* keyword */
+    .s  { color: #86efac; }  /* string */
+    .n  { color: #fb923c; }  /* number */
+    .f  { color: #60a5fa; }  /* function */
+    .v  { color: #fde68a; }  /* variable */
+
+    .caixa-conceito {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+    .caixa-conceito .rotulo {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--roxo);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .grid-conceitos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .mini-card {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .mini-card .emoji { font-size: 1.4rem; margin-bottom: 6px; display: block; }
+    .mini-card h3 { font-size: 0.9rem; margin-bottom: 4px; }
+    .mini-card p { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
+
+    /* PAINEL INTERATIVO */
+    .painel {
+      background: #0d0d1a;
+      border-left: 1px solid var(--borda);
+      padding: 24px 20px;
+      overflow-y: auto;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .painel-titulo {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--borda);
+    }
+
+    .var-card {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 14px 16px;
+      transition: border-color 0.3s;
+    }
+    .var-card.ativa { border-color: var(--roxo); }
+    .var-card .nome { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .var-card .valor {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-family: monospace;
+      min-height: 40px;
+    }
+    .var-card .descricao { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+    .var-card .cor-string { color: #86efac; }
+    .var-card .cor-number { color: #fb923c; }
+    .var-card .cor-bool   { color: #c084fc; }
+
+    .btn-demo {
+      width: 100%;
+      background: var(--roxo);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .btn-demo:hover { background: #6d28d9; }
+    .btn-demo.verde { background: #059669; }
+    .btn-demo.verde:hover { background: #047857; }
+
+    .separador { height: 1px; background: var(--borda); }
+
+    .if-demo {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.85rem;
+    }
+    .if-demo .pergunta { color: var(--ciano); margin-bottom: 8px; font-weight: 600; }
+    .if-demo .resultado { min-height: 32px; padding: 8px 12px; background: #0a0a14; border-radius: 6px; font-family: monospace; font-size: 0.82rem; }
+
+    .input-row { display: flex; gap: 8px; }
+    .input-demo {
+      flex: 1;
+      background: #0a0a14;
+      border: 1px solid var(--borda);
+      color: var(--texto);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    .input-demo:focus { outline: none; border-color: var(--roxo); }
+
+    .loop-demo {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .loop-demo .barras { display: flex; gap: 4px; align-items: flex-end; height: 60px; margin-top: 10px; }
+    .loop-demo .barra {
+      flex: 1;
+      background: var(--roxo);
+      border-radius: 3px 3px 0 0;
+      transition: height 0.3s, background 0.3s;
+      min-height: 4px;
+    }
+    .loop-demo .barra.ativa { background: var(--ciano); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ===== CONTEÚDO ===== -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 1</div>
+    <h1>🧠 O que é Programar?</h1>
+    <p class="subtitulo">Antes de qualquer jogo, você precisa falar a língua do computador.</p>
+
+    <h2>📦 Variáveis — As Caixas da Memória</h2>
+    <p>Imagine que o computador tem muitas <strong>caixas</strong> onde guarda informações. Cada caixa tem um <strong>nome</strong> (pra você saber qual é qual) e um <strong>conteúdo</strong> (o valor guardado).</p>
+
+    <div class="analogia">
+      <div class="titulo">🎒 Analogia do dia a dia</div>
+      Pensa numa mochila escolar. Você tem um compartimento chamado "lanche" onde coloca uma maçã. Mais tarde você troca a maçã por um biscoito. O compartimento continua sendo "lanche", mas o conteúdo mudou.<br><br>
+      Em programação: <strong>nome da caixa = variável</strong>, <strong>o que tem dentro = valor</strong>.
+    </div>
+
+    <div class="bloco-codigo">
+      <div class="cabecalho">JavaScript</div>
+      <pre><span class="c">// Criar uma variável (caixa) e colocar algo dentro</span>
+<span class="k">let</span> <span class="v">nome</span> = <span class="s">"Jogador 1"</span>;
+<span class="k">let</span> <span class="v">pontos</span> = <span class="n">0</span>;
+<span class="k">let</span> <span class="v">estaVivo</span> = <span class="k">true</span>;
+
+<span class="c">// Mudar o conteúdo da caixa</span>
+<span class="v">pontos</span> = <span class="n">10</span>;        <span class="c">// agora pontos vale 10</span>
+<span class="v">pontos</span> = <span class="v">pontos</span> + <span class="n">5</span>; <span class="c">// agora pontos vale 15</span></pre>
+    </div>
+
+    <p>Existem 3 tipos básicos de valor:</p>
+    <div class="grid-conceitos">
+      <div class="mini-card">
+        <span class="emoji">💬</span>
+        <h3>Texto (String)</h3>
+        <p>Sempre entre aspas. Ex: <code style="color:#86efac">"olá"</code>, <code style="color:#86efac">"Jogador 2"</code></p>
+      </div>
+      <div class="mini-card">
+        <span class="emoji">🔢</span>
+        <h3>Número (Number)</h3>
+        <p>Sem aspas. Ex: <code style="color:#fb923c">42</code>, <code style="color:#fb923c">3.14</code>, <code style="color:#fb923c">-5</code></p>
+      </div>
+      <div class="mini-card">
+        <span class="emoji">✅</span>
+        <h3>Verdadeiro/Falso (Boolean)</h3>
+        <p>Só dois valores: <code style="color:#c084fc">true</code> ou <code style="color:#c084fc">false</code></p>
+      </div>
+      <div class="mini-card">
+        <span class="emoji">📦</span>
+        <h3>Objeto (Object)</h3>
+        <p>Agrupa vários valores: <code style="color:#fde68a">{ x: 10, y: 5 }</code></p>
+      </div>
+    </div>
+
+    <h2>❓ Condicionais — Tomando Decisões</h2>
+    <p>Programas precisam tomar decisões. "<strong>SE</strong> isso for verdade, <strong>ENTÃO</strong> faça aquilo. <strong>SENÃO</strong>, faça outra coisa."</p>
+
+    <div class="analogia">
+      <div class="titulo">🎮 Analogia de jogo</div>
+      SE o jogador encostar no inimigo, ENTÃO tirar uma vida.<br>
+      SE as vidas chegarem a zero, ENTÃO mostrar "Game Over".<br>
+      SENÃO, continuar o jogo.
+    </div>
+
+    <div class="bloco-codigo">
+      <div class="cabecalho">JavaScript</div>
+      <pre><span class="k">let</span> <span class="v">vidas</span> = <span class="n">3</span>;
+
+<span class="k">if</span> (<span class="v">vidas</span> > <span class="n">0</span>) {
+  <span class="c">// executa SE vidas for maior que 0</span>
+  console.log(<span class="s">"Continue jogando!"</span>);
+} <span class="k">else</span> {
+  <span class="c">// executa SE vidas NÃO for maior que 0</span>
+  console.log(<span class="s">"Game Over!"</span>);
+}</pre>
+    </div>
+
+    <h2>🔁 Loops — Repetindo Coisas</h2>
+    <p>Um loop faz o computador repetir um bloco de código várias vezes sem você ter que escrever tudo de novo.</p>
+
+    <div class="bloco-codigo">
+      <div class="cabecalho">JavaScript</div>
+      <pre><span class="c">// Faz isso 5 vezes (i vai de 0 até 4)</span>
+<span class="k">for</span> (<span class="k">let</span> <span class="v">i</span> = <span class="n">0</span>; <span class="v">i</span> < <span class="n">5</span>; <span class="v">i</span>++) {
+  console.log(<span class="s">"Rodada número "</span> + <span class="v">i</span>);
+}
+<span class="c">// Imprime: "Rodada número 0", "Rodada número 1"...</span>
+
+<span class="c">// Loop de jogo: roda enquanto o jogador estiver vivo</span>
+<span class="k">while</span> (<span class="v">estaVivo</span>) {
+  <span class="c">// atualiza o jogo...</span>
+}</pre>
+    </div>
+
+    <h2>🍳 Funções — As Receitas do Código</h2>
+    <p>Uma função é um bloco de código com um nome. Você escreve uma vez e <strong>chama</strong> quando precisar.</p>
+
+    <div class="analogia">
+      <div class="titulo">🍕 Analogia da receita</div>
+      Receita "fazer pizza": pegar massa → colocar molho → colocar queijo → assar.<br>
+      Você não re-escreve a receita toda vez que quer pizza. Você só diz "fazer pizza()".
+    </div>
+
+    <div class="bloco-codigo">
+      <div class="cabecalho">JavaScript</div>
+      <pre><span class="c">// Definir a função (escrever a receita)</span>
+<span class="k">function</span> <span class="f">moverJogador</span>(<span class="v">x</span>, <span class="v">y</span>) {
+  jogador.posicaoX = jogador.posicaoX + <span class="v">x</span>;
+  jogador.posicaoY = jogador.posicaoY + <span class="v">y</span>;
+  console.log(<span class="s">"Jogador se moveu!"</span>);
+}
+
+<span class="c">// Chamar a função (usar a receita)</span>
+<span class="f">moverJogador</span>(<span class="n">5</span>, <span class="n">0</span>);   <span class="c">// move 5 pra direita</span>
+<span class="f">moverJogador</span>(<span class="n">0</span>, -<span class="n">3</span>);  <span class="c">// move 3 pra cima</span></pre>
+    </div>
+
+    <h2>🎯 Resumo: Os 4 Pilares</h2>
+    <div class="grid-conceitos">
+      <div class="mini-card">
+        <span class="emoji">📦</span>
+        <h3>Variáveis</h3>
+        <p>Guardam informações (pontos, posição, nome)</p>
+      </div>
+      <div class="mini-card">
+        <span class="emoji">❓</span>
+        <h3>Condicionais</h3>
+        <p>Tomam decisões (se X, então Y)</p>
+      </div>
+      <div class="mini-card">
+        <span class="emoji">🔁</span>
+        <h3>Loops</h3>
+        <p>Repetem ações (game loop, criar inimigos)</p>
+      </div>
+      <div class="mini-card">
+        <span class="emoji">🍳</span>
+        <h3>Funções</h3>
+        <p>Agrupam código reutilizável (mover, atirar)</p>
+      </div>
+    </div>
+
+    <div class="nav">
+      <a href="index.html">← Início</a>
+      <a href="aula2.html">Aula 2: Primeiro Jogo →</a>
+    </div>
+  </div>
+
+  <!-- ===== PAINEL INTERATIVO ===== -->
+  <div class="painel">
+    <div class="painel-titulo">🔬 Laboratório — veja acontecer</div>
+
+    <!-- Variáveis ao vivo -->
+    <div style="font-size:0.82rem; color: var(--muted);">Clique nos botões e veja as variáveis mudando:</div>
+
+    <div class="var-card" id="vc-pontos">
+      <div class="nome">variável: pontos</div>
+      <div class="valor cor-number" id="v-pontos">0</div>
+      <div class="descricao">Guarda o total de pontos do jogador</div>
+    </div>
+
+    <div class="var-card" id="vc-nome">
+      <div class="nome">variável: nome</div>
+      <div class="valor cor-string" id="v-nome">"Jogador 1"</div>
+      <div class="descricao">Texto — sempre entre aspas</div>
+    </div>
+
+    <div class="var-card" id="vc-vivo">
+      <div class="nome">variável: estaVivo</div>
+      <div class="valor cor-bool" id="v-vivo">true</div>
+      <div class="descricao">Booleano — só true ou false</div>
+    </div>
+
+    <button class="btn-demo" onclick="simularJogo()">▶ Simular rodada de jogo</button>
+    <button class="btn-demo verde" onclick="resetarVars()">↺ Reiniciar variáveis</button>
+
+    <div class="separador"></div>
+
+    <!-- IF demo -->
+    <div class="if-demo">
+      <div class="pergunta">🔍 Teste um if/else:</div>
+      <div class="input-row" style="margin:8px 0;">
+        <input class="input-demo" id="input-vidas" type="number" value="3" min="0" max="10" placeholder="Vidas (0-10)">
+        <button class="btn-demo" style="width:auto; padding:8px 16px;" onclick="testarIf()">Testar</button>
+      </div>
+      <div class="resultado" id="resultado-if">Clique "Testar" para ver o resultado</div>
+    </div>
+
+    <div class="separador"></div>
+
+    <!-- Loop demo -->
+    <div class="loop-demo">
+      <div style="font-size:0.82rem; color:var(--muted);">🔁 Visualização do loop <code style="color:var(--ciano)">for i = 0; i &lt; N</code>:</div>
+      <div class="barras" id="barras-loop">
+        <!-- criado por JS -->
+      </div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:6px;" id="loop-status">Clique para animar</div>
+    </div>
+    <button class="btn-demo" onclick="animarLoop()">▶ Animar loop</button>
+
+    <div class="separador"></div>
+
+    <!-- Função demo -->
+    <div class="if-demo">
+      <div class="pergunta">🍳 Chame uma função:</div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-bottom:8px;">
+        <code style="color:#c084fc">function</code> <code style="color:#60a5fa">somar</code>(a, b) { return a + b }
+      </div>
+      <div class="input-row">
+        <input class="input-demo" id="fn-a" type="number" value="10" style="width:70px;">
+        <span style="align-self:center; color:var(--muted)">+</span>
+        <input class="input-demo" id="fn-b" type="number" value="5" style="width:70px;">
+        <button class="btn-demo" style="width:auto; padding:8px 16px;" onclick="chamarFuncao()">= ?</button>
+      </div>
+      <div class="resultado" id="resultado-fn" style="margin-top:8px;">Clique para chamar a função</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let pontos = 0;
+  let nome = "Jogador 1";
+  let estaVivo = true;
+
+  function atualizar() {
+    document.getElementById('v-pontos').textContent = pontos;
+    document.getElementById('v-nome').textContent = `"${nome}"`;
+    document.getElementById('v-vivo').textContent = estaVivo;
+    document.getElementById('v-vivo').style.color = estaVivo ? '#c084fc' : '#ef4444';
+    document.getElementById('vc-pontos').classList.toggle('ativa', true);
+    setTimeout(() => document.getElementById('vc-pontos').classList.remove('ativa'), 500);
+  }
+
+  function simularJogo() {
+    if (!estaVivo) return resetarVars();
+    const ganhou = Math.random() > 0.5;
+    if (ganhou) {
+      pontos += 10;
+    } else {
+      pontos -= 5;
+      if (pontos < 0) {
+        estaVivo = false;
+        document.getElementById('vc-vivo').classList.add('ativa');
+      }
+    }
+    atualizar();
+  }
+
+  function resetarVars() {
+    pontos = 0; nome = "Jogador 1"; estaVivo = true;
+    atualizar();
+  }
+
+  function testarIf() {
+    const v = parseInt(document.getElementById('input-vidas').value);
+    let msg;
+    if (isNaN(v)) msg = '⚠️ Digite um número!';
+    else if (v > 5) msg = '✅ vidas > 5 → "Uau, você está ótimo!"';
+    else if (v > 0) msg = '⚠️ vidas > 0 → "Cuidado, poucas vidas!"';
+    else msg = '💀 vidas === 0 → "GAME OVER!"';
+    document.getElementById('resultado-if').textContent = msg;
+  }
+
+  // Loop animation
+  const N_BARRAS = 10;
+  const barrasEl = document.getElementById('barras-loop');
+  for (let i = 0; i < N_BARRAS; i++) {
+    const b = document.createElement('div');
+    b.className = 'barra';
+    b.style.height = '4px';
+    barrasEl.appendChild(b);
+  }
+
+  let loopRodando = false;
+  function animarLoop() {
+    if (loopRodando) return;
+    loopRodando = true;
+    const barras = barrasEl.querySelectorAll('.barra');
+    barras.forEach(b => { b.style.height = '4px'; b.classList.remove('ativa'); });
+
+    let i = 0;
+    const intervalo = setInterval(() => {
+      if (i > 0) barras[i-1].classList.remove('ativa');
+      if (i >= N_BARRAS) {
+        clearInterval(intervalo);
+        loopRodando = false;
+        document.getElementById('loop-status').textContent = `Loop terminou! i chegou em ${N_BARRAS}`;
+        return;
+      }
+      barras[i].style.height = (20 + i * 5) + 'px';
+      barras[i].classList.add('ativa');
+      document.getElementById('loop-status').textContent = `i = ${i} → executando...`;
+      i++;
+    }, 200);
+  }
+
+  function chamarFuncao() {
+    const a = parseFloat(document.getElementById('fn-a').value) || 0;
+    const b = parseFloat(document.getElementById('fn-b').value) || 0;
+    function somar(a, b) { return a + b; }
+    const res = somar(a, b);
+    document.getElementById('resultado-fn').textContent =
+      `somar(${a}, ${b}) retornou → ${res}`;
+  }
+
+  atualizar();
+</script>
+</body>
+</html>

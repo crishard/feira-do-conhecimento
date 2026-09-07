@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pong — Passo a Passo</title>
+  <style>
+    :root {
+      --roxo: #7c3aed; --ciano: #06b6d4; --verde: #10b981;
+      --bg: #0a0a14; --card: #13131f; --borda: #252538;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--texto);
+      padding: 40px 20px 80px;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; }
+
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+
+    h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--roxo), var(--ciano));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitulo { color: var(--muted); margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6; }
+
+    .aviso {
+      background: #0c1a24; border: 1px solid #0e4963;
+      border-radius: 10px; padding: 14px 18px; margin-bottom: 34px;
+      font-size: 0.85rem; line-height: 1.7; color: #cbd5e1;
+    }
+    .aviso strong { color: var(--ciano); }
+
+    .passo {
+      background: var(--card); border: 1px solid var(--borda);
+      border-radius: 14px; padding: 24px 26px; margin-bottom: 22px;
+    }
+    .passo-cabecalho { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .passo-num {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--roxo), var(--ciano));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.9rem; flex-shrink: 0; color: white;
+    }
+    .passo h2 { font-size: 1.1rem; }
+    p { font-size: 0.88rem; line-height: 1.7; color: #cbd5e1; margin-bottom: 10px; }
+    strong { color: var(--texto); }
+    code.inline { background: #0d0d1a; border: 1px solid var(--borda); border-radius: 4px; padding: 1px 6px; font-size: 0.82rem; color: #fde68a; }
+
+    .bloco-codigo {
+      background: #0d0d1a; border: 1px solid var(--borda);
+      border-radius: 8px; margin: 12px 0; overflow: hidden;
+    }
+    .bloco-codigo .cab {
+      background: #181828; padding: 6px 14px;
+      font-size: 0.72rem; color: var(--muted);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .bloco-codigo .copiar {
+      background: none; border: 1px solid var(--borda); color: var(--muted);
+      font-size: 0.68rem; padding: 2px 8px; border-radius: 4px;
+      cursor: pointer; font-family: inherit;
+    }
+    .bloco-codigo .copiar:hover { color: var(--texto); border-color: var(--roxo); }
+    .bloco-codigo pre { padding: 12px 14px; font-size: 0.78rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .demo-box {
+      position: relative; margin-top: 14px;
+      border-radius: 8px; overflow: hidden;
+      border: 1px solid var(--borda);
+      display: inline-block;
+    }
+    canvas { display: block; background: #050510; }
+    canvas:focus { outline: 2px solid var(--roxo); outline-offset: -2px; }
+
+    .dica {
+      font-size: 0.76rem; color: var(--muted); margin-top: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-mini {
+      background: #1e1e3a; color: var(--texto); border: 1px solid var(--borda);
+      padding: 5px 12px; border-radius: 6px; font-size: 0.76rem;
+      cursor: pointer; font-family: inherit; margin-top: 10px;
+    }
+    .btn-mini:hover { border-color: var(--roxo); }
+
+    .destaque {
+      background: #0c1a24; border: 1px solid #0e4963;
+      border-radius: 8px; padding: 10px 14px; margin: 14px 0 0;
+      font-size: 0.83rem; line-height: 1.7;
+    }
+    .destaque .tit { color: var(--ciano); font-weight: 700; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="breadcrumb"><a href="index.html">← Início</a> / Pong passo a passo</div>
+  <h1>🏓 Construindo o Pong, passo a passo</h1>
+  <p class="subtitulo">O mesmo Pong da Aula 2, desmontado em pedaços. Cada passo mostra o <strong>código completo</strong> daquele estágio do jogo — cole ele inteiro na aba <strong>JAVASCRIPT</strong> do seu compilador e clique em Executar pra ver o resultado antes de ir pro próximo.</p>
+
+  <div class="aviso">
+    💡 No seu compilador, o HTML já vem pronto com <code class="inline">&lt;canvas id="jogo" width="800" height="500"&gt;</code> — não precisa mudar a aba HTML BASE em nenhum passo, só a aba JAVASCRIPT. Os códigos abaixo já usam esse mesmo <code class="inline">id="jogo"</code>. As prévias nesta página usam canvases menores só pra caber várias na tela, mas a lógica é <strong>idêntica</strong> ao código que você vai copiar.
+  </div>
+
+  <!-- PASSO 1 -->
+  <div class="passo">
+    <div class="passo-cabecalho"><div class="passo-num">1</div><h2>Pegar o canvas e pintar o fundo</h2></div>
+    <p>O <code class="inline">canvas</code> é uma tela em branco. Pegamos o "pincel" (<code class="inline">ctx</code>) e pintamos o fundo escuro.</p>
+    <div class="bloco-codigo">
+      <div class="cab"><span>JavaScript</span></div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>);
+
+ctx.fillStyle = <span class="s">'#050510'</span>;
+ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);</pre>
+    </div>
+    <div class="demo-box"><canvas id="demo1" width="480" height="300"></canvas></div>
+  </div>
+
+  <!-- PASSO 2 -->
+  <div class="passo">
+    <div class="passo-cabecalho"><div class="passo-num">2</div><h2>Linha central</h2></div>
+    <p>Uma linha tracejada dividindo a quadra ao meio.</p>
+    <div class="bloco-codigo">
+      <div class="cab"><span>JavaScript</span></div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>);
+
+ctx.fillStyle = <span class="s">'#050510'</span>;
+ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+ctx.setLineDash([<span class="n">10</span>, <span class="n">10</span>]);
+ctx.strokeStyle = <span class="s">'#1e1e3a'</span>;
+ctx.lineWidth = <span class="n">2</span>;
+ctx.beginPath();
+ctx.moveTo(canvas.width / <span class="n">2</span>, <span class="n">0</span>);
+ctx.lineTo(canvas.width / <span class="n">2</span>, canvas.height);
+ctx.stroke();
+ctx.setLineDash([]);</pre>
+    </div>
+    <div class="demo-box"><canvas id="demo2" width="480" height="300"></canvas></div>
+  </div>
+
+  <!-- PASSO 3 -->
+  <div class="passo">
+    <div class="passo-cabecalho"><div class="passo-num">3</div><h2>As raquetes (e uma função <code class="inline">desenhar()</code>)</h2></div>
+    <p>Daqui pra frente, tudo entra dentro de uma função <code class="inline">desenhar()</code> — porque no próximo passo vamos chamar ela várias vezes por segundo pra animar.</p>
+    <div class="bloco-codigo">
+      <div class="cab"><span>JavaScript</span></div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>);
+
+<span class="k">const</span> <span class="v">RAQUETE_W</span> = <span class="n">12</span>, <span class="v">RAQUETE_H</span> = <span class="n">90</span>, <span class="v">MARGEM</span> = <span class="n">20</span>;
+<span class="k">const</span> <span class="v">r1</span> = { x: MARGEM, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">r2</span> = { x: canvas.width - MARGEM - RAQUETE_W, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+
+<span class="k">function</span> <span class="f">desenhar</span>() {
+  ctx.fillStyle = <span class="s">'#050510'</span>;
+  ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+  ctx.setLineDash([<span class="n">10</span>, <span class="n">10</span>]);
+  ctx.strokeStyle = <span class="s">'#1e1e3a'</span>;
+  ctx.lineWidth = <span class="n">2</span>;
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / <span class="n">2</span>, <span class="n">0</span>);
+  ctx.lineTo(canvas.width / <span class="n">2</span>, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = <span class="s">'#60a5fa'</span>;
+  ctx.fillRect(r1.x, r1.y, r1.w, r1.h);
+
+  ctx.fillStyle = <span class="s">'#f59e0b'</span>;
+  ctx.fillRect(r2.x, r2.y, r2.w, r2.h);
+}
+
+<span class="f">desenhar</span>();</pre>
+    </div>
+    <div class="demo-box"><canvas id="demo3" width="480" height="300"></canvas></div>
+  </div>
+
+  <!-- PASSO 4 -->
+  <div class="passo">
+    <div class="passo-cabecalho"><div class="passo-num">4</div><h2>A bola (parada)</h2></div>
+    <p>Um círculo branco no centro — <code class="inline">ctx.arc()</code>.</p>
+    <div class="bloco-codigo">
+      <div class="cab"><span>JavaScript</span></div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>);
+
+<span class="k">const</span> <span class="v">RAQUETE_W</span> = <span class="n">12</span>, <span class="v">RAQUETE_H</span> = <span class="n">90</span>, <span class="v">MARGEM</span> = <span class="n">20</span>;
+<span class="k">const</span> <span class="v">r1</span> = { x: MARGEM, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">r2</span> = { x: canvas.width - MARGEM - RAQUETE_W, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">bola</span> = { x: canvas.width / <span class="n">2</span>, y: canvas.height / <span class="n">2</span>, r: <span class="n">8</span>, velX: <span class="n">5</span>, velY: <span class="n">3</span> };
+
+<span class="k">function</span> <span class="f">desenhar</span>() {
+  ctx.fillStyle = <span class="s">'#050510'</span>;
+  ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+  ctx.setLineDash([<span class="n">10</span>, <span class="n">10</span>]);
+  ctx.strokeStyle = <span class="s">'#1e1e3a'</span>;
+  ctx.lineWidth = <span class="n">2</span>;
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / <span class="n">2</span>, <span class="n">0</span>);
+  ctx.lineTo(canvas.width / <span class="n">2</span>, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = <span class="s">'#60a5fa'</span>;
+  ctx.fillRect(r1.x, r1.y, r1.w, r1.h);
+
+  ctx.fillStyle = <span class="s">'#f59e0b'</span>;
+  ctx.fillRect(r2.x, r2.y, r2.w, r2.h);
+
+  ctx.fillStyle = <span class="s">'#ffffff'</span>;
+  ctx.beginPath();
+  ctx.arc(bola.x, bola.y, bola.r, <span class="n">0</span>, Math.PI * <span class="n">2</span>);
+  ctx.fill();
+}
+
+<span class="f">desenhar</span>();</pre>
+    </div>
+    <div class="demo-box"><canvas id="demo4" width="480" height="300"></canvas></div>
+  </div>
+
+  <!-- PASSO 5 -->
+  <div class="passo">
+    <div class="passo-cabecalho"><div class="passo-num">5</div><h2>Movimento — o game loop</h2></div>
+    <p>Com <code class="inline">requestAnimationFrame</code>, a bola anda sozinha e quica nas quatro paredes. Repare que ela ainda <strong>atravessa</strong> as raquetes — isso só é corrigido no passo 7.</p>
+    <div class="bloco-codigo">
+      <div class="cab"><span>JavaScript</span></div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>);
+
+<span class="k">const</span> <span class="v">RAQUETE_W</span> = <span class="n">12</span>, <span class="v">RAQUETE_H</span> = <span class="n">90</span>, <span class="v">MARGEM</span> = <span class="n">20</span>;
+<span class="k">const</span> <span class="v">r1</span> = { x: MARGEM, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">r2</span> = { x: canvas.width - MARGEM - RAQUETE_W, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">bola</span> = { x: canvas.width / <span class="n">2</span>, y: canvas.height / <span class="n">2</span>, r: <span class="n">8</span>, velX: <span class="n">5</span>, velY: <span class="n">3</span> };
+
+<span class="k">function</span> <span class="f">desenhar</span>() {
+  ctx.fillStyle = <span class="s">'#050510'</span>;
+  ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+  ctx.setLineDash([<span class="n">10</span>, <span class="n">10</span>]);
+  ctx.strokeStyle = <span class="s">'#1e1e3a'</span>;
+  ctx.lineWidth = <span class="n">2</span>;
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / <span class="n">2</span>, <span class="n">0</span>);
+  ctx.lineTo(canvas.width / <span class="n">2</span>, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = <span class="s">'#60a5fa'</span>;
+  ctx.fillRect(r1.x, r1.y, r1.w, r1.h);
+
+  ctx.fillStyle = <span class="s">'#f59e0b'</span>;
+  ctx.fillRect(r2.x, r2.y, r2.w, r2.h);
+
+  ctx.fillStyle = <span class="s">'#ffffff'</span>;
+  ctx.beginPath();
+  ctx.arc(bola.x, bola.y, bola.r, <span class="n">0</span>, Math.PI * <span class="n">2</span>);
+  ctx.fill();
+}
+
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop);
+
+  bola.x += bola.velX;
+  bola.y += bola.velY;
+
+  <span class="k">if</span> (bola.y - bola.r <= <span class="n">0</span> || bola.y + bola.r >= canvas.height) bola.velY *= -<span class="n">1</span>;
+  <span class="k">if</span> (bola.x - bola.r <= <span class="n">0</span> || bola.x + bola.r >= canvas.width) bola.velX *= -<span class="n">1</span>;
+
+  <span class="f">desenhar</span>();
+}
+
+<span class="f">gameLoop</span>();</pre>
+    </div>
+    <div class="demo-box"><canvas id="demo5" width="480" height="300"></canvas></div>
+  </div>
+
+  <!-- PASSO 6 -->
+  <div class="passo">
+    <div class="passo-cabecalho"><div class="passo-num">6</div><h2>Controlando as raquetes pelo teclado</h2></div>
+    <p>Um objeto <code class="inline">teclas</code> guarda quais botões estão pressionados. A cada frame, se <code class="inline">W</code> estiver pressionado, a raquete 1 sobe.</p>
+    <div class="bloco-codigo">
+      <div class="cab"><span>JavaScript</span></div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>);
+
+<span class="k">const</span> <span class="v">RAQUETE_W</span> = <span class="n">12</span>, <span class="v">RAQUETE_H</span> = <span class="n">90</span>, <span class="v">MARGEM</span> = <span class="n">20</span>, <span class="v">VR</span> = <span class="n">7</span>;
+<span class="k">const</span> <span class="v">r1</span> = { x: MARGEM, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">r2</span> = { x: canvas.width - MARGEM - RAQUETE_W, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">bola</span> = { x: canvas.width / <span class="n">2</span>, y: canvas.height / <span class="n">2</span>, r: <span class="n">8</span>, velX: <span class="n">5</span>, velY: <span class="n">3</span> };
+
+<span class="k">const</span> <span class="v">teclas</span> = {};
+window.addEventListener(<span class="s">'keydown'</span>, e => { teclas[e.key] = <span class="k">true</span>; e.preventDefault(); });
+window.addEventListener(<span class="s">'keyup'</span>,   e => { teclas[e.key] = <span class="k">false</span>; });
+
+<span class="k">function</span> <span class="f">desenhar</span>() {
+  ctx.fillStyle = <span class="s">'#050510'</span>;
+  ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+  ctx.setLineDash([<span class="n">10</span>, <span class="n">10</span>]);
+  ctx.strokeStyle = <span class="s">'#1e1e3a'</span>;
+  ctx.lineWidth = <span class="n">2</span>;
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / <span class="n">2</span>, <span class="n">0</span>);
+  ctx.lineTo(canvas.width / <span class="n">2</span>, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = <span class="s">'#60a5fa'</span>;
+  ctx.fillRect(r1.x, r1.y, r1.w, r1.h);
+
+  ctx.fillStyle = <span class="s">'#f59e0b'</span>;
+  ctx.fillRect(r2.x, r2.y, r2.w, r2.h);
+
+  ctx.fillStyle = <span class="s">'#ffffff'</span>;
+  ctx.beginPath();
+  ctx.arc(bola.x, bola.y, bola.r, <span class="n">0</span>, Math.PI * <span class="n">2</span>);
+  ctx.fill();
+}
+
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop);
+
+  <span class="k">if</span> ((teclas[<span class="s">'w'</span>] || teclas[<span class="s">'W'</span>]) && r1.y > <span class="n">0</span>) r1.y -= VR;
+  <span class="k">if</span> ((teclas[<span class="s">'s'</span>] || teclas[<span class="s">'S'</span>]) && r1.y + RAQUETE_H < canvas.height) r1.y += VR;
+  <span class="k">if</span> (teclas[<span class="s">'ArrowUp'</span>]   && r2.y > <span class="n">0</span>) r2.y -= VR;
+  <span class="k">if</span> (teclas[<span class="s">'ArrowDown'</span>] && r2.y + RAQUETE_H < canvas.height) r2.y += VR;
+
+  bola.x += bola.velX;
+  bola.y += bola.velY;
+
+  <span class="k">if</span> (bola.y - bola.r <= <span class="n">0</span> || bola.y + bola.r >= canvas.height) bola.velY *= -<span class="n">1</span>;
+  <span class="k">if</span> (bola.x - bola.r <= <span class="n">0</span> || bola.x + bola.r >= canvas.width) bola.velX *= -<span class="n">1</span>;
+
+  <span class="f">desenhar</span>();
+}
+
+<span class="f">gameLoop</span>();</pre>
+    </div>
+    <div class="demo-box"><canvas id="demo6" width="480" height="300" tabindex="0"></canvas></div>
+    <div class="dica">🖱️ Clique no quadro e use <strong>W/S</strong> (azul) e <strong>↑/↓</strong> (amarela)</div>
+  </div>
+
+  <!-- PASSO 7 -->
+  <div class="passo">
+    <div class="passo-cabecalho"><div class="passo-num">7</div><h2>Colisão bola × raquete</h2></div>
+    <p>A função <code class="inline">colide()</code> checa se a bola tocou o retângulo da raquete. Se sim, inverte a velocidade em X (e acelera um pouco). Quando erra, <code class="inline">resetBola()</code> devolve a bola pro centro.</p>
+    <div class="bloco-codigo">
+      <div class="cab"><span>JavaScript</span></div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>);
+
+<span class="k">const</span> <span class="v">RAQUETE_W</span> = <span class="n">12</span>, <span class="v">RAQUETE_H</span> = <span class="n">90</span>, <span class="v">MARGEM</span> = <span class="n">20</span>, <span class="v">VR</span> = <span class="n">7</span>;
+<span class="k">const</span> <span class="v">r1</span> = { x: MARGEM, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">r2</span> = { x: canvas.width - MARGEM - RAQUETE_W, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">bola</span> = { x: canvas.width / <span class="n">2</span>, y: canvas.height / <span class="n">2</span>, r: <span class="n">8</span>, velX: <span class="n">5</span>, velY: <span class="n">3</span> };
+
+<span class="k">const</span> <span class="v">teclas</span> = {};
+window.addEventListener(<span class="s">'keydown'</span>, e => { teclas[e.key] = <span class="k">true</span>; e.preventDefault(); });
+window.addEventListener(<span class="s">'keyup'</span>,   e => { teclas[e.key] = <span class="k">false</span>; });
+
+<span class="k">function</span> <span class="f">colide</span>(r) {
+  <span class="k">return</span> bola.x - bola.r <= r.x + r.w && bola.x + bola.r >= r.x &&
+         bola.y + bola.r >= r.y && bola.y - bola.r <= r.y + r.h;
+}
+
+<span class="k">function</span> <span class="f">desenhar</span>() {
+  ctx.fillStyle = <span class="s">'#050510'</span>;
+  ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+  ctx.setLineDash([<span class="n">10</span>, <span class="n">10</span>]);
+  ctx.strokeStyle = <span class="s">'#1e1e3a'</span>;
+  ctx.lineWidth = <span class="n">2</span>;
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / <span class="n">2</span>, <span class="n">0</span>);
+  ctx.lineTo(canvas.width / <span class="n">2</span>, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = <span class="s">'#60a5fa'</span>;
+  ctx.fillRect(r1.x, r1.y, r1.w, r1.h);
+
+  ctx.fillStyle = <span class="s">'#f59e0b'</span>;
+  ctx.fillRect(r2.x, r2.y, r2.w, r2.h);
+
+  ctx.fillStyle = <span class="s">'#ffffff'</span>;
+  ctx.beginPath();
+  ctx.arc(bola.x, bola.y, bola.r, <span class="n">0</span>, Math.PI * <span class="n">2</span>);
+  ctx.fill();
+}
+
+<span class="k">function</span> <span class="f">resetBola</span>() {
+  bola.x = canvas.width / <span class="n">2</span>; bola.y = canvas.height / <span class="n">2</span>;
+  bola.velX = (Math.random() > <span class="n">0.5</span> ? <span class="n">1</span> : -<span class="n">1</span>) * <span class="n">5</span>;
+  bola.velY = (Math.random() - <span class="n">0.5</span>) * <span class="n">6</span>;
+}
+
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop);
+
+  <span class="k">if</span> ((teclas[<span class="s">'w'</span>] || teclas[<span class="s">'W'</span>]) && r1.y > <span class="n">0</span>) r1.y -= VR;
+  <span class="k">if</span> ((teclas[<span class="s">'s'</span>] || teclas[<span class="s">'S'</span>]) && r1.y + RAQUETE_H < canvas.height) r1.y += VR;
+  <span class="k">if</span> (teclas[<span class="s">'ArrowUp'</span>]   && r2.y > <span class="n">0</span>) r2.y -= VR;
+  <span class="k">if</span> (teclas[<span class="s">'ArrowDown'</span>] && r2.y + RAQUETE_H < canvas.height) r2.y += VR;
+
+  bola.x += bola.velX;
+  bola.y += bola.velY;
+
+  <span class="k">if</span> (bola.y - bola.r <= <span class="n">0</span> || bola.y + bola.r >= canvas.height) bola.velY *= -<span class="n">1</span>;
+
+  <span class="k">if</span> (<span class="f">colide</span>(r1) && bola.velX < <span class="n">0</span>) bola.velX = Math.min(Math.abs(bola.velX) * <span class="n">1.05</span>, <span class="n">14</span>);
+  <span class="k">if</span> (<span class="f">colide</span>(r2) && bola.velX > <span class="n">0</span>) bola.velX = -Math.min(Math.abs(bola.velX) * <span class="n">1.05</span>, <span class="n">14</span>);
+
+  <span class="k">if</span> (bola.x < <span class="n">0</span> || bola.x > canvas.width) <span class="f">resetBola</span>();
+
+  <span class="f">desenhar</span>();
+}
+
+<span class="f">gameLoop</span>();</pre>
+    </div>
+    <div class="demo-box"><canvas id="demo7" width="480" height="300" tabindex="0"></canvas></div>
+    <div class="dica">🖱️ Clique no quadro e defenda com <strong>W/S</strong> e <strong>↑/↓</strong></div>
+  </div>
+
+  <!-- PASSO 8 -->
+  <div class="passo">
+    <div class="passo-cabecalho"><div class="passo-num">🏆</div><h2>Placar e vitória — o jogo completo</h2></div>
+    <p>Duas variáveis <code class="inline">pts1</code>/<code class="inline">pts2</code> contam os pontos. Ao chegar em <code class="inline">LIMITE</code>, o jogo trava em <code class="inline">fimDeJogo</code> e mostra o vencedor. Este é o Pong da Aula 2.</p>
+    <div class="bloco-codigo">
+      <div class="cab"><span>JavaScript</span></div>
+      <pre><span class="k">const</span> <span class="v">canvas</span> = document.getElementById(<span class="s">'jogo'</span>);
+<span class="k">const</span> <span class="v">ctx</span> = canvas.getContext(<span class="s">'2d'</span>);
+
+<span class="k">const</span> <span class="v">RAQUETE_W</span> = <span class="n">12</span>, <span class="v">RAQUETE_H</span> = <span class="n">90</span>, <span class="v">MARGEM</span> = <span class="n">20</span>, <span class="v">VR</span> = <span class="n">7</span>, <span class="v">LIMITE</span> = <span class="n">7</span>;
+<span class="k">const</span> <span class="v">r1</span> = { x: MARGEM, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">r2</span> = { x: canvas.width - MARGEM - RAQUETE_W, y: canvas.height / <span class="n">2</span> - RAQUETE_H / <span class="n">2</span>, w: RAQUETE_W, h: RAQUETE_H };
+<span class="k">const</span> <span class="v">bola</span> = { x: canvas.width / <span class="n">2</span>, y: canvas.height / <span class="n">2</span>, r: <span class="n">8</span>, velX: <span class="n">5</span>, velY: <span class="n">3</span> };
+<span class="k">let</span> <span class="v">pts1</span> = <span class="n">0</span>, <span class="v">pts2</span> = <span class="n">0</span>, <span class="v">fimDeJogo</span> = <span class="k">false</span>;
+
+<span class="k">const</span> <span class="v">teclas</span> = {};
+window.addEventListener(<span class="s">'keydown'</span>, e => { teclas[e.key] = <span class="k">true</span>; e.preventDefault(); });
+window.addEventListener(<span class="s">'keyup'</span>,   e => { teclas[e.key] = <span class="k">false</span>; });
+
+<span class="k">function</span> <span class="f">colide</span>(r) {
+  <span class="k">return</span> bola.x - bola.r <= r.x + r.w && bola.x + bola.r >= r.x &&
+         bola.y + bola.r >= r.y && bola.y - bola.r <= r.y + r.h;
+}
+
+<span class="k">function</span> <span class="f">desenhar</span>() {
+  ctx.fillStyle = <span class="s">'#050510'</span>;
+  ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+
+  ctx.setLineDash([<span class="n">10</span>, <span class="n">10</span>]);
+  ctx.strokeStyle = <span class="s">'#1e1e3a'</span>;
+  ctx.lineWidth = <span class="n">2</span>;
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / <span class="n">2</span>, <span class="n">0</span>);
+  ctx.lineTo(canvas.width / <span class="n">2</span>, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = <span class="s">'#60a5fa'</span>;
+  ctx.fillRect(r1.x, r1.y, r1.w, r1.h);
+
+  ctx.fillStyle = <span class="s">'#f59e0b'</span>;
+  ctx.fillRect(r2.x, r2.y, r2.w, r2.h);
+
+  ctx.fillStyle = <span class="s">'#ffffff'</span>;
+  ctx.beginPath();
+  ctx.arc(bola.x, bola.y, bola.r, <span class="n">0</span>, Math.PI * <span class="n">2</span>);
+  ctx.fill();
+
+  ctx.fillStyle = <span class="s">'#e2e8f0'</span>;
+  ctx.font = <span class="s">'bold 32px sans-serif'</span>;
+  ctx.textAlign = <span class="s">'center'</span>;
+  ctx.fillText(pts1 + <span class="s">'   '</span> + pts2, canvas.width / <span class="n">2</span>, <span class="n">50</span>);
+
+  <span class="k">if</span> (fimDeJogo) {
+    <span class="k">const</span> <span class="v">vencedor</span> = pts1 >= LIMITE ? <span class="s">'Jogador 1 🔵'</span> : <span class="s">'Jogador 2 🟡'</span>;
+    ctx.fillStyle = <span class="s">'rgba(5,5,16,0.85)'</span>;
+    ctx.fillRect(<span class="n">0</span>, <span class="n">0</span>, canvas.width, canvas.height);
+    ctx.fillStyle = <span class="s">'#fff'</span>;
+    ctx.font = <span class="s">'bold 28px sans-serif'</span>;
+    ctx.fillText(<span class="s">'🏆 '</span> + vencedor + <span class="s">' venceu!'</span>, canvas.width / <span class="n">2</span>, canvas.height / <span class="n">2</span>);
+  }
+}
+
+<span class="k">function</span> <span class="f">resetBola</span>() {
+  bola.x = canvas.width / <span class="n">2</span>; bola.y = canvas.height / <span class="n">2</span>;
+  bola.velX = (Math.random() > <span class="n">0.5</span> ? <span class="n">1</span> : -<span class="n">1</span>) * <span class="n">5</span>;
+  bola.velY = (Math.random() - <span class="n">0.5</span>) * <span class="n">6</span>;
+}
+
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop);
+  <span class="k">if</span> (fimDeJogo) { <span class="f">desenhar</span>(); <span class="k">return</span>; }
+
+  <span class="k">if</span> ((teclas[<span class="s">'w'</span>] || teclas[<span class="s">'W'</span>]) && r1.y > <span class="n">0</span>) r1.y -= VR;
+  <span class="k">if</span> ((teclas[<span class="s">'s'</span>] || teclas[<span class="s">'S'</span>]) && r1.y + RAQUETE_H < canvas.height) r1.y += VR;
+  <span class="k">if</span> (teclas[<span class="s">'ArrowUp'</span>]   && r2.y > <span class="n">0</span>) r2.y -= VR;
+  <span class="k">if</span> (teclas[<span class="s">'ArrowDown'</span>] && r2.y + RAQUETE_H < canvas.height) r2.y += VR;
+
+  bola.x += bola.velX;
+  bola.y += bola.velY;
+
+  <span class="k">if</span> (bola.y - bola.r <= <span class="n">0</span> || bola.y + bola.r >= canvas.height) bola.velY *= -<span class="n">1</span>;
+
+  <span class="k">if</span> (<span class="f">colide</span>(r1) && bola.velX < <span class="n">0</span>) bola.velX = Math.min(Math.abs(bola.velX) * <span class="n">1.05</span>, <span class="n">14</span>);
+  <span class="k">if</span> (<span class="f">colide</span>(r2) && bola.velX > <span class="n">0</span>) bola.velX = -Math.min(Math.abs(bola.velX) * <span class="n">1.05</span>, <span class="n">14</span>);
+
+  <span class="k">if</span> (bola.x < <span class="n">0</span>) { pts2++; <span class="k">if</span> (pts2 >= LIMITE) fimDeJogo = <span class="k">true</span>; <span class="f">resetBola</span>(); }
+  <span class="k">if</span> (bola.x > canvas.width) { pts1++; <span class="k">if</span> (pts1 >= LIMITE) fimDeJogo = <span class="k">true</span>; <span class="f">resetBola</span>(); }
+
+  <span class="f">desenhar</span>();
+}
+
+<span class="f">gameLoop</span>();</pre>
+    </div>
+    <div class="demo-box"><canvas id="demo8" width="480" height="300" tabindex="0"></canvas></div>
+    <div class="dica">🖱️ Clique no quadro — primeiro a 5 pontos vence, depois reinicia sozinho</div>
+  </div>
+
+  <div class="destaque">
+    <div class="tit">💡 O que fica desse exercício</div>
+    Um jogo "complexo" quase sempre é uma pilha de pedaços simples: desenhar → mover → ler entrada do jogador → detectar colisão → marcar pontos. Construir na ordem certa, um pedaço testável de cada vez, é o que faz o Pong parecer fácil.
+  </div>
+</div>
+
+<script>
+(function () {
+  // Prévias desta página — mesma lógica dos blocos de código acima,
+  // só que cada canvas tem seu próprio id (demo1..demo8) e é menor,
+  // e o teclado é escutado no canvas (não em window) pra não misturar
+  // os controles de várias prévias abertas ao mesmo tempo na tela.
+
+  const RAQUETE_W = 10, RAQUETE_H = 64, MARGEM = 14, VR = 4.5, LIMITE = 5;
+
+  function base(id) {
+    const canvas = document.getElementById(id);
+    const ctx = canvas.getContext('2d');
+    const r1 = { x: MARGEM, y: canvas.height / 2 - RAQUETE_H / 2, w: RAQUETE_W, h: RAQUETE_H };
+    const r2 = { x: canvas.width - MARGEM - RAQUETE_W, y: canvas.height / 2 - RAQUETE_H / 2, w: RAQUETE_W, h: RAQUETE_H };
+    const bola = { x: canvas.width / 2, y: canvas.height / 2, r: 6, velX: 3, velY: 2 };
+    return { canvas, ctx, r1, r2, bola };
+  }
+
+  function fundo(ctx, canvas) {
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  function linha(ctx, canvas) {
+    ctx.setLineDash([8, 8]);
+    ctx.strokeStyle = '#1e1e3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  function raquetes(ctx, r1, r2) {
+    ctx.fillStyle = '#60a5fa'; ctx.fillRect(r1.x, r1.y, r1.w, r1.h);
+    ctx.fillStyle = '#f59e0b'; ctx.fillRect(r2.x, r2.y, r2.w, r2.h);
+  }
+  function bolaDesenho(ctx, bola) {
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(bola.x, bola.y, bola.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  function colide(bola, r) {
+    return bola.x - bola.r <= r.x + r.w && bola.x + bola.r >= r.x &&
+           bola.y + bola.r >= r.y && bola.y - bola.r <= r.y + r.h;
+  }
+
+  // Passo 1
+  (function () {
+    const { canvas, ctx } = base('demo1');
+    fundo(ctx, canvas);
+  })();
+
+  // Passo 2
+  (function () {
+    const { canvas, ctx } = base('demo2');
+    fundo(ctx, canvas); linha(ctx, canvas);
+  })();
+
+  // Passo 3
+  (function () {
+    const { canvas, ctx, r1, r2 } = base('demo3');
+    fundo(ctx, canvas); linha(ctx, canvas); raquetes(ctx, r1, r2);
+  })();
+
+  // Passo 4
+  (function () {
+    const { canvas, ctx, r1, r2, bola } = base('demo4');
+    fundo(ctx, canvas); linha(ctx, canvas); raquetes(ctx, r1, r2); bolaDesenho(ctx, bola);
+  })();
+
+  // Passo 5 — movimento, quica em tudo (sem raquete ainda)
+  (function () {
+    const { canvas, ctx, r1, r2, bola } = base('demo5');
+    function desenhar() {
+      fundo(ctx, canvas); linha(ctx, canvas); raquetes(ctx, r1, r2); bolaDesenho(ctx, bola);
+    }
+    function loop() {
+      requestAnimationFrame(loop);
+      bola.x += bola.velX; bola.y += bola.velY;
+      if (bola.y - bola.r <= 0 || bola.y + bola.r >= canvas.height) bola.velY *= -1;
+      if (bola.x - bola.r <= 0 || bola.x + bola.r >= canvas.width) bola.velX *= -1;
+      desenhar();
+    }
+    loop();
+  })();
+
+  // Passo 6 — controle de teclado (ball ainda ignora raquetes)
+  (function () {
+    const { canvas, ctx, r1, r2, bola } = base('demo6');
+    const teclas = {};
+    canvas.addEventListener('keydown', e => { teclas[e.key] = true; e.preventDefault(); });
+    canvas.addEventListener('keyup',   e => { teclas[e.key] = false; });
+    function desenhar() {
+      fundo(ctx, canvas); linha(ctx, canvas); raquetes(ctx, r1, r2); bolaDesenho(ctx, bola);
+    }
+    function loop() {
+      requestAnimationFrame(loop);
+      if ((teclas['w'] || teclas['W']) && r1.y > 0) r1.y -= VR;
+      if ((teclas['s'] || teclas['S']) && r1.y + RAQUETE_H < canvas.height) r1.y += VR;
+      if (teclas['ArrowUp'] && r2.y > 0) r2.y -= VR;
+      if (teclas['ArrowDown'] && r2.y + RAQUETE_H < canvas.height) r2.y += VR;
+      bola.x += bola.velX; bola.y += bola.velY;
+      if (bola.y - bola.r <= 0 || bola.y + bola.r >= canvas.height) bola.velY *= -1;
+      if (bola.x - bola.r <= 0 || bola.x + bola.r >= canvas.width) bola.velX *= -1;
+      desenhar();
+    }
+    loop();
+  })();
+
+  // Passo 7 — colisão real com as raquetes
+  (function () {
+    const { canvas, ctx, r1, r2, bola } = base('demo7');
+    const teclas = {};
+    canvas.addEventListener('keydown', e => { teclas[e.key] = true; e.preventDefault(); });
+    canvas.addEventListener('keyup',   e => { teclas[e.key] = false; });
+    function desenhar() {
+      fundo(ctx, canvas); linha(ctx, canvas); raquetes(ctx, r1, r2); bolaDesenho(ctx, bola);
+    }
+    function resetBola() {
+      bola.x = canvas.width / 2; bola.y = canvas.height / 2;
+      bola.velX = (Math.random() > 0.5 ? 1 : -1) * 3;
+      bola.velY = (Math.random() - 0.5) * 4;
+    }
+    function loop() {
+      requestAnimationFrame(loop);
+      if ((teclas['w'] || teclas['W']) && r1.y > 0) r1.y -= VR;
+      if ((teclas['s'] || teclas['S']) && r1.y + RAQUETE_H < canvas.height) r1.y += VR;
+      if (teclas['ArrowUp'] && r2.y > 0) r2.y -= VR;
+      if (teclas['ArrowDown'] && r2.y + RAQUETE_H < canvas.height) r2.y += VR;
+      bola.x += bola.velX; bola.y += bola.velY;
+      if (bola.y - bola.r <= 0 || bola.y + bola.r >= canvas.height) bola.velY *= -1;
+      if (colide(bola, r1) && bola.velX < 0) bola.velX = Math.min(Math.abs(bola.velX) * 1.04, 9);
+      if (colide(bola, r2) && bola.velX > 0) bola.velX = -Math.min(Math.abs(bola.velX) * 1.04, 9);
+      if (bola.x < 0 || bola.x > canvas.width) resetBola();
+      desenhar();
+    }
+    loop();
+  })();
+
+  // Passo 8 — placar e vitória
+  (function () {
+    const { canvas, ctx, r1, r2, bola } = base('demo8');
+    let pts1 = 0, pts2 = 0, fimDeJogo = false, timeoutId = null;
+    const teclas = {};
+    canvas.addEventListener('keydown', e => { teclas[e.key] = true; e.preventDefault(); });
+    canvas.addEventListener('keyup',   e => { teclas[e.key] = false; });
+    function resetBola() {
+      bola.x = canvas.width / 2; bola.y = canvas.height / 2;
+      bola.velX = (Math.random() > 0.5 ? 1 : -1) * 3;
+      bola.velY = (Math.random() - 0.5) * 4;
+    }
+    function desenhar() {
+      fundo(ctx, canvas); linha(ctx, canvas); raquetes(ctx, r1, r2); bolaDesenho(ctx, bola);
+      ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(pts1 + '   ' + pts2, canvas.width / 2, 24);
+      if (fimDeJogo) {
+        const vencedor = pts1 >= LIMITE ? 'Jogador 1 🔵' : 'Jogador 2 🟡';
+        ctx.fillStyle = 'rgba(5,5,16,0.85)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif';
+        ctx.fillText('🏆 ' + vencedor + ' venceu!', canvas.width / 2, canvas.height / 2);
+      }
+    }
+    function loop() {
+      requestAnimationFrame(loop);
+      if (!fimDeJogo) {
+        if ((teclas['w'] || teclas['W']) && r1.y > 0) r1.y -= VR;
+        if ((teclas['s'] || teclas['S']) && r1.y + RAQUETE_H < canvas.height) r1.y += VR;
+        if (teclas['ArrowUp'] && r2.y > 0) r2.y -= VR;
+        if (teclas['ArrowDown'] && r2.y + RAQUETE_H < canvas.height) r2.y += VR;
+        bola.x += bola.velX; bola.y += bola.velY;
+        if (bola.y - bola.r <= 0 || bola.y + bola.r >= canvas.height) bola.velY *= -1;
+        if (colide(bola, r1) && bola.velX < 0) bola.velX = Math.min(Math.abs(bola.velX) * 1.04, 9);
+        if (colide(bola, r2) && bola.velX > 0) bola.velX = -Math.min(Math.abs(bola.velX) * 1.04, 9);
+        if (bola.x < 0) {
+          pts2++;
+          if (pts2 >= LIMITE) {
+            fimDeJogo = true;
+            timeoutId = setTimeout(() => { pts1 = 0; pts2 = 0; fimDeJogo = false; resetBola(); }, 1800);
+          } else resetBola();
+        }
+        if (bola.x > canvas.width) {
+          pts1++;
+          if (pts1 >= LIMITE) {
+            fimDeJogo = true;
+            timeoutId = setTimeout(() => { pts1 = 0; pts2 = 0; fimDeJogo = false; resetBola(); }, 1800);
+          } else resetBola();
+        }
+      }
+      desenhar();
+    }
+    loop();
+  })();
+})();
+</script>
+</body>
+</html>

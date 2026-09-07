@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula 6 — Iluminação e Sombras</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .luz-card {
+      background: var(--card); border: 1px solid var(--borda); border-radius: 10px;
+      padding: 12px 14px; margin: 8px 0;
+    }
+    .luz-card .luz-topo {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .luz-card .luz-topo .dot {
+      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+    }
+    .luz-card .luz-topo .nome { font-size: 0.84rem; font-weight: 700; flex: 1; }
+    .luz-card .luz-topo .toggle {
+      background: none; border: 1px solid var(--borda); color: var(--muted);
+      padding: 2px 8px; border-radius: 5px; cursor: pointer; font-size: 0.7rem; font-family: inherit;
+    }
+    .luz-card .luz-topo .toggle.on { background: #0d1f0d; border-color: #14532d; color: #4ade80; }
+    .luz-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .luz-row label { font-size: 0.7rem; color: var(--muted); width: 70px; flex-shrink: 0; }
+    .luz-row input[type=range] { flex: 1; accent-color: var(--laranja); }
+    .luz-row input[type=color] { width: 38px; height: 22px; border: 1px solid var(--borda); border-radius: 4px; background: none; cursor: pointer; padding: 1px; }
+    .luz-row .val { width: 32px; text-align: right; font-size: 0.7rem; font-family: monospace; color: var(--muted); }
+    .sombra-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.68rem; padding: 2px 7px; border-radius: 4px;
+      background: #141421; border: 1px solid var(--borda); color: var(--muted); margin-left: 4px;
+    }
+    .sombra-badge.on { background: #0c1a24; border-color: #0e4963; color: var(--ciano); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- PAINEL -->
+<div class="painel">
+  <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 6</div>
+  <div class="aula-num-badge">Aula 6 de 7 · Avançado</div>
+  <h1>💡 Iluminação e Sombras</h1>
+  <p class="subtitulo">A iluminação muda tudo numa cena 3D. Você pode ter a melhor geometria e o melhor material, mas sem uma boa luz a cena fica morta. Vamos aprender os 4 tipos de luz.</p>
+
+  <h2>🌐 AmbientLight — Luz de Preenchimento</h2>
+  <p>Ilumina <strong>tudo igualmente</strong>, sem direção. É como a luz difusa do céu nublado. Sem ela, as partes não iluminadas ficam completamente pretas.</p>
+
+  <div class="luz-card" id="card-amb">
+    <div class="luz-topo">
+      <div class="dot" style="background:#ffffff"></div>
+      <span class="nome">AmbientLight</span>
+      <span class="sombra-badge">Sem sombra</span>
+      <button class="toggle on" id="tog-amb" onclick="toggleLuz('amb')">ON</button>
+    </div>
+    <div class="luz-row">
+      <label>Cor</label>
+      <input type="color" id="cor-amb" value="#ffffff" oninput="atualizar()">
+    </div>
+    <div class="luz-row">
+      <label>Intensidade</label>
+      <input type="range" id="int-amb" min="0" max="3" step="0.05" value="0.4" oninput="atualizar()">
+      <span class="val" id="val-amb">0.40</span>
+    </div>
+  </div>
+
+  <h2>☀️ DirectionalLight — Luz do Sol</h2>
+  <p>Raios <strong>paralelos</strong>, como o sol. Tem direção fixa e é a principal fonte de sombras nas cenas. Uma cena realista geralmente tem 1 DirectionalLight como "sol".</p>
+
+  <div class="luz-card" id="card-dir">
+    <div class="luz-topo">
+      <div class="dot" style="background:#fffbe6"></div>
+      <span class="nome">DirectionalLight</span>
+      <span class="sombra-badge on" id="sbadge-dir">☁ Sombra ON</span>
+      <button class="toggle on" id="tog-dir" onclick="toggleLuz('dir')">ON</button>
+    </div>
+    <div class="luz-row">
+      <label>Cor</label>
+      <input type="color" id="cor-dir" value="#fffbe6" oninput="atualizar()">
+    </div>
+    <div class="luz-row">
+      <label>Intensidade</label>
+      <input type="range" id="int-dir" min="0" max="5" step="0.05" value="1.5" oninput="atualizar()">
+      <span class="val" id="val-dir">1.50</span>
+    </div>
+    <div class="luz-row">
+      <label>Posição X</label>
+      <input type="range" id="dx" min="-10" max="10" step="0.2" value="5" oninput="atualizar()">
+      <span class="val" id="val-dx">5.0</span>
+    </div>
+    <div class="luz-row">
+      <label>Posição Y</label>
+      <input type="range" id="dy" min="0.5" max="15" step="0.2" value="8" oninput="atualizar()">
+      <span class="val" id="val-dy">8.0</span>
+    </div>
+    <div class="luz-row">
+      <label>Posição Z</label>
+      <input type="range" id="dz" min="-10" max="10" step="0.2" value="4" oninput="atualizar()">
+      <span class="val" id="val-dz">4.0</span>
+    </div>
+  </div>
+
+  <h2>💡 PointLight — Lâmpada</h2>
+  <p>Irradia em <strong>todas as direções</strong> a partir de um ponto, como uma lâmpada ou vela. Tem alcance limitado (distance) e atenua com a distância.</p>
+
+  <div class="luz-card" id="card-pt">
+    <div class="luz-topo">
+      <div class="dot" style="background:#ff6030"></div>
+      <span class="nome">PointLight</span>
+      <span class="sombra-badge">Sem sombra</span>
+      <button class="toggle on" id="tog-pt" onclick="toggleLuz('pt')">ON</button>
+    </div>
+    <div class="luz-row">
+      <label>Cor</label>
+      <input type="color" id="cor-pt" value="#ff6030" oninput="atualizar()">
+    </div>
+    <div class="luz-row">
+      <label>Intensidade</label>
+      <input type="range" id="int-pt" min="0" max="5" step="0.05" value="1.2" oninput="atualizar()">
+      <span class="val" id="val-pt">1.20</span>
+    </div>
+    <div class="luz-row">
+      <label>Distância</label>
+      <input type="range" id="dist-pt" min="1" max="20" step="0.5" value="8" oninput="atualizar()">
+      <span class="val" id="val-dist">8.0</span>
+    </div>
+  </div>
+
+  <h2>🔦 SpotLight — Holofote</h2>
+  <p>Um <strong>cone de luz</strong> com direção definida, como um refletor de palco ou lanterna. O ângulo do cone (angle) e a suavidade das bordas (penumbra) são os parâmetros chave.</p>
+
+  <div class="luz-card" id="card-spot">
+    <div class="luz-topo">
+      <div class="dot" style="background:#a0d4ff"></div>
+      <span class="nome">SpotLight</span>
+      <span class="sombra-badge on" id="sbadge-spot">☁ Sombra ON</span>
+      <button class="toggle" id="tog-spot" onclick="toggleLuz('spot')">OFF</button>
+    </div>
+    <div class="luz-row">
+      <label>Cor</label>
+      <input type="color" id="cor-spot" value="#a0d4ff" oninput="atualizar()">
+    </div>
+    <div class="luz-row">
+      <label>Intensidade</label>
+      <input type="range" id="int-spot" min="0" max="10" step="0.1" value="0" oninput="atualizar()">
+      <span class="val" id="val-spot">0.00</span>
+    </div>
+    <div class="luz-row">
+      <label>Ângulo</label>
+      <input type="range" id="ang-spot" min="0.05" max="1.2" step="0.01" value="0.4" oninput="atualizar()">
+      <span class="val" id="val-ang">0.40</span>
+    </div>
+    <div class="luz-row">
+      <label>Penumbra</label>
+      <input type="range" id="pen-spot" min="0" max="1" step="0.01" value="0.3" oninput="atualizar()">
+      <span class="val" id="val-pen">0.30</span>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <h2>💻 No Código</h2>
+  <div class="bloco">
+    <div class="cab">JavaScript — Todos os tipos de luz</div>
+    <pre><span class="c">// Luz ambiente (preenche as sombras)</span>
+<span class="k">const</span> <span class="v">amb</span> = <span class="k">new</span> <span class="f">THREE.AmbientLight</span>(<span class="s">'#ffffff'</span>, <span class="n">0.4</span>);
+cena.<span class="f">add</span>(amb);
+
+<span class="c">// Luz direcional (sol) com sombra</span>
+<span class="k">const</span> <span class="v">sol</span> = <span class="k">new</span> <span class="f">THREE.DirectionalLight</span>(<span class="s">'#fffbe6'</span>, <span class="n">1.5</span>);
+sol.position.<span class="f">set</span>(<span class="n">5</span>, <span class="n">8</span>, <span class="n">4</span>);
+sol.castShadow = <span class="k">true</span>;
+sol.shadow.mapSize.width  = <span class="n">2048</span>; <span class="c">// maior = mais nítido</span>
+sol.shadow.mapSize.height = <span class="n">2048</span>;
+cena.<span class="f">add</span>(sol);
+
+<span class="c">// Lâmpada pontual</span>
+<span class="k">const</span> <span class="v">lamp</span> = <span class="k">new</span> <span class="f">THREE.PointLight</span>(<span class="s">'#ff6030'</span>, <span class="n">1.2</span>, <span class="n">8</span>);
+lamp.position.<span class="f">set</span>(-<span class="n">2</span>, <span class="n">2</span>, <span class="n">2</span>);
+cena.<span class="f">add</span>(lamp);
+
+<span class="c">// Holofote com sombra</span>
+<span class="k">const</span> <span class="v">spot</span> = <span class="k">new</span> <span class="f">THREE.SpotLight</span>(<span class="s">'#a0d4ff'</span>, <span class="n">3</span>);
+spot.position.<span class="f">set</span>(<span class="n">0</span>, <span class="n">6</span>, <span class="n">0</span>);
+spot.angle   = <span class="n">0.4</span>;  <span class="c">// largura do cone (rad)</span>
+spot.penumbra = <span class="n">0.3</span>; <span class="c">// suavidade da borda</span>
+spot.castShadow = <span class="k">true</span>;
+cena.<span class="f">add</span>(spot);
+
+<span class="c">// Objeto precisa de castShadow = true</span>
+<span class="c">// Piso precisa de receiveShadow = true</span></pre>
+  </div>
+
+  <div class="caixa-dica">
+    <div class="tit">💡 Dica de artista</div>
+    A receita clássica de iluminação 3D é a <strong>"regra dos 3 pontos"</strong>: uma luz principal forte (key light), uma luz de preenchimento mais fraca no lado oposto (fill light), e uma luz de contorno atrás do objeto (rim light). Experimenta no estúdio ao lado!
+  </div>
+
+  <div class="caixa-atencao">
+    <div class="tit">⚠️ Performance</div>
+    Sombras têm custo alto! Cada luz com <code>castShadow = true</code> renderiza a cena duas vezes. Para jogos, use no máximo 1–2 luzes com sombra, e prefira sombras pré-calculadas (baked shadows) quando possível.
+  </div>
+
+  <div class="nav">
+    <a href="aula5.html">← Aula 5</a>
+    <a href="aula7.html">Aula 7: Projeto Final →</a>
+  </div>
+</div>
+
+<!-- VIEWPORT -->
+<div class="viewport" id="vp">
+  <div class="controles-painel" style="min-width:170px">
+    <div class="ctrl-grupo">
+      <label>Cena</label>
+      <select id="sel-cena" onchange="trocarCena()">
+        <option value="bolas">Esferas</option>
+        <option value="quarto">Quarto</option>
+        <option value="pilares">Pilares</option>
+      </select>
+    </div>
+    <div class="sep" style="margin:4px 0"></div>
+    <div class="ctrl-grupo">
+      <label>PointLight orbita</label>
+      <button class="btn-ctrl" id="btn-orbit" onclick="toggleOrbit()">▶ Iniciar</button>
+    </div>
+    <div class="ctrl-grupo">
+      <label>Sombras</label>
+      <button class="btn-ctrl" id="btn-shadow" onclick="toggleSombras()">☁ ON</button>
+    </div>
+    <div class="ctrl-grupo">
+      <label>Helper de luz</label>
+      <button class="btn-ctrl" id="btn-helper" onclick="toggleHelper()">◎ ON</button>
+    </div>
+  </div>
+  <div class="info-viewport">
+    <span id="info-luz">4 tipos de luz · drag = orbitar</span>
+    <span>🖱️ Arrastar = orbitar</span>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const vp = document.getElementById('vp');
+const vpW = () => window.innerWidth - document.querySelector('.painel').offsetWidth;
+const vpH = () => window.innerHeight;
+
+const cena = new THREE.Scene();
+cena.background = new THREE.Color('#04040c');
+
+const camera = new THREE.PerspectiveCamera(50, vpW()/vpH(), 0.1, 100);
+camera.position.set(0, 4, 9);
+camera.lookAt(0, 0, 0);
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch(e) {
+  document.getElementById('vp').innerHTML = '<div style="color:#f97316;padding:30px;font-family:monospace">❌ WebGL não iniciou: ' + e + '</div>';
+  throw e;
+}
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(vpW(), vpH());
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+vp.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 1, 0);
+
+// ===== LUZES =====
+const ambLight  = new THREE.AmbientLight('#ffffff', 0.4);
+const dirLight  = new THREE.DirectionalLight('#fffbe6', 1.5);
+dirLight.position.set(5, 8, 4);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far  = 30;
+dirLight.shadow.camera.left = dirLight.shadow.camera.bottom = -8;
+dirLight.shadow.camera.right= dirLight.shadow.camera.top   =  8;
+
+const ptLight = new THREE.PointLight('#ff6030', 1.2, 8);
+ptLight.position.set(-2, 2, 2);
+
+const spotLight = new THREE.SpotLight('#a0d4ff', 0);
+spotLight.position.set(0, 6, 0);
+spotLight.angle    = 0.4;
+spotLight.penumbra = 0.3;
+spotLight.castShadow = true;
+spotLight.shadow.mapSize.set(1024, 1024);
+
+[ambLight, dirLight, ptLight, spotLight].forEach(l => cena.add(l));
+
+// Helper visual para PointLight
+const ptHelper = new THREE.PointLightHelper(ptLight, 0.25);
+const dirHelper = new THREE.DirectionalLightHelper(dirLight, 1);
+cena.add(ptHelper); cena.add(dirHelper);
+
+// ===== OBJETOS =====
+const pisoMat = new THREE.MeshStandardMaterial({ color:'#0d0d18', roughness:0.85 });
+const pisoGeo = new THREE.PlaneGeometry(14, 14);
+const piso = new THREE.Mesh(pisoGeo, pisoMat);
+piso.rotation.x = -Math.PI/2; piso.receiveShadow = true;
+cena.add(piso);
+
+let objetos = [];
+
+function criarObjetos(tipo) {
+  objetos.forEach(o => cena.remove(o));
+  objetos = [];
+
+  if (tipo === 'bolas') {
+    const posicoes = [
+      [-3,1,0],[0,1,0],[3,1,0],
+      [-1.5,1,-2.5],[1.5,1,-2.5]
+    ];
+    const cores = ['#f97316','#06b6d4','#8b5cf6','#10b981','#ec4899'];
+    posicoes.forEach(([x,y,z], i) => {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(0.8, 48, 32),
+        new THREE.MeshStandardMaterial({ color: cores[i], roughness: 0.3+i*0.1, metalness: i%2===0?0.6:0.1 })
+      );
+      m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true;
+      cena.add(m); objetos.push(m);
+    });
+  }
+
+  if (tipo === 'quarto') {
+    const wallMat = new THREE.MeshStandardMaterial({ color:'#0e0e20', roughness:0.9 });
+    // Paredes
+    [[-5,2.5,0,true],[5,2.5,0,true],[0,2.5,-5,false]].forEach(([x,y,z,rot]) => {
+      const w = new THREE.Mesh(new THREE.PlaneGeometry(10,5), wallMat.clone());
+      w.position.set(x,y,z);
+      if (rot) w.rotation.y = x<0? Math.PI/2 : -Math.PI/2;
+      w.receiveShadow = true; cena.add(w); objetos.push(w);
+    });
+    // Teto
+    const teto = new THREE.Mesh(new THREE.PlaneGeometry(10,10), wallMat.clone());
+    teto.rotation.x = Math.PI/2; teto.position.y = 5; teto.receiveShadow = true;
+    cena.add(teto); objetos.push(teto);
+    // Móveis simples
+    const mesaMat = new THREE.MeshStandardMaterial({ color:'#3b1e0a', roughness:0.7, metalness:0.1 });
+    const mesa = new THREE.Mesh(new THREE.BoxGeometry(3,0.15,1.5), mesaMat);
+    mesa.position.set(0,0.75,0); mesa.castShadow = true; mesa.receiveShadow = true;
+    cena.add(mesa); objetos.push(mesa);
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.75), mesaMat);
+    [[-1.3,0.375,-0.6],[1.3,0.375,-0.6],[-1.3,0.375,0.6],[1.3,0.375,0.6]].forEach(([px,py,pz]) => {
+      const p = perna.clone(); p.position.set(px,py,pz); p.castShadow=true; cena.add(p); objetos.push(p);
+    });
+  }
+
+  if (tipo === 'pilares') {
+    const pilMat = new THREE.MeshStandardMaterial({ color:'#1a1a2e', roughness:0.5, metalness:0.4 });
+    const posMat = new THREE.MeshStandardMaterial({ color:'#0f3460', roughness:0.3, metalness:0.6 });
+    [[-3,0,-3],[3,0,-3],[-3,0,3],[3,0,3]].forEach(([x,_,z]) => {
+      const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,4,12), pilMat);
+      pilar.position.set(x,2,z); pilar.castShadow=true; pilar.receiveShadow=true;
+      cena.add(pilar); objetos.push(pilar);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.2,0.9), posMat);
+      base.position.set(x,0.1,z); base.castShadow=true;
+      cena.add(base); objetos.push(base);
+    });
+    // Esfera central
+    const esfera = new THREE.Mesh(new THREE.SphereGeometry(0.8,64,32),
+      new THREE.MeshStandardMaterial({ color:'#f97316', roughness:0.1, metalness:1.0 }));
+    esfera.position.set(0,1.2,0); esfera.castShadow=true;
+    cena.add(esfera); objetos.push(esfera);
+  }
+}
+
+criarObjetos('bolas');
+
+// ===== ESTADO =====
+const estado = {
+  amb: true, dir: true, pt: true, spot: false,
+  orbitPt: false, sombras: true, helper: true
+};
+
+function toggleLuz(tipo) {
+  estado[tipo] = !estado[tipo];
+  const tog = document.getElementById('tog-'+tipo);
+  tog.textContent = estado[tipo] ? 'ON' : 'OFF';
+  tog.classList.toggle('on', estado[tipo]);
+  atualizar();
+}
+
+function toggleOrbit() {
+  estado.orbitPt = !estado.orbitPt;
+  const btn = document.getElementById('btn-orbit');
+  btn.textContent = estado.orbitPt ? '⏸ Parar' : '▶ Iniciar';
+  btn.classList.toggle('ativo', estado.orbitPt);
+}
+
+function toggleSombras() {
+  estado.sombras = !estado.sombras;
+  renderer.shadowMap.enabled = estado.sombras;
+  const btn = document.getElementById('btn-shadow');
+  btn.textContent = estado.sombras ? '☁ ON' : '☁ OFF';
+  btn.classList.toggle('ativo', !estado.sombras);
+  // Força rebuild das sombras
+  renderer.shadowMap.needsUpdate = true;
+}
+
+function toggleHelper() {
+  estado.helper = !estado.helper;
+  ptHelper.visible  = estado.helper;
+  dirHelper.visible = estado.helper;
+  const btn = document.getElementById('btn-helper');
+  btn.textContent = estado.helper ? '◎ ON' : '◎ OFF';
+  btn.classList.toggle('ativo', !estado.helper);
+}
+
+function trocarCena() {
+  criarObjetos(document.getElementById('sel-cena').value);
+}
+
+function atualizar() {
+  // Ambient
+  ambLight.visible   = estado.amb;
+  ambLight.color.set(document.getElementById('cor-amb').value);
+  ambLight.intensity = parseFloat(document.getElementById('int-amb').value);
+  document.getElementById('val-amb').textContent = ambLight.intensity.toFixed(2);
+
+  // Directional
+  dirLight.visible   = estado.dir;
+  dirLight.color.set(document.getElementById('cor-dir').value);
+  dirLight.intensity = parseFloat(document.getElementById('int-dir').value);
+  const dx = parseFloat(document.getElementById('dx').value);
+  const dy = parseFloat(document.getElementById('dy').value);
+  const dz = parseFloat(document.getElementById('dz').value);
+  dirLight.position.set(dx, dy, dz);
+  document.getElementById('val-dir').textContent  = dirLight.intensity.toFixed(2);
+  document.getElementById('val-dx').textContent   = dx.toFixed(1);
+  document.getElementById('val-dy').textContent   = dy.toFixed(1);
+  document.getElementById('val-dz').textContent   = dz.toFixed(1);
+
+  // Point
+  ptLight.visible   = estado.pt;
+  ptLight.color.set(document.getElementById('cor-pt').value);
+  ptLight.intensity = parseFloat(document.getElementById('int-pt').value);
+  ptLight.distance  = parseFloat(document.getElementById('dist-pt').value);
+  document.getElementById('val-pt').textContent   = ptLight.intensity.toFixed(2);
+  document.getElementById('val-dist').textContent = ptLight.distance.toFixed(1);
+
+  // Spot
+  spotLight.visible   = estado.spot;
+  spotLight.color.set(document.getElementById('cor-spot').value);
+  spotLight.intensity = parseFloat(document.getElementById('int-spot').value);
+  spotLight.angle     = parseFloat(document.getElementById('ang-spot').value);
+  spotLight.penumbra  = parseFloat(document.getElementById('pen-spot').value);
+  document.getElementById('val-spot').textContent = spotLight.intensity.toFixed(2);
+  document.getElementById('val-ang').textContent  = spotLight.angle.toFixed(2);
+  document.getElementById('val-pen').textContent  = spotLight.penumbra.toFixed(2);
+
+  // Info
+  const on = ['Ambient','Directional','Point','Spot'].filter((_,i)=>[estado.amb,estado.dir,estado.pt,estado.spot][i]);
+  document.getElementById('info-luz').textContent = 'Luzes ativas: ' + (on.join(' · ') || 'nenhuma');
+}
+
+atualizar();
+
+let clock = 0;
+function animar(t) {
+  requestAnimationFrame(animar);
+  controls.update();
+  if (estado.orbitPt) {
+    clock += 0.01;
+    ptLight.position.x = Math.cos(clock) * 3.5;
+    ptLight.position.z = Math.sin(clock) * 3.5;
+    ptLight.position.y = 2 + Math.sin(clock*0.7) * 0.8;
+  }
+  ptHelper.update();
+  dirHelper.update();
+  renderer.render(cena, camera);
+}
+animar();
+
+window.addEventListener('resize', () => {
+  camera.aspect = vpW()/vpH();
+  camera.updateProjectionMatrix();
+  renderer.setSize(vpW(), vpH());
+});
+</script>
+</body>
+</html>

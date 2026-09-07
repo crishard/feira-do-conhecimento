@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>🕹️ Arena PS2 — Empurra pra Fora!</title>
+<style>
+  :root {
+    --roxo: #7c3aed; --ciano: #06b6d4; --verde: #10b981;
+    --laranja: #f59e0b; --vermelho: #ef4444;
+    --bg: #020208; --card: #0d0d1a; --borda: #1e1e3a;
+    --texto: #e2e8f0; --muted: #475569;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); height: 100vh; overflow: hidden; }
+
+  #tela-jogo { position: relative; width: 100vw; height: 100vh; }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  #hud {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 24px; pointer-events: none; z-index: 10;
+    background: linear-gradient(to bottom, rgba(2,2,8,0.85) 60%, transparent);
+  }
+  .hud-jogador { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
+  .hud-jogador.direita { align-items: flex-end; }
+  .hud-nome { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  .pips { display: flex; gap: 6px; }
+  .hud-jogador.direita .pips { flex-direction: row-reverse; }
+  .pip { width: 16px; height: 16px; border-radius: 50%; background: #1e1e3a; border: 1px solid var(--borda); }
+  .pip.ganho { background: currentColor; }
+  .hud-info { font-size: 0.72rem; color: var(--muted); }
+  .hud-centro { text-align: center; }
+  .hud-placar { font-size: 1.6rem; font-weight: 900; letter-spacing: 2px; }
+  .hud-status { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  .overlay {
+    position: absolute; inset: 0; z-index: 30;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(2,2,8,0.95);
+  }
+  .overlay-titulo { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; }
+  .overlay-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 28px; text-align: center; max-width: 560px; line-height: 1.7; }
+
+  .controles-status { display: flex; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; justify-content: center; }
+  .status-card {
+    background: var(--card); border: 2px solid var(--borda); border-radius: 14px;
+    padding: 18px 28px; text-align: center; min-width: 160px; transition: border-color 0.2s;
+  }
+  .status-card.ok { border-color: var(--verde); }
+  .status-card .icone { font-size: 1.8rem; margin-bottom: 8px; }
+  .status-card h3 { font-size: 0.85rem; margin-bottom: 4px; }
+  .status-card p { font-size: 0.72rem; color: var(--muted); }
+  .status-card.ok p { color: var(--verde); }
+
+  .grid-modos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; max-width: 560px; width: 100%; }
+  .modo-card {
+    background: var(--card); border: 2px solid var(--borda); border-radius: 14px;
+    padding: 22px 18px; cursor: pointer; text-align: center; transition: border-color 0.2s, transform 0.2s;
+  }
+  .modo-card.desabilitado { opacity: 0.4; cursor: not-allowed; }
+  .modo-card:not(.desabilitado):hover { border-color: var(--roxo); transform: translateY(-2px); }
+  .modo-card .icone { font-size: 2.2rem; margin-bottom: 8px; }
+  .modo-card h3 { font-size: 0.95rem; margin-bottom: 6px; }
+  .modo-card p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+  .btn-comecar {
+    background: var(--roxo); color: white; border: none;
+    padding: 14px 40px; border-radius: 10px; font-size: 1.05rem;
+    cursor: pointer; font-family: inherit; transition: background 0.2s; font-weight: 700;
+  }
+  .btn-comecar:hover { background: #6d28d9; }
+  .btn-comecar:disabled { background: #2a2a3a; color: var(--muted); cursor: not-allowed; }
+  .btn-sec { background: transparent; color: var(--muted); border: 1px solid var(--borda); padding: 8px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.85rem; margin-top: 10px; }
+
+  .dica-teclado { margin-top: 18px; font-size: 0.72rem; color: var(--muted); max-width: 480px; text-align: center; line-height: 1.6; }
+  .dica-teclado code { background: #13131f; padding: 1px 6px; border-radius: 4px; color: #86efac; }
+
+  #kill-feed {
+    position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+    pointer-events: none; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .kill-msg { background: rgba(0,0,0,0.8); padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; animation: fadeUp 2s forwards; }
+  @keyframes fadeUp { 0%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0;transform:translateY(-20px)} }
+
+  #painel-codigo {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 40;
+    background: rgba(2,2,8,0.97); border-top: 1px solid var(--borda);
+    max-height: 0; overflow: hidden; transition: max-height 0.3s;
+  }
+  #painel-codigo.aberto { max-height: 380px; }
+  .codigo-header { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--borda); }
+  .codigo-tabs { display: flex; gap: 0; flex-wrap: wrap; }
+  .codigo-tab {
+    padding: 5px 14px; font-size: 0.78rem; cursor: pointer; background: none; border: none;
+    color: var(--muted); border-bottom: 2px solid transparent; font-family: inherit; transition: color 0.2s, border-color 0.2s;
+  }
+  .codigo-tab.ativo { color: var(--ciano); border-bottom-color: var(--ciano); }
+  .codigo-conteudo { padding: 14px 20px; overflow-y: auto; max-height: 300px; }
+  pre.codigo { font-size: 0.76rem; line-height: 1.65; }
+  .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+  .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+  #btn-toggle-codigo { position: absolute; bottom: 12px; right: 12px; z-index: 41; background: var(--card); border: 1px solid var(--borda); color: var(--muted); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-family: inherit; }
+
+  #debug-gamepad {
+    position: absolute; bottom: 12px; left: 12px; z-index: 41; font-size: 0.7rem;
+    color: var(--muted); background: rgba(13,13,26,0.8); border: 1px solid var(--borda);
+    border-radius: 8px; padding: 6px 10px; font-family: monospace; display: none;
+  }
+</style>
+</head>
+<body>
+<div id="tela-jogo">
+  <canvas id="canvas"></canvas>
+
+  <div id="hud">
+    <div class="hud-jogador" id="hud-p1">
+      <div class="hud-nome" style="color:#60a5fa">🔵 Jogador 1</div>
+      <div class="pips" id="pips-p1" style="color:#60a5fa"></div>
+      <div class="hud-info" id="info-p1">—</div>
+    </div>
+    <div class="hud-centro">
+      <div class="hud-placar" id="placar">0 : 0</div>
+      <div class="hud-status" id="hud-status">Empurre o adversário pra fora do círculo!</div>
+    </div>
+    <div class="hud-jogador direita" id="hud-p2">
+      <div class="hud-nome" style="color:#f59e0b">🟡 Jogador 2</div>
+      <div class="pips" id="pips-p2" style="color:#f59e0b"></div>
+      <div class="hud-info" id="info-p2">—</div>
+    </div>
+  </div>
+
+  <div id="kill-feed"></div>
+
+  <!-- MENU -->
+  <div class="overlay" id="overlay-menu">
+    <div class="overlay-titulo">🕹️ Arena PS2</div>
+    <div class="overlay-sub">Conecte 2 controles de PS2 (com adaptador USB) e joguem no mesmo computador. Quem empurrar o outro pra fora do círculo primeiro, ganha a rodada!</div>
+
+    <div class="controles-status">
+      <div class="status-card" id="status-p1">
+        <div class="icone">🎮</div>
+        <h3>Jogador 1</h3>
+        <p id="status-p1-txt">Nenhum controle detectado</p>
+      </div>
+      <div class="status-card" id="status-p2">
+        <div class="icone">🎮</div>
+        <h3>Jogador 2</h3>
+        <p id="status-p2-txt">Nenhum controle detectado</p>
+      </div>
+    </div>
+
+    <div class="grid-modos">
+      <div class="modo-card" id="modo-2p" onclick="iniciarModo('2p')">
+        <div class="icone">🎮🎮</div>
+        <h3>2 Controles</h3>
+        <p>Cada jogador usa um controle de PS2 conectado por adaptador USB.</p>
+      </div>
+      <div class="modo-card" id="modo-bot" onclick="iniciarModo('bot')">
+        <div class="icone">🤖</div>
+        <h3>Contra o Computador</h3>
+        <p>Precisa de só 1 controle (ou teclado). Bom pra testar sozinho.</p>
+      </div>
+    </div>
+
+    <button class="btn-comecar" id="btn-jogar" onclick="iniciarModo('2p')" disabled>▶ Conecte os controles pra jogar</button>
+
+    <div class="dica-teclado">
+      Sem controle por perto? Dá pra testar com teclado: Jogador 1 usa <code>WASD</code> + <code>Espaço</code> (empurrão), Jogador 2 usa as <code>Setas</code> + <code>Enter</code>.
+    </div>
+    <div style="margin-top:10px;font-size:0.75rem;color:var(--muted)"><a href="index.html" style="color:var(--roxo);text-decoration:none">← Voltar ao curso</a></div>
+  </div>
+
+  <!-- FIM -->
+  <div class="overlay" id="overlay-fim" style="display:none">
+    <div id="fim-emoji" style="font-size:3rem;margin-bottom:12px">🏆</div>
+    <div class="overlay-titulo" id="fim-titulo">Jogador 1 venceu!</div>
+    <div id="fim-placar" style="font-size:1.1rem;color:var(--muted);margin-bottom:24px"></div>
+    <button class="btn-comecar" onclick="reiniciarPartida()">↺ Jogar de Novo</button>
+    <button class="btn-sec" onclick="mostrarMenu()">← Menu</button>
+  </div>
+
+  <button id="btn-toggle-codigo" onclick="toggleCodigo()">📖 Ver Código</button>
+  <div id="debug-gamepad"></div>
+
+  <div id="painel-codigo">
+    <div class="codigo-header">
+      <div class="codigo-tabs">
+        <button class="codigo-tab ativo" onclick="setTab('detectar')">🔌 Detectar Controle</button>
+        <button class="codigo-tab" onclick="setTab('analogico')">🕹️ Ler Analógico</button>
+        <button class="codigo-tab" onclick="setTab('colisao')">💥 Colisão</button>
+        <button class="codigo-tab" onclick="setTab('loop')">🔄 Game Loop</button>
+      </div>
+      <button onclick="toggleCodigo()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;">✕</button>
+    </div>
+    <div class="codigo-conteudo" id="codigo-conteudo"></div>
+  </div>
+</div>
+
+<script>
+// =============================================
+// CANVAS
+// =============================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+// =============================================
+// DETECÇÃO DE CONTROLES (Gamepad API)
+// Um controle de PS2 ligado por adaptador USB aparece
+// pro navegador como um "gamepad" comum, igual um de Xbox.
+// =============================================
+let gpP1 = null; // índice do gamepad do Jogador 1
+let gpP2 = null; // índice do gamepad do Jogador 2
+
+window.addEventListener('gamepadconnected', (e) => {
+  atribuirGamepad(e.gamepad.index);
+  atualizarStatusControles();
+});
+window.addEventListener('gamepaddisconnected', (e) => {
+  if (gpP1 === e.gamepad.index) gpP1 = null;
+  if (gpP2 === e.gamepad.index) gpP2 = null;
+  atualizarStatusControles();
+});
+
+function atribuirGamepad(index) {
+  if (gpP1 === null && gpP2 !== index) { gpP1 = index; return; }
+  if (gpP2 === null && gpP1 !== index) { gpP2 = index; return; }
+}
+
+// alguns navegadores só atualizam a lista quando o usuário aperta um botão,
+// então também checamos periodicamente
+setInterval(() => {
+  const pads = navigator.getGamepads();
+  for (const p of pads) {
+    if (p && gpP1 !== p.index && gpP2 !== p.index) atribuirGamepad(p.index);
+  }
+  atualizarStatusControles();
+}, 1000);
+
+function atualizarStatusControles() {
+  const pads = navigator.getGamepads();
+  const c1 = document.getElementById('status-p1');
+  const c2 = document.getElementById('status-p2');
+  const t1 = document.getElementById('status-p1-txt');
+  const t2 = document.getElementById('status-p2-txt');
+
+  if (gpP1 !== null && pads[gpP1]) {
+    c1.classList.add('ok'); t1.textContent = '✅ Conectado';
+  } else {
+    c1.classList.remove('ok'); t1.textContent = 'Nenhum controle detectado';
+  }
+  if (gpP2 !== null && pads[gpP2]) {
+    c2.classList.add('ok'); t2.textContent = '✅ Conectado';
+  } else {
+    c2.classList.remove('ok'); t2.textContent = 'Nenhum controle detectado';
+  }
+
+  const doisConectados = gpP1 !== null && gpP2 !== null;
+  const umConectado = gpP1 !== null || gpP2 !== null;
+  const btn = document.getElementById('btn-jogar');
+  document.getElementById('modo-2p').classList.toggle('desabilitado', !doisConectados);
+  document.getElementById('modo-bot').classList.toggle('desabilitado', false);
+
+  if (doisConectados) {
+    btn.disabled = false; btn.textContent = '▶ Jogar (2 Controles)'; btn.onclick = () => iniciarModo('2p');
+  } else if (umConectado) {
+    btn.disabled = false; btn.textContent = '▶ Jogar contra o Bot'; btn.onclick = () => iniciarModo('bot');
+  } else {
+    btn.disabled = false; btn.textContent = '▶ Jogar com Teclado'; btn.onclick = () => iniciarModo('bot');
+  }
+}
+atualizarStatusControles();
+
+// =============================================
+// LEITURA DO CONTROLE (analógico + botão)
+// =============================================
+const ZONA_MORTA = 0.15;
+function lerEixo(v) { return Math.abs(v) < ZONA_MORTA ? 0 : v; }
+
+function lerInputJogador(gpIndex, teclasWASD) {
+  // teclasWASD: { cima, baixo, esq, dir, acao } -> teclas de fallback
+  let mx = 0, my = 0, acao = false;
+
+  if (gpIndex !== null) {
+    const pads = navigator.getGamepads();
+    const gp = pads[gpIndex];
+    if (gp) {
+      mx = lerEixo(gp.axes[0]); // analógico esquerdo, eixo X
+      my = lerEixo(gp.axes[1]); // analógico esquerdo, eixo Y
+      acao = gp.buttons[0] && gp.buttons[0].pressed; // X / Cross
+    }
+  } else {
+    if (teclas[teclasWASD.esq])  mx = -1;
+    if (teclas[teclasWASD.dir])  mx = 1;
+    if (teclas[teclasWASD.cima]) my = -1;
+    if (teclas[teclasWASD.baixo]) my = 1;
+    acao = !!teclas[teclasWASD.acao];
+  }
+  return { mx, my, acao };
+}
+
+const teclas = {};
+window.addEventListener('keydown', e => { teclas[e.key] = true; });
+window.addEventListener('keyup',   e => { teclas[e.key] = false; });
+
+// =============================================
+// ESTADO DO JOGO
+// =============================================
+let estado = { emJogo: false, modo: '2p', pontos: [0, 0], rodada: 0 };
+let jogadores = [];
+let particulas = [];
+let animId = null;
+let ARENA = { x: 0, y: 0, r: 0 };
+
+function criarJogador(ordem) {
+  return {
+    ordem,
+    x: 0, y: 0, vx: 0, vy: 0,
+    r: 30,
+    cor: ordem === 0 ? '#60a5fa' : '#f59e0b',
+    dashCooldown: 0,
+    fora: false
+  };
+}
+
+function posicionarArena() {
+  ARENA.x = canvas.width / 2;
+  ARENA.y = canvas.height / 2;
+  ARENA.r = Math.min(canvas.width, canvas.height) * 0.36;
+}
+
+function posicionarJogadores() {
+  const [j1, j2] = jogadores;
+  j1.x = ARENA.x - ARENA.r * 0.5; j1.y = ARENA.y; j1.vx = 0; j1.vy = 0; j1.fora = false;
+  j2.x = ARENA.x + ARENA.r * 0.5; j2.y = ARENA.y; j2.vx = 0; j2.vy = 0; j2.fora = false;
+}
+
+// =============================================
+// MENU / INÍCIO
+// =============================================
+function mostrarMenu() {
+  esconderTodos();
+  document.getElementById('overlay-menu').style.display = 'flex';
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  estado.emJogo = false;
+}
+
+function iniciarModo(modo) {
+  estado.modo = modo;
+  estado.pontos = [0, 0];
+  estado.rodada = 0;
+  jogadores = [criarJogador(0), criarJogador(1)];
+  posicionarArena();
+  posicionarJogadores();
+  atualizarPips();
+  esconderTodos();
+  document.getElementById('hud-status').textContent = modo === 'bot'
+    ? 'Você (azul) contra o computador (amarelo)'
+    : 'Empurre o adversário pra fora do círculo!';
+  estado.emJogo = true;
+  if (animId) cancelAnimationFrame(animId);
+  gameLoop();
+}
+
+function reiniciarPartida() { iniciarModo(estado.modo); }
+
+function reiniciarRodada() {
+  posicionarJogadores();
+  estado.emJogo = true;
+}
+
+function esconderTodos() {
+  ['overlay-menu', 'overlay-fim'].forEach(id => document.getElementById(id).style.display = 'none');
+}
+
+// =============================================
+// GAME LOOP
+// =============================================
+const ACEL = 0.5, ATRITO = 0.94, VEL_MAX = 9;
+const DASH_FORCA = 15, DASH_COOLDOWN_MAX = 55;
+
+function gameLoop() {
+  animId = requestAnimationFrame(gameLoop);
+  posicionarArena();
+  if (!estado.emJogo) { desenhar(); return; }
+
+  // === INPUT E FÍSICA DE CADA JOGADOR ===
+  const in1 = lerInputJogador(gpP1, { cima:'w', baixo:'s', esq:'a', dir:'d', acao:' ' });
+  const in2 = estado.modo === 'bot'
+    ? calcularInputBot()
+    : lerInputJogador(gpP2, { cima:'ArrowUp', baixo:'ArrowDown', esq:'ArrowLeft', dir:'ArrowRight', acao:'Enter' });
+
+  aplicarInput(jogadores[0], in1);
+  aplicarInput(jogadores[1], in2);
+
+  jogadores.forEach(moverJogador);
+  resolverColisaoEntreJogadores(jogadores[0], jogadores[1]);
+  verificarForaDaArena();
+
+  atualizarParticulas();
+  desenhar();
+  atualizarHUD();
+}
+
+function aplicarInput(j, input) {
+  j.vx += input.mx * ACEL;
+  j.vy += input.my * ACEL;
+
+  if (j.dashCooldown > 0) j.dashCooldown--;
+  if (input.acao && j.dashCooldown <= 0) {
+    const dist = Math.hypot(input.mx, input.my);
+    const dx = dist > 0 ? input.mx / dist : 1;
+    const dy = dist > 0 ? input.my / dist : 0;
+    j.vx += dx * DASH_FORCA;
+    j.vy += dy * DASH_FORCA;
+    j.dashCooldown = DASH_COOLDOWN_MAX;
+    criarParticulas(j.x, j.y, j.cor);
+  }
+}
+
+function moverJogador(j) {
+  j.vx *= ATRITO; j.vy *= ATRITO;
+  const vel = Math.hypot(j.vx, j.vy);
+  if (vel > VEL_MAX) { j.vx = j.vx / vel * VEL_MAX; j.vy = j.vy / vel * VEL_MAX; }
+  j.x += j.vx; j.y += j.vy;
+}
+
+function resolverColisaoEntreJogadores(a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const dist = Math.hypot(dx, dy) || 0.001;
+  const minDist = a.r + b.r;
+  if (dist < minDist) {
+    const overlap = (minDist - dist) / 2;
+    const nx = dx / dist, ny = dy / dist;
+    a.x -= nx * overlap; a.y -= ny * overlap;
+    b.x += nx * overlap; b.y += ny * overlap;
+
+    // troca de "empurrão": parte da velocidade de um vira impulso no outro
+    const impulso = 0.6;
+    const vaN = a.vx * nx + a.vy * ny;
+    const vbN = b.vx * nx + b.vy * ny;
+    a.vx += (vbN - vaN) * impulso * nx; a.vy += (vbN - vaN) * impulso * ny;
+    b.vx += (vaN - vbN) * impulso * nx; b.vy += (vaN - vbN) * impulso * ny;
+  }
+}
+
+function verificarForaDaArena() {
+  if (!estado.emJogo) return;
+  jogadores.forEach(j => {
+    const dist = Math.hypot(j.x - ARENA.x, j.y - ARENA.y);
+    if (dist > ARENA.r && !j.fora) {
+      j.fora = true;
+      venceuRodada(1 - j.ordem);
+    }
+  });
+}
+
+function venceuRodada(ordemVencedor) {
+  estado.emJogo = false;
+  estado.pontos[ordemVencedor]++;
+  atualizarPips();
+  const nome = estado.modo === 'bot'
+    ? (ordemVencedor === 0 ? 'Você' : '🤖 Bot')
+    : `Jogador ${ordemVencedor + 1}`;
+  killFeed(`${nome} venceu a rodada!`);
+  criarParticulas(jogadores[1 - ordemVencedor].x, jogadores[1 - ordemVencedor].y, jogadores[1 - ordemVencedor].cor);
+
+  if (estado.pontos[ordemVencedor] >= 3) {
+    setTimeout(() => mostrarFim(ordemVencedor), 900);
+  } else {
+    setTimeout(reiniciarRodada, 1200);
+  }
+}
+
+function mostrarFim(ordemVencedor) {
+  const nome = estado.modo === 'bot'
+    ? (ordemVencedor === 0 ? 'Você venceu!' : 'O Bot venceu!')
+    : `Jogador ${ordemVencedor + 1} venceu!`;
+  document.getElementById('fim-emoji').textContent = ordemVencedor === 0 ? '🔵' : '🟡';
+  document.getElementById('fim-titulo').textContent = nome;
+  document.getElementById('fim-placar').textContent = `Placar final: ${estado.pontos[0]} × ${estado.pontos[1]}`;
+  document.getElementById('overlay-fim').style.display = 'flex';
+}
+
+// =============================================
+// BOT (modo treino sozinho)
+// =============================================
+function calcularInputBot() {
+  const bot = jogadores[1], alvo = jogadores[0];
+  const dx = alvo.x - bot.x, dy = alvo.y - bot.y;
+  const dist = Math.hypot(dx, dy) || 0.001;
+  const mx = dx / dist, my = dy / dist;
+  const acao = dist < 90 && Math.random() < 0.04;
+  return { mx, my, acao };
+}
+
+// =============================================
+// PARTÍCULAS (efeito visual do empurrão)
+// =============================================
+function criarParticulas(x, y, cor) {
+  for (let i = 0; i < 14; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const vel = 2 + Math.random() * 4;
+    particulas.push({ x, y, vx: Math.cos(ang) * vel, vy: Math.sin(ang) * vel, vida: 30, cor });
+  }
+}
+function atualizarParticulas() {
+  for (let i = particulas.length - 1; i >= 0; i--) {
+    const p = particulas[i];
+    p.x += p.vx; p.y += p.vy; p.vx *= 0.9; p.vy *= 0.9; p.vida--;
+    if (p.vida <= 0) particulas.splice(i, 1);
+  }
+}
+
+// =============================================
+// DESENHO
+// =============================================
+function desenharArena() {
+  ctx.fillStyle = '#020208';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.beginPath();
+  ctx.arc(ARENA.x, ARENA.y, ARENA.r, 0, Math.PI * 2);
+  ctx.fillStyle = '#0d0d1a';
+  ctx.fill();
+  ctx.strokeStyle = '#7c3aed';
+  ctx.lineWidth = 4;
+  ctx.shadowBlur = 20; ctx.shadowColor = '#7c3aed80';
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function desenharJogador(j) {
+  if (j.fora) return;
+  ctx.save();
+  ctx.translate(j.x, j.y);
+  ctx.shadowBlur = 16; ctx.shadowColor = j.cor + '80';
+  ctx.fillStyle = j.cor;
+  ctx.beginPath();
+  ctx.arc(0, 0, j.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  const vel = Math.hypot(j.vx, j.vy);
+  if (vel > 0.4) {
+    ctx.rotate(Math.atan2(j.vy, j.vx));
+    ctx.fillStyle = '#ffffffaa';
+    ctx.beginPath();
+    ctx.moveTo(j.r + 8, 0); ctx.lineTo(j.r - 6, -7); ctx.lineTo(j.r - 6, 7);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  if (j.dashCooldown > DASH_COOLDOWN_MAX - 10) {
+    ctx.beginPath();
+    ctx.arc(j.x, j.y, j.r + 10, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffffff50'; ctx.lineWidth = 2; ctx.stroke();
+  }
+}
+
+function desenharParticulas() {
+  particulas.forEach(p => {
+    ctx.globalAlpha = p.vida / 30;
+    ctx.fillStyle = p.cor;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+}
+
+function desenhar() {
+  desenharArena();
+  jogadores.forEach(desenharJogador);
+  desenharParticulas();
+}
+
+// =============================================
+// HUD
+// =============================================
+function atualizarPips() {
+  ['p1', 'p2'].forEach((id, i) => {
+    const el = document.getElementById('pips-' + id);
+    el.innerHTML = '';
+    for (let k = 0; k < 3; k++) {
+      const pip = document.createElement('div');
+      pip.className = 'pip' + (k < estado.pontos[i] ? ' ganho' : '');
+      el.appendChild(pip);
+    }
+  });
+}
+
+function atualizarHUD() {
+  document.getElementById('placar').textContent = `${estado.pontos[0]} : ${estado.pontos[1]}`;
+  document.getElementById('info-p1').textContent = gpP1 !== null ? '🎮 Controle' : '⌨️ Teclado';
+  document.getElementById('info-p2').textContent = estado.modo === 'bot' ? '🤖 Bot' : (gpP2 !== null ? '🎮 Controle' : '⌨️ Teclado');
+}
+
+function killFeed(texto) {
+  const kf = document.getElementById('kill-feed');
+  const el = document.createElement('div');
+  el.className = 'kill-msg';
+  el.textContent = texto;
+  kf.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
+// =============================================
+// CÓDIGO EXIBÍVEL
+// =============================================
+const CODIGOS = {
+  detectar: `<span class="c">// Quando um controle é conectado (inclusive PS2 via adaptador USB)</span>
+<span class="v">window</span>.addEventListener(<span class="s">'gamepadconnected'</span>, (<span class="v">e</span>) => {
+  <span class="v">console</span>.log(<span class="s">'Controle conectado:'</span>, e.gamepad.id);
+  <span class="c">// e.gamepad.index é o número que identifica esse controle</span>
+});
+
+<span class="v">window</span>.addEventListener(<span class="s">'gamepaddisconnected'</span>, (<span class="v">e</span>) => {
+  <span class="v">console</span>.log(<span class="s">'Controle desconectado'</span>);
+});`,
+
+  analogico: `<span class="c">// A cada frame, lemos o estado atual de todos os controles</span>
+<span class="k">const</span> <span class="v">pads</span> = navigator.<span class="f">getGamepads</span>();
+<span class="k">const</span> <span class="v">gp</span> = pads[<span class="n">0</span>]; <span class="c">// primeiro controle conectado</span>
+
+<span class="k">if</span> (gp) {
+  <span class="k">const</span> <span class="v">x</span> = gp.axes[<span class="n">0</span>]; <span class="c">// analógico esquerdo, horizontal (-1 a 1)</span>
+  <span class="k">const</span> <span class="v">y</span> = gp.axes[<span class="n">1</span>]; <span class="c">// analógico esquerdo, vertical (-1 a 1)</span>
+
+  <span class="c">// zona morta: ignora tremidas pequenas do analógico</span>
+  <span class="k">const</span> <span class="v">mx</span> = Math.abs(x) < <span class="n">0.15</span> ? <span class="n">0</span> : x;
+
+  <span class="k">const</span> <span class="v">botaoX</span> = gp.buttons[<span class="n">0</span>].pressed; <span class="c">// botão "Cross"</span>
+}`,
+
+  colisao: `<span class="c">// Dois jogadores são círculos. Se a distância entre os centros</span>
+<span class="c">// é menor que a soma dos raios, eles estão colidindo.</span>
+<span class="k">const</span> <span class="v">dx</span> = b.x - a.x, <span class="v">dy</span> = b.y - a.y;
+<span class="k">const</span> <span class="v">dist</span> = Math.hypot(dx, dy);
+<span class="k">const</span> <span class="v">minDist</span> = a.r + b.r;
+
+<span class="k">if</span> (dist < minDist) {
+  <span class="c">// separa os dois pra não ficarem grudados</span>
+  <span class="k">const</span> <span class="v">overlap</span> = (minDist - dist) / <span class="n">2</span>;
+  <span class="k">const</span> <span class="v">nx</span> = dx / dist, <span class="v">ny</span> = dy / dist;
+  a.x -= nx * overlap; b.x += nx * overlap;
+
+  <span class="c">// e troca parte da velocidade — isso é o "empurrão"!</span>
+}`,
+
+  loop: `<span class="c">// O jogo roda 60x por segundo (requestAnimationFrame)</span>
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  requestAnimationFrame(gameLoop);
+
+  <span class="c">// 1. Ler o controle de cada jogador</span>
+  <span class="k">const</span> <span class="v">input1</span> = <span class="f">lerInputJogador</span>(gpP1);
+  <span class="k">const</span> <span class="v">input2</span> = <span class="f">lerInputJogador</span>(gpP2);
+
+  <span class="c">// 2. Aplicar aceleração e atrito</span>
+  jogador1.vx += input1.mx * ACELERACAO;
+  jogador1.vx *= ATRITO;
+  jogador1.x  += jogador1.vx;
+
+  <span class="c">// 3. Checar colisão entre os dois jogadores</span>
+  <span class="f">resolverColisao</span>(jogador1, jogador2);
+
+  <span class="c">// 4. Ver se alguém saiu do círculo da arena</span>
+  <span class="k">if</span> (distanciaDoCentro > raioDaArena) <span class="f">venceuRodada</span>();
+
+  <span class="c">// 5. Desenhar tudo de novo</span>
+  <span class="f">desenhar</span>();
+}`
+};
+
+let tabAtual = 'detectar';
+function setTab(t) {
+  tabAtual = t;
+  document.querySelectorAll('.codigo-tab').forEach((el, i) => {
+    el.classList.toggle('ativo', ['detectar','analogico','colisao','loop'][i] === t);
+  });
+  document.getElementById('codigo-conteudo').innerHTML = `<pre class="codigo">${CODIGOS[t]}</pre>`;
+}
+function toggleCodigo() {
+  const p = document.getElementById('painel-codigo');
+  p.classList.toggle('aberto');
+  if (p.classList.contains('aberto') && !document.getElementById('codigo-conteudo').innerHTML) setTab(tabAtual);
+}
+setTab('detectar');
+
+// desenha o fundo mesmo parado no menu
+posicionarArena();
+desenharArena();
+mostrarMenu();
+</script>
+</body>
+</html>

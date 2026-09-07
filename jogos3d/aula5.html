@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 5 — Colisões e Física Simples</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0ff; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+    .painel { overflow-y: auto; padding: 32px; border-right: 1px solid #2d2d4e; }
+    .visualizador { position: relative; background: #050510; }
+    canvas { display: block; }
+    h1 { font-size: 1.5rem; color: #7c3aed; margin-bottom: 4px; }
+    .aula-num { font-size: 0.75rem; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .secao { margin-top: 28px; padding-top: 20px; border-top: 1px solid #2d2d4e; }
+    .secao h2 { font-size: 1.05rem; color: #06b6d4; margin-bottom: 12px; }
+    p { font-size: 0.9rem; line-height: 1.7; color: #c0c0d8; margin-bottom: 10px; }
+    pre {
+      background: #12121f; border: 1px solid #2d2d4e; border-radius: 8px;
+      padding: 16px; font-size: 0.78rem; overflow-x: auto; line-height: 1.6; margin: 12px 0;
+    }
+    .comment { color: #6b7280; }
+    .keyword { color: #c084fc; }
+    .string { color: #86efac; }
+    .number { color: #fb923c; }
+    .func { color: #60a5fa; }
+    .conceito {
+      background: #1a1a2e; border-left: 3px solid #7c3aed;
+      padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.88rem;
+    }
+    .nav { display: flex; justify-content: space-between; margin-top: 32px; padding-top: 20px; border-top: 1px solid #2d2d4e; }
+    .nav a { color: #7c3aed; text-decoration: none; font-size: 0.88rem; }
+    .hud {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: space-between; pointer-events: none; z-index: 10;
+    }
+    .label-canvas {
+      background: rgba(0,0,0,0.6); padding: 4px 10px;
+      border-radius: 6px; font-size: 0.75rem; color: #9ca3af;
+    }
+    .colisoes-hud {
+      background: rgba(0,0,0,0.7); padding: 4px 12px;
+      border-radius: 6px; font-size: 0.75rem; color: #fb923c;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div class="painel">
+    <div class="aula-num">Aula 5 de 6</div>
+    <h1>Colisões e Física Simples</h1>
+
+    <div class="secao">
+      <h2>🎯 O que é Detecção de Colisão?</h2>
+      <p>Colisão é quando dois objetos "se tocam" no mundo do jogo. Detectar isso é fundamental para: dano, pontuação, paredes, pegando itens e mais.</p>
+
+      <p>Engines profissionais têm sistemas de física completos (PhysX, Bullet, Rapier). Para jogos simples, fazemos detecção manual com <strong>formas simplificadas</strong>.</p>
+    </div>
+
+    <div class="secao">
+      <h2>⭕ AABB — Colisão por Caixa</h2>
+      <p><strong>AABB</strong> (Axis-Aligned Bounding Box) é o método mais simples: você envolve cada objeto em uma caixa invisível e verifica se as caixas se sobrepõem:</p>
+
+      <pre><span class="comment">// Three.js tem Box3 exatamente pra isso!</span>
+<span class="keyword">const</span> caixaA = <span class="keyword">new</span> <span class="func">THREE.Box3</span>().<span class="func">setFromObject</span>(objetoA);
+<span class="keyword">const</span> caixaB = <span class="keyword">new</span> <span class="func">THREE.Box3</span>().<span class="func">setFromObject</span>(objetoB);
+
+<span class="keyword">if</span> (caixaA.<span class="func">intersectsBox</span>(caixaB)) {
+  console.<span class="func">log</span>(<span class="string">'Colisão detectada!'</span>);
+}
+
+<span class="comment">// IMPORTANTE: recalcular a cada frame,</span>
+<span class="comment">// pois os objetos se movem!</span>
+<span class="keyword">function</span> <span class="func">gameLoop</span>() {
+  <span class="func">requestAnimationFrame</span>(gameLoop);
+
+  <span class="comment">// Atualiza as caixas com as posições atuais</span>
+  caixaA.<span class="func">setFromObject</span>(objetoA);
+  caixaB.<span class="func">setFromObject</span>(objetoB);
+
+  <span class="keyword">if</span> (caixaA.<span class="func">intersectsBox</span>(caixaB)) {
+    <span class="comment">// reagir à colisão</span>
+  }
+
+  renderer.<span class="func">render</span>(cena, camera);
+}</pre>
+    </div>
+
+    <div class="secao">
+      <h2>⚪ Colisão por Distância (Esfera)</h2>
+      <p>Para objetos redondos (personagem, bola, inimigos), colisão por distância é ainda mais simples e eficiente:</p>
+
+      <pre><span class="comment">// Distância entre dois pontos no espaço 3D</span>
+<span class="keyword">const</span> distancia = objetoA.position.<span class="func">distanceTo</span>(objetoB.position);
+
+<span class="comment">// Se a distância for menor que a soma dos raios = colisão!</span>
+<span class="keyword">const</span> raioA = <span class="number">0.6</span>;
+<span class="keyword">const</span> raioB = <span class="number">0.8</span>;
+
+<span class="keyword">if</span> (distancia < raioA + raioB) {
+  console.<span class="func">log</span>(<span class="string">'Colisão de esferas!'</span>);
+}</pre>
+
+      <div class="conceito">
+        💡 Use colisão por <strong>caixa (AABB)</strong> para paredes, plataformas e objetos retangulares.<br>
+        Use colisão por <strong>distância</strong> para personagens, projéteis e objetos circulares.<br>
+        Combine as duas para jogos mais complexos!
+      </div>
+    </div>
+
+    <div class="secao">
+      <h2>🧱 Limites de Mapa</h2>
+      <p>Para impedir que o jogador saia do mapa, simplesmente limite a posição:</p>
+
+      <pre><span class="comment">// Definir os limites do mapa</span>
+<span class="keyword">const</span> LIMITE = <span class="number">9</span>;
+
+<span class="comment">// Dentro do game loop, após mover o jogador:</span>
+jogador.position.x = <span class="func">Math.max</span>(-LIMITE, <span class="func">Math.min</span>(LIMITE, jogador.position.x));
+jogador.position.z = <span class="func">Math.max</span>(-LIMITE, <span class="func">Math.min</span>(LIMITE, jogador.position.z));
+
+<span class="comment">// Forma alternativa usando clamp</span>
+jogador.position.<span class="func">clampScalar</span>(-LIMITE, LIMITE);</pre>
+    </div>
+
+    <div class="secao">
+      <h2>🎮 Demo ao Lado</h2>
+      <p>No demo você pode ver:</p>
+      <p>• <strong>Cubo roxo</strong> bounce nas paredes (AABB com o limite do mapa)</p>
+      <p>• <strong>Cubos coloridos</strong> colidindo com o cubo roxo — ficam vermelhos ao colidir</p>
+      <p>• O contador de colisões no topo direito</p>
+      <p>As caixas de colisão (wireframe brancas) ficam visíveis para você entender o que está acontecendo!</p>
+    </div>
+
+    <div class="nav">
+      <a href="aula4.html">← Aula 4</a>
+      <a href="aula6.html">Aula 6: Jogo Final →</a>
+    </div>
+  </div>
+
+  <!-- VISUALIZADOR -->
+  <div class="visualizador" id="visualizador">
+    <div class="hud">
+      <div class="label-canvas">▶ Colisões AABB em tempo real</div>
+      <div class="colisoes-hud" id="col-count">Colisões: 0</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
+<script>
+  const container = document.getElementById('visualizador');
+
+  const cena = new THREE.Scene();
+  cena.background = new THREE.Color('#050510');
+
+  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(0, 16, 0);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+
+  cena.add(new THREE.AmbientLight('#ffffff', 0.5));
+  const luz = new THREE.DirectionalLight('#ffffff', 1.5);
+  luz.position.set(5, 10, 5);
+  cena.add(luz);
+
+  // Chão
+  const chaoMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshStandardMaterial({ color: '#12121f' })
+  );
+  chaoMesh.rotation.x = -Math.PI / 2;
+  cena.add(chaoMesh);
+  cena.add(new THREE.GridHelper(20, 20, '#2d2d4e', '#1a1a2e'));
+
+  // Paredes visíveis
+  const parMat = new THREE.MeshStandardMaterial({ color: '#2d2d4e', transparent: true, opacity: 0.3 });
+  const LIMITE = 9;
+  const paredes = [
+    { pos: [LIMITE, 0.5, 0],  rot: [0, 0, 0],          size: [0.2, 1, 20] },
+    { pos: [-LIMITE, 0.5, 0], rot: [0, 0, 0],          size: [0.2, 1, 20] },
+    { pos: [0, 0.5, LIMITE],  rot: [0, Math.PI/2, 0], size: [0.2, 1, 20] },
+    { pos: [0, 0.5, -LIMITE], rot: [0, Math.PI/2, 0], size: [0.2, 1, 20] },
+  ];
+  paredes.forEach(p => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(...p.size), parMat);
+    m.position.set(...p.pos);
+    m.rotation.set(...p.rot);
+    cena.add(m);
+  });
+
+  // Cubo principal (bouncing)
+  const mainGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+  const mainMat = new THREE.MeshStandardMaterial({ color: '#7c3aed', roughness: 0.3, metalness: 0.5 });
+  const mainCubo = new THREE.Mesh(mainGeo, mainMat);
+  mainCubo.position.set(0, 0.75, 0);
+  cena.add(mainCubo);
+
+  let velMain = new THREE.Vector3(4, 0, 3);
+
+  // Cubos obstáculo
+  const N_OBS = 8;
+  const obstaculos = [];
+  const coresObs = ['#06b6d4','#f59e0b','#10b981','#ec4899','#60a5fa','#a78bfa','#34d399','#fbbf24'];
+
+  for (let i = 0; i < N_OBS; i++) {
+    const s = 0.8 + Math.random() * 0.7;
+    const geo = new THREE.BoxGeometry(s, s, s);
+    const mat = new THREE.MeshStandardMaterial({ color: coresObs[i], roughness: 0.5 });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(
+      (Math.random() - 0.5) * 14,
+      s / 2,
+      (Math.random() - 0.5) * 14
+    );
+    m._corOriginal = coresObs[i];
+    m._vel = new THREE.Vector3(
+      (Math.random() - 0.5) * 3,
+      0,
+      (Math.random() - 0.5) * 3
+    );
+    cena.add(m);
+    obstaculos.push(m);
+  }
+
+  // Helpers de colisão (wireframe)
+  const helperMat = new THREE.MeshBasicMaterial({ color: '#ffffff', wireframe: true, transparent: true, opacity: 0.15 });
+
+  const clock = new THREE.Clock();
+  let totalColisoes = 0;
+
+  function gameLoop() {
+    requestAnimationFrame(gameLoop);
+    const delta = clock.getDelta();
+
+    // Mover cubo principal
+    mainCubo.position.x += velMain.x * delta;
+    mainCubo.position.z += velMain.z * delta;
+    mainCubo.rotation.y += 1.5 * delta;
+    mainCubo.rotation.x += 0.8 * delta;
+
+    // Bounce nas paredes
+    if (mainCubo.position.x > LIMITE - 0.75 || mainCubo.position.x < -LIMITE + 0.75) {
+      velMain.x *= -1;
+      mainCubo.position.x = Math.max(-LIMITE + 0.75, Math.min(LIMITE - 0.75, mainCubo.position.x));
+    }
+    if (mainCubo.position.z > LIMITE - 0.75 || mainCubo.position.z < -LIMITE + 0.75) {
+      velMain.z *= -1;
+      mainCubo.position.z = Math.max(-LIMITE + 0.75, Math.min(LIMITE - 0.75, mainCubo.position.z));
+    }
+
+    // Mover obstáculos
+    obstaculos.forEach(obs => {
+      obs.position.x += obs._vel.x * delta;
+      obs.position.z += obs._vel.z * delta;
+
+      if (obs.position.x > LIMITE - 0.5 || obs.position.x < -LIMITE + 0.5) obs._vel.x *= -1;
+      if (obs.position.z > LIMITE - 0.5 || obs.position.z < -LIMITE + 0.5) obs._vel.z *= -1;
+
+      obs.rotation.y += 0.01;
+    });
+
+    // Detecção de colisão AABB
+    const caixaMain = new THREE.Box3().setFromObject(mainCubo);
+    let colisaoAtual = 0;
+
+    obstaculos.forEach(obs => {
+      const caixaObs = new THREE.Box3().setFromObject(obs);
+      if (caixaMain.intersectsBox(caixaObs)) {
+        obs.material.color.set('#ff0000');
+        colisaoAtual++;
+        totalColisoes++;
+      } else {
+        obs.material.color.set(obs._corOriginal);
+      }
+    });
+
+    if (colisaoAtual > 0) {
+      mainMat.color.set('#ff4444');
+    } else {
+      mainMat.color.set('#7c3aed');
+    }
+
+    document.getElementById('col-count').textContent = `Colisões: ${totalColisoes}`;
+
+    renderer.render(cena, camera);
+  }
+  gameLoop();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+</script>
+</body>
+</html>

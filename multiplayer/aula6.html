@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>🏆 Batalha Espacial — Multiplayer</title>
+  <style>
+    :root {
+      --roxo: #7c3aed; --ciano: #06b6d4; --verde: #10b981;
+      --laranja: #f59e0b; --vermelho: #ef4444;
+      --bg: #020208; --card: #0d0d1a; --borda: #1e1e3a;
+      --texto: #e2e8f0; --muted: #475569;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); height: 100vh; overflow: hidden; }
+
+    /* TELA CHEIA DO JOGO */
+    #tela-jogo { position: relative; width: 100vw; height: 100vh; }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    /* HUD */
+    #hud {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 24px; pointer-events: none; z-index: 10;
+      background: linear-gradient(to bottom, rgba(2,2,8,0.85) 60%, transparent);
+    }
+    .hud-jogador { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
+    .hud-jogador.direita { align-items: flex-end; }
+    .hud-nome { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .barra-vida-container { width: 140px; height: 8px; background: #1e1e3a; border-radius: 4px; overflow: hidden; }
+    .barra-vida { height: 100%; border-radius: 4px; transition: width 0.2s; }
+    .hud-info { font-size: 0.72rem; color: var(--muted); }
+    .hud-centro { text-align: center; }
+    .hud-placar { font-size: 2rem; font-weight: 900; letter-spacing: 4px; }
+    .hud-tempo { font-size: 0.75rem; color: var(--muted); }
+
+    /* OVERLAYS */
+    .overlay {
+      position: absolute; inset: 0; z-index: 30;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(2,2,8,0.95);
+    }
+    .overlay-titulo { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; }
+    .overlay-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 32px; text-align: center; max-width: 500px; line-height: 1.7; }
+
+    .grid-modos {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; max-width: 560px; width: 100%;
+    }
+    .modo-card {
+      background: var(--card); border: 2px solid var(--borda);
+      border-radius: 14px; padding: 24px 20px; cursor: pointer;
+      text-align: center; transition: border-color 0.2s, transform 0.2s;
+    }
+    .modo-card:hover { border-color: var(--roxo); transform: translateY(-2px); }
+    .modo-card .icone { font-size: 2.5rem; margin-bottom: 10px; }
+    .modo-card h3 { font-size: 1rem; margin-bottom: 6px; }
+    .modo-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+    .controles-lista {
+      display: flex; gap: 32px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center;
+    }
+    .ctrl-grupo { text-align: center; }
+    .ctrl-titulo { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+    .ctrl-teclas { display: grid; grid-template-columns: repeat(3, 36px); gap: 4px; margin: 0 auto; }
+    .tecla-visual {
+      width: 36px; height: 36px; background: var(--card); border: 1px solid var(--borda);
+      border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+    }
+    .tecla-visual.grande { width: auto; grid-column: span 3; }
+    .tecla-visual.vazia { background: transparent; border-color: transparent; }
+
+    .btn-comecar {
+      background: var(--roxo); color: white; border: none;
+      padding: 14px 40px; border-radius: 10px; font-size: 1.05rem;
+      cursor: pointer; font-family: inherit; transition: background 0.2s; font-weight: 700;
+    }
+    .btn-comecar:hover { background: #6d28d9; }
+    .btn-sec { background: transparent; color: var(--muted); border: 1px solid var(--borda); padding: 8px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.85rem; margin-top: 10px; }
+
+    /* KILL FEED */
+    #kill-feed {
+      position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+      pointer-events: none; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .kill-msg {
+      background: rgba(0,0,0,0.8); padding: 4px 14px; border-radius: 20px;
+      font-size: 0.78rem; animation: fadeUp 2s forwards;
+    }
+    @keyframes fadeUp { 0%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0;transform:translateY(-20px)} }
+
+    /* FLASH DE DANO */
+    #flash { position: absolute; inset: 0; pointer-events: none; z-index: 25; opacity: 0; }
+
+    /* CÓDIGO COLAPSÁVEL */
+    #painel-codigo {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 40;
+      background: rgba(2,2,8,0.97); border-top: 1px solid var(--borda);
+      max-height: 0; overflow: hidden; transition: max-height 0.3s;
+    }
+    #painel-codigo.aberto { max-height: 380px; }
+    .codigo-header {
+      padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--borda);
+    }
+    .codigo-tabs { display: flex; gap: 0; }
+    .codigo-tab {
+      padding: 5px 14px; font-size: 0.78rem; cursor: pointer; background: none; border: none;
+      color: var(--muted); border-bottom: 2px solid transparent; font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .codigo-tab.ativo { color: var(--ciano); border-bottom-color: var(--ciano); }
+    .codigo-conteudo { padding: 14px 20px; overflow-y: auto; max-height: 300px; }
+    pre.codigo { font-size: 0.76rem; line-height: 1.65; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    #btn-toggle-codigo {
+      position: absolute; bottom: 12px; right: 12px; z-index: 41;
+      background: var(--card); border: 1px solid var(--borda);
+      color: var(--muted); padding: 6px 14px; border-radius: 8px;
+      cursor: pointer; font-size: 0.75rem; font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+<div id="tela-jogo">
+  <canvas id="canvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-jogador" id="hud-p1">
+      <div class="hud-nome" id="nome-p1" style="color:#60a5fa">—</div>
+      <div class="barra-vida-container"><div class="barra-vida" id="vida-p1" style="width:100%;background:#60a5fa"></div></div>
+      <div class="hud-info" id="info-p1">Aguardando...</div>
+    </div>
+    <div class="hud-centro">
+      <div class="hud-placar" id="placar">0 : 0</div>
+      <div class="hud-tempo" id="hud-tempo">⏱ 00:00</div>
+    </div>
+    <div class="hud-jogador direita" id="hud-p2">
+      <div class="hud-nome" id="nome-p2" style="color:#f59e0b">—</div>
+      <div class="barra-vida-container" style="align-self:flex-end"><div class="barra-vida" id="vida-p2" style="width:100%;background:#f59e0b"></div></div>
+      <div class="hud-info" id="info-p2">Aguardando...</div>
+    </div>
+  </div>
+
+  <!-- KILL FEED -->
+  <div id="kill-feed"></div>
+
+  <!-- FLASH -->
+  <div id="flash"></div>
+
+  <!-- OVERLAY MENU -->
+  <div class="overlay" id="overlay-menu">
+    <div class="overlay-titulo">🚀 Batalha Espacial</div>
+    <div class="overlay-sub">Jogo multiplayer entre duas abas do navegador.<br>Cada jogador controla uma nave e precisa destruir o adversário.</div>
+
+    <div class="grid-modos">
+      <div class="modo-card" onclick="iniciarModo('multiplayer')">
+        <div class="icone">🌐</div>
+        <h3>Multiplayer</h3>
+        <p>Abra em duas abas. Cada aba é um jogador diferente. Online de verdade!</p>
+      </div>
+      <div class="modo-card" onclick="iniciarModo('bot')">
+        <div class="icone">🤖</div>
+        <h3>vs. Computador</h3>
+        <p>Jogue sozinho contra um bot. Boa para testar antes de chamar um amigo!</p>
+      </div>
+    </div>
+
+    <div class="controles-lista">
+      <div class="ctrl-grupo">
+        <div class="ctrl-titulo">🔵 Jogador 1 / Você</div>
+        <div class="ctrl-teclas" style="grid-template-columns:repeat(3,36px);margin-bottom:4px;">
+          <div class="tecla-visual vazia"></div>
+          <div class="tecla-visual">W</div>
+          <div class="tecla-visual vazia"></div>
+          <div class="tecla-visual">A</div>
+          <div class="tecla-visual">S</div>
+          <div class="tecla-visual">D</div>
+        </div>
+        <div style="text-align:center;margin-top:4px;font-size:0.72rem;color:var(--muted)">Espaço = atirar</div>
+      </div>
+      <div class="ctrl-grupo">
+        <div class="ctrl-titulo">🟡 Jogador 2 (outra aba)</div>
+        <div class="ctrl-teclas" style="grid-template-columns:repeat(3,36px);margin-bottom:4px;">
+          <div class="tecla-visual vazia"></div>
+          <div class="tecla-visual">↑</div>
+          <div class="tecla-visual vazia"></div>
+          <div class="tecla-visual">←</div>
+          <div class="tecla-visual">↓</div>
+          <div class="tecla-visual">→</div>
+        </div>
+        <div style="text-align:center;margin-top:4px;font-size:0.72rem;color:var(--muted)">Enter = atirar</div>
+      </div>
+    </div>
+
+    <button class="btn-comecar" onclick="iniciarModo('multiplayer')">▶ Jogar (2 Abas)</button>
+    <button class="btn-sec" onclick="window.open(location.href,'_blank')">🪟 Abrir 2ª aba automaticamente</button>
+    <div style="margin-top:12px;font-size:0.75rem;color:var(--muted)"><a href="index.html" style="color:var(--roxo);text-decoration:none">← Voltar ao curso</a></div>
+  </div>
+
+  <!-- OVERLAY AGUARDANDO -->
+  <div class="overlay" id="overlay-aguardando" style="display:none">
+    <div style="font-size:3rem;margin-bottom:16px">🔌</div>
+    <div class="overlay-titulo">Aguardando Adversário...</div>
+    <div class="overlay-sub">Abra este arquivo em outra aba do navegador!<br>Quando o outro jogador abrir, o jogo começa automaticamente.</div>
+    <div style="margin-top:16px;font-size:0.85rem;color:var(--ciano);font-family:monospace" id="id-display"></div>
+    <button class="btn-sec" style="margin-top:20px" onclick="window.open(location.href,'_blank')">🪟 Abrir 2ª aba</button>
+    <button class="btn-sec" onclick="mostrarMenu()">← Voltar</button>
+  </div>
+
+  <!-- OVERLAY FIM DE JOGO -->
+  <div class="overlay" id="overlay-fim" style="display:none">
+    <div id="fim-emoji" style="font-size:3rem;margin-bottom:12px">🏆</div>
+    <div class="overlay-titulo" id="fim-titulo">Você venceu!</div>
+    <div id="fim-placar" style="font-size:1.1rem;color:var(--muted);margin-bottom:24px"></div>
+    <button class="btn-comecar" onclick="reiniciar()">↺ Jogar de Novo</button>
+    <button class="btn-sec" onclick="mostrarMenu()">← Menu</button>
+  </div>
+
+  <!-- BOTÃO CÓDIGO -->
+  <button id="btn-toggle-codigo" onclick="toggleCodigo()">📖 Ver Código</button>
+
+  <!-- PAINEL CÓDIGO -->
+  <div id="painel-codigo">
+    <div class="codigo-header">
+      <div class="codigo-tabs">
+        <button class="codigo-tab ativo" onclick="setTab('canal')">📡 Canal</button>
+        <button class="codigo-tab" onclick="setTab('nave')">🚀 Nave</button>
+        <button class="codigo-tab" onclick="setTab('tiro')">💥 Tiro</button>
+        <button class="codigo-tab" onclick="setTab('loop')">🔄 Game Loop</button>
+      </div>
+      <button onclick="toggleCodigo()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;">✕</button>
+    </div>
+    <div class="codigo-conteudo" id="codigo-conteudo"></div>
+  </div>
+</div>
+
+<script>
+// =============================================
+// CONFIGURAÇÃO GERAL
+// =============================================
+const MEU_ID = 'nave-' + Math.random().toString(36).substr(2, 6);
+const canal = new BroadcastChannel('batalha-espacial');
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+// =============================================
+// ESTADO DO JOGO
+// =============================================
+const JOGADORES = {
+  cores: ['#60a5fa', '#f59e0b'],
+  nomes: []
+};
+
+let estado = {
+  naves: {},          // id -> nave
+  tiros: [],
+  pontuacao: {},      // id -> pts
+  rodada: 0,
+  inicio: 0,
+  emJogo: false,
+  modo: 'multiplayer'
+};
+
+let meuOrdem = 0;      // 0 = primeiro a entrar, 1 = segundo
+let outroId = null;
+let botAtivo = false;
+let animId = null;
+
+// =============================================
+// NAVE
+// =============================================
+function criarNave(id, ordem) {
+  const W = canvas.width, H = canvas.height;
+  return {
+    id, ordem,
+    x: ordem === 0 ? W * 0.25 : W * 0.75,
+    y: H / 2,
+    ang: ordem === 0 ? 0 : Math.PI,
+    vx: 0, vy: 0,
+    vida: 100, vidaMax: 100,
+    cor: JOGADORES.cores[ordem],
+    nome: 'J' + (ordem + 1),
+    morta: false,
+    invencivel: 0,
+    recarga: 0,
+    particulas: []
+  };
+}
+
+// =============================================
+// TECLADO
+// =============================================
+const teclas = {};
+window.addEventListener('keydown', e => { teclas[e.key] = true; });
+window.addEventListener('keyup',   e => { teclas[e.key] = false; });
+
+// =============================================
+// CANAL DE COMUNICAÇÃO
+// =============================================
+canal.postMessage({ tipo: 'entrou', id: MEU_ID });
+
+canal.onmessage = (ev) => {
+  const d = ev.data;
+
+  if (d.tipo === 'entrou' && d.id !== MEU_ID) {
+    outroId = d.id;
+    if (!estado.naves[MEU_ID]) {
+      meuOrdem = 0;
+      iniciarJogoMultiplayer(0, d.id);
+    } else {
+      canal.postMessage({ tipo: 'presente', id: MEU_ID, ordem: meuOrdem });
+    }
+  }
+  if (d.tipo === 'presente' && d.id !== MEU_ID) {
+    outroId = d.id;
+    if (!estado.naves[MEU_ID]) {
+      meuOrdem = 1;
+      iniciarJogoMultiplayer(1, d.id);
+    }
+  }
+
+  if (d.tipo === 'nave' && d.id !== MEU_ID) {
+    if (estado.naves[d.id]) {
+      estado.naves[d.id].x   = d.x;
+      estado.naves[d.id].y   = d.y;
+      estado.naves[d.id].ang = d.ang;
+      estado.naves[d.id].vx  = d.vx;
+      estado.naves[d.id].vy  = d.vy;
+      estado.naves[d.id].vida = d.vida;
+      estado.naves[d.id].morta = d.morta;
+    }
+  }
+
+  if (d.tipo === 'tiro' && d.id !== MEU_ID) {
+    estado.tiros.push({
+      x: d.x, y: d.y, vx: d.vx, vy: d.vy,
+      dono: d.id, cor: d.cor, vida: 120
+    });
+  }
+
+  if (d.tipo === 'saiu') {
+    mostrarFim('🏆', 'Adversário saiu!', 'Você vence por W.O.!');
+  }
+};
+
+window.addEventListener('beforeunload', () => {
+  canal.postMessage({ tipo: 'saiu', id: MEU_ID });
+});
+
+// =============================================
+// INICIALIZAÇÃO
+// =============================================
+function mostrarMenu() {
+  esconderTodos();
+  document.getElementById('overlay-menu').style.display = 'flex';
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  estado.emJogo = false;
+  botAtivo = false;
+}
+
+function iniciarModo(modo) {
+  estado.modo = modo;
+  esconderTodos();
+
+  if (modo === 'bot') {
+    botAtivo = true;
+    meuOrdem = 0;
+    outroId = 'bot';
+    iniciarJogoMultiplayer(0, 'bot');
+    // Criar nave do bot
+    estado.naves['bot'] = criarNave('bot', 1);
+  } else {
+    document.getElementById('overlay-aguardando').style.display = 'flex';
+    document.getElementById('id-display').textContent = 'Seu ID: ' + MEU_ID;
+    canal.postMessage({ tipo: 'entrou', id: MEU_ID });
+  }
+}
+
+function iniciarJogoMultiplayer(ordem, adversarioId) {
+  esconderTodos();
+  estado.naves = {};
+  estado.tiros = [];
+  estado.pontuacao = { [MEU_ID]: 0, [adversarioId]: 0 };
+  estado.inicio = Date.now();
+  estado.emJogo = true;
+  meuOrdem = ordem;
+  outroId = adversarioId;
+
+  estado.naves[MEU_ID] = criarNave(MEU_ID, ordem);
+  if (!estado.naves[adversarioId]) {
+    estado.naves[adversarioId] = criarNave(adversarioId, 1 - ordem);
+  }
+
+  atualizarHUD();
+  if (animId) cancelAnimationFrame(animId);
+  gameLoop();
+}
+
+function reiniciar() {
+  esconderTodos();
+  estado.tiros = [];
+  estado.inicio = Date.now();
+  estado.emJogo = true;
+
+  Object.keys(estado.naves).forEach((id, i) => {
+    const n = estado.naves[id];
+    const W = canvas.width, H = canvas.height;
+    n.x = n.ordem === 0 ? W * 0.25 : W * 0.75;
+    n.y = H / 2;
+    n.ang = n.ordem === 0 ? 0 : Math.PI;
+    n.vx = 0; n.vy = 0;
+    n.vida = 100; n.morta = false; n.invencivel = 0;
+    n.particulas = [];
+  });
+
+  gameLoop();
+}
+
+function esconderTodos() {
+  ['overlay-menu','overlay-aguardando','overlay-fim'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+}
+
+// =============================================
+// GAME LOOP
+// =============================================
+let ultimoSync = 0;
+let tempoJogo = 0;
+
+function gameLoop() {
+  animId = requestAnimationFrame(gameLoop);
+  if (!estado.emJogo) return;
+
+  tempoJogo = (Date.now() - estado.inicio) / 1000;
+  const eu = estado.naves[MEU_ID];
+  if (!eu) return;
+
+  // === MINHA NAVE ===
+  const ROT = 0.065, EMP = 0.18, ATRITO = 0.985, VEL_MAX = 7;
+  const RECARGA_MAX = 18;
+
+  if (eu.recarga > 0) eu.recarga--;
+
+  if (!eu.morta) {
+    if (teclas['a'] || teclas['A'])    eu.ang -= ROT;
+    if (teclas['d'] || teclas['D'])    eu.ang += ROT;
+    if (teclas['w'] || teclas['W']) {
+      eu.vx += Math.cos(eu.ang) * EMP;
+      eu.vy += Math.sin(eu.ang) * EMP;
+    }
+    if ((teclas[' '] || teclas['ArrowUp']) && eu.recarga <= 0) {
+      atirar(eu);
+      eu.recarga = RECARGA_MAX;
+    }
+  }
+
+  if (eu.invencivel > 0) eu.invencivel--;
+
+  eu.vx *= ATRITO; eu.vy *= ATRITO;
+  const vel = Math.sqrt(eu.vx*eu.vx + eu.vy*eu.vy);
+  if (vel > VEL_MAX) { eu.vx = eu.vx/vel*VEL_MAX; eu.vy = eu.vy/vel*VEL_MAX; }
+
+  eu.x += eu.vx; eu.y += eu.vy;
+
+  // Warp de borda
+  const W = canvas.width, H = canvas.height;
+  if (eu.x < 0)  eu.x = W;
+  if (eu.x > W)  eu.x = 0;
+  if (eu.y < 0)  eu.y = H;
+  if (eu.y > H)  eu.y = 0;
+
+  // === BOT IA ===
+  if (botAtivo && estado.naves['bot']) {
+    atualizarBot();
+  }
+
+  // === TIROS ===
+  for (let i = estado.tiros.length - 1; i >= 0; i--) {
+    const t = estado.tiros[i];
+    t.x += t.vx; t.y += t.vy;
+    t.vida--;
+    if (t.vida <= 0 || t.x < 0 || t.x > W || t.y < 0 || t.y > H) {
+      estado.tiros.splice(i, 1); continue;
+    }
+
+    // Colisão: só tiros inimigos me acertam (dono !== MEU_ID)
+    if (t.dono !== MEU_ID && !eu.morta && eu.invencivel <= 0) {
+      const dist = Math.hypot(t.x - eu.x, t.y - eu.y);
+      if (dist < 20) {
+        eu.vida -= 20;
+        eu.invencivel = 45;
+        estado.tiros.splice(i, 1);
+        flashDano();
+        if (eu.vida <= 0) {
+          eu.morta = true;
+          eu.vida = 0;
+          setTimeout(verificarFimRodada, 500);
+        }
+      }
+    }
+  }
+
+  // === SINCRONIZAR ===
+  const agora = Date.now();
+  if (agora - ultimoSync > 40) {
+    canal.postMessage({
+      tipo: 'nave', id: MEU_ID,
+      x: eu.x, y: eu.y, ang: eu.ang, vx: eu.vx, vy: eu.vy,
+      vida: eu.vida, morta: eu.morta
+    });
+    ultimoSync = agora;
+  }
+
+  desenhar();
+  atualizarHUD();
+}
+
+// =============================================
+// BOT
+// =============================================
+let botRecarga = 0;
+function atualizarBot() {
+  const bot = estado.naves['bot'];
+  const eu  = estado.naves[MEU_ID];
+  if (bot.morta || !eu) return;
+
+  const ROT = 0.04, EMP = 0.12, ATRITO = 0.982;
+  const dx = eu.x - bot.x, dy = eu.y - bot.y;
+  const angAlvo = Math.atan2(dy, dx);
+
+  let difAng = angAlvo - bot.ang;
+  while (difAng >  Math.PI) difAng -= Math.PI * 2;
+  while (difAng < -Math.PI) difAng += Math.PI * 2;
+
+  if (difAng > 0.05)  bot.ang += ROT;
+  else if (difAng < -0.05) bot.ang -= ROT;
+
+  const dist = Math.hypot(dx, dy);
+  if (dist > 150) { bot.vx += Math.cos(bot.ang) * EMP; bot.vy += Math.sin(bot.ang) * EMP; }
+
+  bot.vx *= ATRITO; bot.vy *= ATRITO;
+  bot.x += bot.vx; bot.y += bot.vy;
+
+  const W = canvas.width, H = canvas.height;
+  if (bot.x < 0) bot.x = W; if (bot.x > W) bot.x = 0;
+  if (bot.y < 0) bot.y = H; if (bot.y > H) bot.y = 0;
+
+  if (botRecarga > 0) { botRecarga--; return; }
+  if (Math.abs(difAng) < 0.25 && dist < 400 && Math.random() < 0.7) {
+    atirar(bot); botRecarga = 25;
+  }
+}
+
+// =============================================
+// ATIRAR
+// =============================================
+const VEL_TIRO = 10;
+function atirar(nave) {
+  const tiro = {
+    x: nave.x + Math.cos(nave.ang) * 22,
+    y: nave.y + Math.sin(nave.ang) * 22,
+    vx: Math.cos(nave.ang) * VEL_TIRO + nave.vx,
+    vy: Math.sin(nave.ang) * VEL_TIRO + nave.vy,
+    dono: nave.id, cor: nave.cor, vida: 100
+  };
+  estado.tiros.push(tiro);
+  if (nave.id === MEU_ID) {
+    canal.postMessage({ tipo: 'tiro', id: MEU_ID, x: tiro.x, y: tiro.y, vx: tiro.vx, vy: tiro.vy, cor: nave.cor });
+  }
+}
+
+// =============================================
+// DESENHO
+// =============================================
+const estrelas = Array.from({length: 150}, () => ({
+  x: Math.random(), y: Math.random(), r: Math.random() * 1.5,
+  b: 0.3 + Math.random() * 0.7
+}));
+
+function desenharNave(nave) {
+  if (nave.morta) return;
+  if (nave.invencivel > 0 && Math.floor(nave.invencivel / 4) % 2 === 0) return;
+
+  ctx.save();
+  ctx.translate(nave.x, nave.y);
+  ctx.rotate(nave.ang);
+
+  // Brilho de motor
+  if (nave.id === MEU_ID && (teclas['w'] || teclas['W'])) {
+    ctx.fillStyle = nave.cor + '60';
+    ctx.beginPath();
+    ctx.ellipse(-20, 0, 8 + Math.random()*4, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Sombra
+  ctx.shadowBlur = 12; ctx.shadowColor = nave.cor + '60';
+
+  // Forma da nave
+  ctx.fillStyle = nave.cor;
+  ctx.strokeStyle = '#ffffff30';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(22, 0);
+  ctx.lineTo(-14, 12);
+  ctx.lineTo(-8, 0);
+  ctx.lineTo(-14, -12);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.restore();
+}
+
+function desenhar() {
+  const W = canvas.width, H = canvas.height;
+
+  ctx.fillStyle = '#020208';
+  ctx.fillRect(0, 0, W, H);
+
+  // Estrelas
+  estrelas.forEach(e => {
+    ctx.fillStyle = `rgba(200,210,255,${e.b})`;
+    ctx.beginPath();
+    ctx.arc(e.x * W, e.y * H, e.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Tiros
+  estado.tiros.forEach(t => {
+    ctx.fillStyle = t.cor;
+    ctx.shadowBlur = 8; ctx.shadowColor = t.cor;
+    ctx.beginPath(); ctx.arc(t.x, t.y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  // Naves
+  Object.values(estado.naves).forEach(n => desenharNave(n));
+}
+
+// =============================================
+// HUD
+// =============================================
+function atualizarHUD() {
+  const naves = Object.values(estado.naves);
+  if (naves.length < 1) return;
+
+  const eu   = estado.naves[MEU_ID];
+  const outro = outroId ? estado.naves[outroId] : null;
+
+  if (eu) {
+    document.getElementById('nome-p1').textContent = 'VOCÊ';
+    document.getElementById('vida-p1').style.width = eu.vida + '%';
+    document.getElementById('info-p1').textContent = eu.morta ? '💀 Morto' : `${eu.vida}% vida`;
+  }
+  if (outro) {
+    document.getElementById('nome-p2').textContent = botAtivo ? '🤖 BOT' : 'ADVERSÁRIO';
+    document.getElementById('vida-p2').style.width = outro.vida + '%';
+    document.getElementById('info-p2').textContent = outro.morta ? '💀 Morto' : `${outro.vida}% vida`;
+  }
+
+  const s = estado.pontuacao;
+  const pts1 = s[MEU_ID] || 0;
+  const pts2 = outroId ? (s[outroId] || 0) : 0;
+  document.getElementById('placar').textContent = `${pts1} : ${pts2}`;
+
+  const mins = Math.floor(tempoJogo / 60).toString().padStart(2, '0');
+  const secs = Math.floor(tempoJogo % 60).toString().padStart(2, '0');
+  document.getElementById('hud-tempo').textContent = `⏱ ${mins}:${secs}`;
+}
+
+function flashDano() {
+  const f = document.getElementById('flash');
+  f.style.background = 'rgba(239,68,68,0.3)';
+  f.style.opacity = '1';
+  setTimeout(() => { f.style.opacity = '0'; f.style.background = 'transparent'; }, 200);
+}
+
+function killFeed(texto) {
+  const kf = document.getElementById('kill-feed');
+  const el = document.createElement('div');
+  el.className = 'kill-msg';
+  el.textContent = texto;
+  kf.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
+function verificarFimRodada() {
+  const eu    = estado.naves[MEU_ID];
+  const outro = outroId ? estado.naves[outroId] : null;
+  if (!eu) return;
+
+  if (eu.morta) {
+    if (outroId) estado.pontuacao[outroId] = (estado.pontuacao[outroId] || 0) + 1;
+    killFeed(botAtivo ? '🤖 BOT venceu essa rodada!' : '💀 Você foi destruído!');
+
+    const ptsDeles = outroId ? (estado.pontuacao[outroId] || 0) : 0;
+    if (ptsDeles >= 3) {
+      mostrarFim('💀', botAtivo ? 'O bot venceu!' : 'Você perdeu!', `Placar final: ${estado.pontuacao[MEU_ID]} × ${ptsDeles}`);
+    } else {
+      setTimeout(reiniciar, 1500);
+    }
+  }
+}
+
+function mostrarFim(emoji, titulo, sub) {
+  estado.emJogo = false;
+  cancelAnimationFrame(animId);
+  document.getElementById('fim-emoji').textContent = emoji;
+  document.getElementById('fim-titulo').textContent = titulo;
+  document.getElementById('fim-placar').textContent = sub;
+  document.getElementById('overlay-fim').style.display = 'flex';
+}
+
+// =============================================
+// CÓDIGO EXIBÍVEL
+// =============================================
+const CODIGOS = {
+  canal: `<span class="c">// Criar canal e conectar outros jogadores</span>
+<span class="k">const</span> <span class="v">canal</span> = <span class="k">new</span> <span class="f">BroadcastChannel</span>(<span class="s">'batalha-espacial'</span>);
+
+<span class="c">// Anunciar chegada</span>
+canal.<span class="f">postMessage</span>({ tipo: <span class="s">'entrou'</span>, id: MEU_ID });
+
+canal.onmessage = (<span class="v">ev</span>) => {
+  <span class="k">const</span> <span class="v">d</span> = ev.data;
+
+  <span class="k">if</span> (d.tipo === <span class="s">'entrou'</span> && d.id !== MEU_ID) {
+    <span class="c">// Novo jogador! Iniciar jogo</span>
+    outroId = d.id;
+    <span class="f">iniciarJogo</span>();
+  }
+
+  <span class="k">if</span> (d.tipo === <span class="s">'nave'</span> && d.id !== MEU_ID) {
+    <span class="c">// Atualiza posição do outro jogador</span>
+    estado.naves[d.id].x   = d.x;
+    estado.naves[d.id].y   = d.y;
+    estado.naves[d.id].ang = d.ang;
+    estado.naves[d.id].vida = d.vida;
+  }
+};`,
+
+  nave: `<span class="c">// Estrutura de uma nave</span>
+<span class="k">function</span> <span class="f">criarNave</span>(id, ordem) {
+  <span class="k">return</span> {
+    id, ordem,
+    x: ordem === <span class="n">0</span> ? W * <span class="n">0.25</span> : W * <span class="n">0.75</span>,
+    y: H / <span class="n">2</span>,
+    ang: ordem === <span class="n">0</span> ? <span class="n">0</span> : Math.PI,
+    vx: <span class="n">0</span>, vy: <span class="n">0</span>,
+    vida: <span class="n">100</span>,
+    cor: CORES[ordem],
+    morta: <span class="k">false</span>,
+    recarga: <span class="n">0</span>
+  };
+}
+
+<span class="c">// Física da nave no game loop</span>
+<span class="k">if</span> (teclas[<span class="s">'a'</span>]) nave.ang -= <span class="n">0.065</span>; <span class="c">// girar</span>
+<span class="k">if</span> (teclas[<span class="s">'d'</span>]) nave.ang += <span class="n">0.065</span>;
+<span class="k">if</span> (teclas[<span class="s">'w'</span>]) {
+  nave.vx += Math.cos(nave.ang) * <span class="n">0.18</span>; <span class="c">// empuxo!</span>
+  nave.vy += Math.sin(nave.ang) * <span class="n">0.18</span>;
+}
+nave.vx *= <span class="n">0.985</span>; <span class="c">// atrito no espaço</span>
+nave.x  += nave.vx;`,
+
+  tiro: `<span class="c">// Criar um tiro</span>
+<span class="k">function</span> <span class="f">atirar</span>(nave) {
+  <span class="k">const</span> tiro = {
+    x: nave.x + Math.cos(nave.ang) * <span class="n">22</span>,
+    y: nave.y + Math.sin(nave.ang) * <span class="n">22</span>,
+    vx: Math.cos(nave.ang) * <span class="n">10</span> + nave.vx,
+    vy: Math.sin(nave.ang) * <span class="n">10</span> + nave.vy,
+    dono: nave.id,
+    vida: <span class="n">100</span>
+  };
+  estado.tiros.push(tiro);
+
+  <span class="c">// Enviar para outra aba</span>
+  canal.<span class="f">postMessage</span>({ tipo: <span class="s">'tiro'</span>, ...tiro });
+}
+
+<span class="c">// Detectar acerto (dist < raio)</span>
+<span class="k">const</span> dist = Math.hypot(tiro.x - nave.x, tiro.y - nave.y);
+<span class="k">if</span> (dist < <span class="n">20</span>) {
+  nave.vida -= <span class="n">20</span>;
+  <span class="k">if</span> (nave.vida <= <span class="n">0</span>) nave.morta = <span class="k">true</span>;
+}`,
+
+  loop: `<span class="c">// Estrutura completa do game loop</span>
+<span class="k">function</span> <span class="f">gameLoop</span>() {
+  <span class="f">requestAnimationFrame</span>(gameLoop);
+
+  <span class="c">// 1. Processar input do jogador local</span>
+  <span class="f">processarTeclado</span>();
+
+  <span class="c">// 2. Atualizar física</span>
+  nave.vx += Math.cos(nave.ang) * empuxo;
+  nave.x  += nave.vx;
+
+  <span class="c">// 3. Sincronizar com outras abas</span>
+  canal.<span class="f">postMessage</span>({ tipo: <span class="s">'nave'</span>, id, x, y, ang, vida });
+
+  <span class="c">// 4. Verificar colisões</span>
+  <span class="f">verificarTiros</span>();
+
+  <span class="c">// 5. Desenhar tudo</span>
+  <span class="f">desenhar</span>();
+}
+<span class="f">gameLoop</span>();
+
+<span class="c">// A cada frame (~16ms), o jogo:</span>
+<span class="c">// 60 frames/seg × 40ms por envio = 25 mensagens/seg</span>
+<span class="c">// Suficiente para multiplayer fluido!</span>`
+};
+
+let tabAtual = 'canal';
+function setTab(t) {
+  tabAtual = t;
+  document.querySelectorAll('.codigo-tab').forEach((el, i) => {
+    el.classList.toggle('ativo', ['canal','nave','tiro','loop'][i] === t);
+  });
+  document.getElementById('codigo-conteudo').innerHTML = `<pre class="codigo">${CODIGOS[t]}</pre>`;
+}
+
+function toggleCodigo() {
+  const p = document.getElementById('painel-codigo');
+  p.classList.toggle('aberto');
+  if (p.classList.contains('aberto') && !document.getElementById('codigo-conteudo').innerHTML) {
+    setTab(tabAtual);
+  }
+}
+
+setTab('canal');
+
+// Mostrar menu inicial
+mostrarMenu();
+</script>
+</body>
+</html>

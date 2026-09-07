@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula 5 — Materiais PBR</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .prop-row { margin-bottom: 12px; }
+    .prop-row label { font-size: 0.75rem; color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .prop-row label span { color: var(--texto); font-family: monospace; }
+    .prop-row input[type=range] { width: 100%; accent-color: var(--laranja); }
+    .prop-row input[type=color] { width: 100%; height: 32px; border: 1px solid var(--borda); border-radius: 6px; background: none; cursor: pointer; padding: 2px; }
+    .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; }
+    .preset-btn {
+      background: var(--card); border: 1px solid var(--borda); border-radius: 8px;
+      padding: 8px 6px; text-align: center; cursor: pointer; font-size: 0.74rem; font-family: inherit; color: var(--muted);
+      transition: background 0.15s;
+    }
+    .preset-btn:hover { background: #1c0e00; border-color: var(--laranja); color: var(--texto); }
+    .preset-btn .pico { font-size: 1.2rem; display: block; margin-bottom: 3px; }
+    .sphere-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
+    .sphereinfo { background: var(--card); border: 1px solid var(--borda); border-radius: 6px; padding: 6px; text-align: center; font-size: 0.68rem; color: var(--muted); }
+    .sphereinfo .dot { width: 20px; height: 20px; border-radius: 50%; margin: 0 auto 4px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- PAINEL -->
+<div class="painel">
+  <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 5</div>
+  <div class="aula-num-badge">Aula 5 de 7 · Avançado</div>
+  <h1>🎨 Materiais PBR</h1>
+  <p class="subtitulo"><strong>PBR</strong> (Physically Based Rendering) é o sistema de materiais usado nos jogos modernos. Ele simula como a luz realmente se comporta.</p>
+
+  <h2>🎛️ Editor de Material</h2>
+
+  <div class="prop-row">
+    <label>Cor Base (Albedo) <span id="lbl-cor">#f97316</span></label>
+    <input type="color" id="p-cor" value="#f97316" oninput="atualizar()">
+  </div>
+
+  <div class="prop-row">
+    <label>Roughness (Rugosidade) <span id="lbl-rough">0.40</span></label>
+    <input type="range" id="p-rough" min="0" max="1" step="0.01" value="0.4" oninput="atualizar()">
+  </div>
+
+  <div class="prop-row">
+    <label>Metalness (Metal) <span id="lbl-metal">0.20</span></label>
+    <input type="range" id="p-metal" min="0" max="1" step="0.01" value="0.2" oninput="atualizar()">
+  </div>
+
+  <div class="prop-row">
+    <label>Emissive (Brilho próprio) <span id="lbl-emit">0.00</span></label>
+    <input type="range" id="p-emit" min="0" max="1" step="0.01" value="0" oninput="atualizar()">
+  </div>
+
+  <div class="prop-row">
+    <label>Wireframe <span id="lbl-wire">OFF</span></label>
+    <input type="range" id="p-wire" min="0" max="1" step="1" value="0" oninput="atualizar()">
+  </div>
+
+  <div class="sep"></div>
+
+  <h2>⚡ Presets de Material</h2>
+  <div class="preset-grid">
+    <div class="preset-btn" onclick="setPreset('metal')"><span class="pico">🔩</span>Metal</div>
+    <div class="preset-btn" onclick="setPreset('plast')"><span class="pico">🧴</span>Plástico</div>
+    <div class="preset-btn" onclick="setPreset('borr')"><span class="pico">⚫</span>Borracha</div>
+    <div class="preset-btn" onclick="setPreset('vidro')"><span class="pico">🔷</span>Vidro</div>
+    <div class="preset-btn" onclick="setPreset('ouro')"><span class="pico">🥇</span>Ouro</div>
+    <div class="preset-btn" onclick="setPreset('neon')"><span class="pico">💡</span>Neon</div>
+  </div>
+
+  <h2>🌡️ Roughness × Metalness</h2>
+  <p>Veja como as 4 combinações extremas se parecem:</p>
+  <div class="sphere-grid">
+    <div class="sphereinfo"><div class="dot" id="dot-00" style="background:#888"></div>R=0 M=0<br><small>Plástico brilhante</small></div>
+    <div class="sphereinfo"><div class="dot" id="dot-10" style="background:#888"></div>R=1 M=0<br><small>Plástico fosco</small></div>
+    <div class="sphereinfo"><div class="dot" id="dot-01" style="background:#888"></div>R=0 M=1<br><small>Metal polido</small></div>
+    <div class="sphereinfo"><div class="dot" id="dot-11" style="background:#888"></div>R=1 M=1<br><small>Metal oxidado</small></div>
+  </div>
+
+  <h2>💻 No Código</h2>
+  <div class="bloco">
+    <div class="cab">JavaScript — MeshStandardMaterial (PBR)</div>
+    <pre><span class="k">const</span> <span class="v">mat</span> = <span class="k">new</span> <span class="f">THREE.MeshStandardMaterial</span>({
+  color:     <span class="s">'#f97316'</span>,  <span class="c">// cor base</span>
+  roughness: <span class="n">0.4</span>,       <span class="c">// 0=espelho  1=fosco</span>
+  metalness: <span class="n">0.8</span>,       <span class="c">// 0=plástico 1=metal</span>
+  emissive:  <span class="s">'#ff4400'</span>,  <span class="c">// cor de brilho próprio</span>
+  emissiveIntensity: <span class="n">0.5</span>,
+
+  <span class="c">// Com texturas (PBR completo):</span>
+  map:         texAlbedo,   <span class="c">// cor de base</span>
+  roughnessMap: texRough,   <span class="c">// rugosidade por região</span>
+  metalnessMap: texMetal,   <span class="c">// metal por região</span>
+  normalMap:    texNormal,  <span class="c">// detalhes sem geometria</span>
+});</pre>
+  </div>
+
+  <div class="caixa-dica">
+    <div class="tit">💡 A regra do PBR</div>
+    Na vida real, materiais <strong>não-metálicos</strong> têm metalness ≈ 0. Metais têm metalness ≈ 1. Roughness controla o quão "desgastado" está o objeto. Uma panela nova = metalness 1, roughness 0.1. Uma panela enferrujada = metalness 0.7, roughness 0.9.
+  </div>
+
+  <div class="nav">
+    <a href="aula4.html">← Aula 4</a>
+    <a href="aula6.html">Aula 6: Iluminação →</a>
+  </div>
+</div>
+
+<!-- VIEWPORT -->
+<div class="viewport" id="vp">
+  <div class="controles-painel" style="min-width:160px">
+    <div class="ctrl-grupo">
+      <label>Forma</label>
+      <select id="sel-forma" onchange="trocarForma()">
+        <option value="esfera">Esfera</option>
+        <option value="cubo">Cubo</option>
+        <option value="torus">Torus</option>
+        <option value="capsula">Cápsula</option>
+      </select>
+    </div>
+    <div class="sep" style="margin:6px 0"></div>
+    <div class="ctrl-grupo">
+      <label>Luz ambiente</label>
+      <input type="range" id="sl-amb" min="0" max="2" step="0.05" value="0.5" oninput="atualizarLuz()">
+    </div>
+    <div class="ctrl-grupo">
+      <label>Luz direcional</label>
+      <input type="range" id="sl-dir" min="0" max="3" step="0.05" value="1.5" oninput="atualizarLuz()">
+    </div>
+  </div>
+  <div class="info-viewport">
+    <span id="info-mat">roughness: 0.40 · metalness: 0.20</span>
+    <span>🖱️ Arrastar = orbitar</span>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const vp = document.getElementById('vp');
+const vpW = () => window.innerWidth - document.querySelector('.painel').offsetWidth;
+const vpH = () => window.innerHeight;
+
+const cena = new THREE.Scene();
+cena.background = new THREE.Color('#03030a');
+
+const camera = new THREE.PerspectiveCamera(50, vpW()/vpH(), 0.1, 100);
+camera.position.set(0, 1, 4);
+camera.lookAt(0, 0, 0);
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch(e) {
+  document.getElementById('vp').innerHTML = '<div style="color:#f97316;padding:30px;font-family:monospace">❌ WebGL não iniciou: ' + e + '</div>';
+  throw e;
+}
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(vpW(), vpH());
+renderer.shadowMap.enabled = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+vp.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+const ambLight = new THREE.AmbientLight('#ffffff', 0.5); cena.add(ambLight);
+const dirLight = new THREE.DirectionalLight('#fffbe6', 1.5); dirLight.position.set(4,8,4); dirLight.castShadow = true; cena.add(dirLight);
+const fillLight = new THREE.DirectionalLight('#4060ff', 0.4); fillLight.position.set(-4,0,-4); cena.add(fillLight);
+
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(10,10), new THREE.MeshStandardMaterial({ color:'#0e0e16', roughness:0.8 }));
+piso.rotation.x = -Math.PI/2; piso.position.y = -1; piso.receiveShadow = true; cena.add(piso);
+
+// Material principal
+const mat = new THREE.MeshStandardMaterial({ color:'#f97316', roughness:0.4, metalness:0.2 });
+let meshAtual;
+
+function getGeo(tipo) {
+  if (tipo==='esfera')  return new THREE.SphereGeometry(1, 64, 48);
+  if (tipo==='cubo')    return new THREE.BoxGeometry(1.5,1.5,1.5);
+  if (tipo==='torus')   return new THREE.TorusGeometry(0.9,0.35,32,100);
+  if (tipo==='capsula') return new THREE.CapsuleGeometry(0.6,1,16,32);
+}
+
+function trocarForma() {
+  if (meshAtual) cena.remove(meshAtual);
+  const geo = getGeo(document.getElementById('sel-forma').value);
+  meshAtual = new THREE.Mesh(geo, mat);
+  meshAtual.castShadow = true;
+  cena.add(meshAtual);
+}
+
+trocarForma();
+
+// Grade de esferas de referência no fundo
+const PRESETS_ESFERAS = [
+  { r:0, m:0, x:-2.2, y:-0.4 },
+  { r:1, m:0, x:-0.7, y:-0.4 },
+  { r:0, m:1, x: 0.7, y:-0.4 },
+  { r:1, m:1, x: 2.2, y:-0.4 },
+];
+const dotsIds = ['dot-00','dot-10','dot-01','dot-11'];
+
+function atualizar() {
+  const cor    = document.getElementById('p-cor').value;
+  const rough  = parseFloat(document.getElementById('p-rough').value);
+  const metal  = parseFloat(document.getElementById('p-metal').value);
+  const emit   = parseFloat(document.getElementById('p-emit').value);
+  const wire   = parseInt(document.getElementById('p-wire').value) === 1;
+
+  mat.color.set(cor);
+  mat.roughness  = rough;
+  mat.metalness  = metal;
+  mat.emissive.set(emit > 0 ? cor : '#000000');
+  mat.emissiveIntensity = emit;
+  mat.wireframe  = wire;
+
+  document.getElementById('lbl-cor').textContent   = cor;
+  document.getElementById('lbl-rough').textContent = rough.toFixed(2);
+  document.getElementById('lbl-metal').textContent = metal.toFixed(2);
+  document.getElementById('lbl-emit').textContent  = emit.toFixed(2);
+  document.getElementById('lbl-wire').textContent  = wire ? 'ON' : 'OFF';
+  document.getElementById('info-mat').textContent  = `roughness: ${rough.toFixed(2)} · metalness: ${metal.toFixed(2)} · emissive: ${emit.toFixed(2)}`;
+
+  // Atualizar dots de referência
+  dotsIds.forEach((id, i) => {
+    const p = PRESETS_ESFERAS[i];
+    const dotMat = new THREE.MeshStandardMaterial({ color: cor, roughness: p.r, metalness: p.m });
+    // Só atualizar cor — não temos acesso ao mesh, mas atualizamos o background
+    // do div como aproximação visual
+    const lum = (p.m > 0.5) ? (p.r < 0.5 ? 0.7 : 0.4) : (p.r < 0.5 ? 0.9 : 0.6);
+    document.getElementById(id).style.background = cor;
+    document.getElementById(id).style.opacity = (0.4 + lum*0.6).toString();
+  });
+}
+
+function setPreset(p) {
+  const presets = {
+    metal: { cor:'#888888', rough:0.15, metal:1.0, emit:0 },
+    plast: { cor:'#3b82f6', rough:0.2,  metal:0.0, emit:0 },
+    borr:  { cor:'#1c1c1c', rough:0.95, metal:0.0, emit:0 },
+    vidro: { cor:'#a0d0ff', rough:0.05, metal:0.0, emit:0 },
+    ouro:  { cor:'#fbbf24', rough:0.1,  metal:1.0, emit:0 },
+    neon:  { cor:'#10b981', rough:0.8,  metal:0.0, emit:0.9},
+  };
+  const pr = presets[p];
+  document.getElementById('p-cor').value   = pr.cor;
+  document.getElementById('p-rough').value = pr.rough;
+  document.getElementById('p-metal').value = pr.metal;
+  document.getElementById('p-emit').value  = pr.emit;
+  atualizar();
+}
+
+function atualizarLuz() {
+  ambLight.intensity = parseFloat(document.getElementById('sl-amb').value);
+  dirLight.intensity = parseFloat(document.getElementById('sl-dir').value);
+}
+
+atualizar();
+
+function animar() {
+  requestAnimationFrame(animar);
+  controls.update();
+  renderer.render(cena, camera);
+}
+animar();
+
+window.addEventListener('resize', () => {
+  camera.aspect = vpW()/vpH();
+  camera.updateProjectionMatrix();
+  renderer.setSize(vpW(), vpH());
+});
+</script>
+</body>
+</html>

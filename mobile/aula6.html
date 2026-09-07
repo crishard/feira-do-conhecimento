@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🏆 Nave Caindo! — Jogo Mobile</title>
+  <style>
+    :root {
+      --roxo: #8b5cf6; --ciano: #06b6d4; --verde: #10b981; --laranja: #f97316;
+      --vermelho: #ef4444; --rosa: #ec4899;
+      --bg: #020208; --card: #0d0d1a; --borda: #1e1e3a;
+      --texto: #e2e8f0; --muted: #475569;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); height: 100vh; overflow: hidden; }
+
+    #canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+
+    /* HUD */
+    #hud {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: env(safe-area-inset-top, 12px) 20px 12px;
+      background: linear-gradient(to bottom, rgba(2,2,8,0.85), transparent);
+      pointer-events: none;
+    }
+    .hud-item { text-align: center; }
+    .hud-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .hud-val { font-size: 1.4rem; font-weight: 800; }
+
+    /* OVERLAYS */
+    .overlay {
+      position: absolute; inset: 0; z-index: 30;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(2,2,8,0.94);
+      padding: 24px;
+    }
+    .ov-emoji { font-size: 4rem; margin-bottom: 12px; }
+    .ov-titulo { font-size: 2rem; font-weight: 900; margin-bottom: 8px; text-align: center; }
+    .ov-sub { color: var(--muted); font-size: 0.92rem; margin-bottom: 28px; text-align: center; max-width: 380px; line-height: 1.7; }
+
+    .controle-opcoes {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      max-width: 400px; width: 100%; margin-bottom: 20px;
+    }
+    .ctrl-opt {
+      background: var(--card); border: 2px solid var(--borda);
+      border-radius: 12px; padding: 16px; text-align: center; cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .ctrl-opt:hover, .ctrl-opt.selecionado { border-color: var(--roxo); }
+    .ctrl-opt.selecionado { background: #1e1040; }
+    .ctrl-opt .ic { font-size: 2rem; margin-bottom: 6px; }
+    .ctrl-opt h3 { font-size: 0.88rem; margin-bottom: 2px; }
+    .ctrl-opt p { font-size: 0.75rem; color: var(--muted); }
+
+    .btn-jogar {
+      background: var(--roxo); color: white; border: none;
+      padding: 14px 40px; border-radius: 12px; font-size: 1.05rem;
+      cursor: pointer; font-family: inherit; font-weight: 700;
+      transition: background 0.2s;
+    }
+    .btn-jogar:hover { background: #7c3aed; }
+    .btn-sec { background: transparent; border: 1px solid var(--borda); color: var(--muted); padding: 8px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.85rem; margin-top: 10px; }
+
+    /* Flash de dano */
+    #flash { position: absolute; inset: 0; pointer-events: none; z-index: 25; opacity: 0; background: rgba(239,68,68,0.4); transition: opacity 0.1s; }
+
+    /* Joystick */
+    #joy-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+
+    /* Painel de código (colapsável) */
+    #painel {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 40;
+      background: rgba(2,2,8,0.97); border-top: 1px solid var(--borda);
+      max-height: 0; overflow: hidden; transition: max-height 0.3s;
+    }
+    #painel.aberto { max-height: 360px; }
+    .painel-cab {
+      padding: 10px 18px; display: flex; justify-content: space-between;
+      align-items: center; border-bottom: 1px solid var(--borda);
+    }
+    .p-tabs { display: flex; gap: 0; }
+    .p-tab {
+      padding: 5px 14px; font-size: 0.78rem; cursor: pointer;
+      background: none; border: none; color: var(--muted);
+      border-bottom: 2px solid transparent; font-family: inherit;
+    }
+    .p-tab.ativo { color: var(--ciano); border-bottom-color: var(--ciano); }
+    .painel-body { padding: 14px 18px; overflow-y: auto; max-height: 290px; }
+    pre.cod { font-size: 0.76rem; line-height: 1.65; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    #btn-cod {
+      position: absolute; bottom: 10px; right: 10px; z-index: 41;
+      background: rgba(13,13,26,0.9); border: 1px solid var(--borda);
+      color: var(--muted); padding: 6px 12px; border-radius: 8px;
+      cursor: pointer; font-size: 0.73rem; font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-item">
+    <div class="hud-label">Pontos</div>
+    <div class="hud-val" id="h-pts" style="color:#f59e0b">0</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-label">Recorde</div>
+    <div class="hud-val" id="h-rec" style="color:#8b5cf6">0</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-label">Vidas</div>
+    <div class="hud-val" id="h-vidas" style="color:#ef4444">❤️❤️❤️</div>
+  </div>
+</div>
+
+<!-- Flash -->
+<div id="flash"></div>
+
+<!-- Joystick SVG overlay -->
+<svg id="joy-overlay" id="joy-overlay"></svg>
+
+<!-- OVERLAY MENU -->
+<div class="overlay" id="ov-menu">
+  <div class="ov-emoji">🚀</div>
+  <div class="ov-titulo">Nave Caindo!</div>
+  <div class="ov-sub">Desvie dos meteoros, colete combustível e sobreviva o máximo de tempo possível!</div>
+
+  <div class="controle-opcoes">
+    <div class="ctrl-opt selecionado" id="opt-joy" onclick="selecionarCtrl('joystick')">
+      <div class="ic">🕹️</div>
+      <h3>Joystick</h3>
+      <p>Toque e arraste</p>
+    </div>
+    <div class="ctrl-opt" id="opt-acel" onclick="selecionarCtrl('acel')">
+      <div class="ic">🌀</div>
+      <h3>Acelerômetro</h3>
+      <p>Incline o celular</p>
+    </div>
+  </div>
+
+  <button class="btn-jogar" onclick="comecarJogo()">▶ Jogar</button>
+  <button class="btn-sec" onclick="window.location.href='index.html'">← Voltar ao Curso</button>
+</div>
+
+<!-- OVERLAY GAME OVER -->
+<div class="overlay" id="ov-gameover" style="display:none">
+  <div class="ov-emoji" id="go-emoji">💥</div>
+  <div class="ov-titulo" id="go-titulo">Fim de Jogo!</div>
+  <div style="font-size:2.5rem;font-weight:900;color:#f59e0b;margin-bottom:4px" id="go-pts">0</div>
+  <div style="font-size:0.85rem;color:var(--muted);margin-bottom:24px" id="go-rec"></div>
+  <button class="btn-jogar" onclick="reiniciar()">↺ Tentar de Novo</button>
+  <button class="btn-sec" onclick="document.getElementById('ov-menu').style.display='flex';document.getElementById('ov-gameover').style.display='none'">← Menu</button>
+</div>
+
+<!-- Botão de código -->
+<button id="btn-cod" onclick="toggleCod()">📖 Ver Código</button>
+
+<!-- Painel de código -->
+<div id="painel">
+  <div class="painel-cab">
+    <div class="p-tabs">
+      <button class="p-tab ativo" onclick="setTab('nave')">🚀 Nave</button>
+      <button class="p-tab" onclick="setTab('meteoro')">☄️ Meteoros</button>
+      <button class="p-tab" onclick="setTab('touch')">👆 Touch</button>
+      <button class="p-tab" onclick="setTab('acel')">🌀 Sensor</button>
+    </div>
+    <button onclick="toggleCod()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem">✕</button>
+  </div>
+  <div class="painel-body" id="painel-body"></div>
+</div>
+
+<script>
+// =====================================================
+// SETUP
+// =====================================================
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+const joySVG = document.getElementById('joy-overlay');
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+// =====================================================
+// ESTADO
+// =====================================================
+let ctrlModo = 'joystick'; // 'joystick' | 'acel'
+let emJogo = false, animId = null;
+
+const nave = { x:0, y:0, vx:0, vy:0, largura:36, altura:50, vidas:3, invencivel:0, cor:'#8b5cf6', pontos:0, combustivel:100 };
+const meteoros = [], combustiveis = [], particulas = [];
+let velocidadeBase = 2.5, tempoJogo = 0, spawnTimer = 0, spawnCombTimer = 0;
+let recorde = parseInt(localStorage.getItem('nave-caindo-rec') || '0');
+document.getElementById('h-rec').textContent = recorde;
+
+// =====================================================
+// JOYSTICK
+// =====================================================
+const joy = { ativo:false, baseX:0, baseY:0, caboX:0, caboY:0, dx:0, dy:0, raio:65, touchId:null };
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t => {
+    if (!joy.ativo && ctrlModo === 'joystick') {
+      joy.ativo = true; joy.touchId = t.identifier;
+      joy.baseX = t.clientX; joy.baseY = t.clientY;
+      joy.caboX = t.clientX; joy.caboY = t.clientY;
+      joy.dx = 0; joy.dy = 0;
+    }
+  });
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t => {
+    if (t.identifier === joy.touchId) {
+      const dx = t.clientX - joy.baseX, dy = t.clientY - joy.baseY;
+      const d = Math.hypot(dx, dy);
+      if (d > joy.raio) {
+        joy.caboX = joy.baseX + (dx/d)*joy.raio;
+        joy.caboY = joy.baseY + (dy/d)*joy.raio;
+      } else { joy.caboX = t.clientX; joy.caboY = t.clientY; }
+      joy.dx = (joy.caboX - joy.baseX) / joy.raio;
+      joy.dy = (joy.caboY - joy.baseY) / joy.raio;
+    }
+  });
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t => {
+    if (t.identifier === joy.touchId) { joy.ativo = false; joy.dx = 0; joy.dy = 0; joy.touchId = null; }
+  });
+}, { passive: false });
+
+// Mouse fallback
+let mouseJoy = false;
+canvas.addEventListener('mousedown', (e) => {
+  if (!emJogo || ctrlModo !== 'joystick') return;
+  mouseJoy = true; joy.ativo = true;
+  joy.baseX = e.clientX; joy.baseY = e.clientY;
+  joy.caboX = e.clientX; joy.caboY = e.clientY;
+});
+canvas.addEventListener('mousemove', (e) => {
+  if (!mouseJoy) return;
+  const dx = e.clientX - joy.baseX, dy = e.clientY - joy.baseY;
+  const d = Math.hypot(dx, dy);
+  if (d > joy.raio) {
+    joy.caboX = joy.baseX + (dx/d)*joy.raio;
+    joy.caboY = joy.baseY + (dy/d)*joy.raio;
+  } else { joy.caboX = e.clientX; joy.caboY = e.clientY; }
+  joy.dx = (joy.caboX - joy.baseX) / joy.raio;
+  joy.dy = (joy.caboY - joy.baseY) / joy.raio;
+});
+canvas.addEventListener('mouseup', () => { mouseJoy = false; joy.ativo = false; joy.dx = 0; joy.dy = 0; });
+
+// =====================================================
+// ACELERÔMETRO
+// =====================================================
+let acelX = 0, acelY = 0;
+
+async function ativarAcel() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+    const r = await DeviceOrientationEvent.requestPermission();
+    if (r !== 'granted') return;
+  }
+  window.addEventListener('deviceorientation', (e) => {
+    acelX = Math.max(-1, Math.min(1, (e.gamma || 0) / 40));
+    acelY = Math.max(-1, Math.min(1, ((e.beta || 0) - 25) / 40));
+  });
+}
+
+// =====================================================
+// MENU
+// =====================================================
+function selecionarCtrl(modo) {
+  ctrlModo = modo;
+  document.getElementById('opt-joy').classList.toggle('selecionado', modo === 'joystick');
+  document.getElementById('opt-acel').classList.toggle('selecionado', modo === 'acel');
+}
+
+async function comecarJogo() {
+  if (ctrlModo === 'acel') await ativarAcel();
+  document.getElementById('ov-menu').style.display = 'none';
+  reiniciar();
+}
+
+function reiniciar() {
+  document.getElementById('ov-gameover').style.display = 'none';
+  const W = canvas.width, H = canvas.height;
+  nave.x = W/2; nave.y = H - 120;
+  nave.vx = 0; nave.vy = 0; nave.vidas = 3;
+  nave.invencivel = 0; nave.pontos = 0; nave.combustivel = 100;
+  meteoros.length = 0; combustiveis.length = 0; particulas.length = 0;
+  velocidadeBase = 2.5; tempoJogo = 0; spawnTimer = 0; spawnCombTimer = 0;
+  emJogo = true;
+  atualizarHUD();
+  if (animId) cancelAnimationFrame(animId);
+  gameLoop();
+}
+
+// =====================================================
+// SPAWN
+// =====================================================
+function spawnMeteoro() {
+  const W = canvas.width;
+  const tam = 15 + Math.random() * 30;
+  meteoros.push({
+    x: tam + Math.random() * (W - tam*2), y: -tam*2,
+    r: tam, vx: (Math.random()-0.5)*2,
+    vy: velocidadeBase + Math.random() * 2,
+    ang: 0, vang: (Math.random()-0.5)*0.06,
+    cor: ['#6b7280','#94a3b8','#78716c','#57534e'][Math.floor(Math.random()*4)]
+  });
+}
+
+function spawnCombustivel() {
+  const W = canvas.width;
+  combustiveis.push({
+    x: 30 + Math.random() * (W - 60), y: -30,
+    vy: velocidadeBase * 0.7, r: 14, ang: 0
+  });
+}
+
+function addParticula(x, y, cor, n=8) {
+  for (let i = 0; i < n; i++) {
+    const ang = Math.random() * Math.PI * 2, spd = 1+Math.random()*4;
+    particulas.push({ x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd, vida: 1, r: 2+Math.random()*4, cor });
+  }
+}
+
+// =====================================================
+// GAME LOOP
+// =====================================================
+const ATRITO = 0.88, ACEL = 0.45, VEL_MAX = 8;
+const estrelas = Array.from({length:120}, () => ({ x:Math.random(), y:Math.random(), r:0.5+Math.random()*1.5, b:0.2+Math.random()*0.7 }));
+
+function gameLoop() {
+  animId = requestAnimationFrame(gameLoop);
+  if (!emJogo) return;
+  const W = canvas.width, H = canvas.height;
+  tempoJogo++;
+
+  // === CONTROLE ===
+  let ax = 0, ay = 0;
+  if (ctrlModo === 'joystick') { ax = joy.dx * ACEL; ay = joy.dy * ACEL; }
+  else { ax = acelX * ACEL; ay = acelY * ACEL; }
+
+  nave.vx += ax; nave.vy += ay;
+  nave.vx *= ATRITO; nave.vy *= ATRITO;
+  const v = Math.hypot(nave.vx, nave.vy);
+  if (v > VEL_MAX) { nave.vx = nave.vx/v*VEL_MAX; nave.vy = nave.vy/v*VEL_MAX; }
+  nave.x += nave.vx; nave.y += nave.vy;
+  nave.x = Math.max(nave.largura/2, Math.min(W - nave.largura/2, nave.x));
+  nave.y = Math.max(nave.altura/2, Math.min(H - nave.altura/2, nave.y));
+
+  if (nave.invencivel > 0) nave.invencivel--;
+
+  // Velocidade aumenta com o tempo
+  velocidadeBase = 2.5 + tempoJogo * 0.001;
+
+  // === COMBUSTÍVEL ===
+  nave.combustivel -= 0.05;
+  if (nave.combustivel <= 0) { morrer(); return; }
+
+  // === SPAWN ===
+  spawnTimer++;
+  spawnCombTimer++;
+  const intervMet = Math.max(20, 60 - tempoJogo * 0.05);
+  if (spawnTimer >= intervMet) { spawnMeteoro(); spawnTimer = 0; }
+  if (spawnCombTimer >= 180) { spawnCombustivel(); spawnCombTimer = 0; }
+
+  // === METEOROS ===
+  for (let i = meteoros.length-1; i >= 0; i--) {
+    const m = meteoros[i];
+    m.x += m.vx; m.y += m.vy; m.ang += m.vang;
+    if (m.y > H + m.r*2) { meteoros.splice(i, 1); nave.pontos += 5; continue; }
+
+    if (nave.invencivel <= 0) {
+      const dist = Math.hypot(nave.x - m.x, nave.y - m.y);
+      if (dist < m.r + 18) {
+        meteoros.splice(i, 1);
+        addParticula(m.x, m.y, '#f97316', 12);
+        tomarDano();
+      }
+    }
+  }
+
+  // === COMBUSTÍVEL COLETÁVEL ===
+  for (let i = combustiveis.length-1; i >= 0; i--) {
+    const c = combustiveis[i];
+    c.y += c.vy; c.ang += 0.04;
+    if (c.y > H + 40) { combustiveis.splice(i, 1); continue; }
+    if (Math.hypot(nave.x - c.x, nave.y - c.y) < 22 + c.r) {
+      combustiveis.splice(i, 1);
+      nave.combustivel = Math.min(100, nave.combustivel + 35);
+      nave.pontos += 20;
+      addParticula(c.x, c.y, '#10b981', 10);
+      if (navigator.vibrate) navigator.vibrate(60);
+    }
+  }
+
+  // === PARTÍCULAS ===
+  for (let i = particulas.length-1; i >= 0; i--) {
+    const p = particulas[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.1;
+    p.vida -= 0.04; p.r *= 0.97;
+    if (p.vida <= 0) particulas.splice(i, 1);
+  }
+
+  // === HUD ===
+  nave.pontos += 0.1;
+  atualizarHUD();
+
+  // ===  DRAW ===
+  ctx.fillStyle = '#020208'; ctx.fillRect(0, 0, W, H);
+
+  // Estrelas
+  estrelas.forEach(s => {
+    ctx.globalAlpha = s.b; ctx.fillStyle = '#c8d5ff';
+    ctx.beginPath(); ctx.arc(s.x*W, (s.y + tempoJogo*0.0003) % 1 * H, s.r, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // Partículas
+  particulas.forEach(p => {
+    ctx.globalAlpha = p.vida;
+    ctx.fillStyle = p.cor;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // Combustíveis
+  combustiveis.forEach(c => {
+    ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.ang);
+    ctx.fillStyle = '#10b981'; ctx.shadowBlur = 10; ctx.shadowColor = '#10b98180';
+    ctx.font = '22px serif'; ctx.textAlign = 'center';
+    ctx.fillText('⛽', 0, 8); ctx.shadowBlur = 0; ctx.restore();
+  });
+
+  // Meteoros
+  meteoros.forEach(m => {
+    ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.ang);
+    ctx.fillStyle = m.cor; ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < 7; i++) {
+      const a = (i/7)*Math.PI*2;
+      const r = m.r * (0.75 + Math.sin(i*1.3)*0.25);
+      i === 0 ? ctx.moveTo(Math.cos(a)*r, Math.sin(a)*r) : ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+  });
+
+  // Nave
+  const visivelNave = nave.invencivel <= 0 || Math.floor(nave.invencivel/4) % 2 === 0;
+  if (visivelNave) {
+    ctx.save(); ctx.translate(nave.x, nave.y);
+    // Chama do motor
+    ctx.fillStyle = `rgba(249,115,22,${0.4+Math.random()*0.3})`;
+    ctx.beginPath();
+    ctx.ellipse(0, nave.altura*0.4, 7+Math.random()*4, 14+Math.random()*8, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Corpo
+    ctx.fillStyle = '#8b5cf6'; ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 12; ctx.shadowColor = '#8b5cf680';
+    ctx.beginPath();
+    ctx.moveTo(0, -nave.altura/2);
+    ctx.lineTo(nave.largura/2, nave.altura/2);
+    ctx.lineTo(0, nave.altura/3);
+    ctx.lineTo(-nave.largura/2, nave.altura/2);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    // Janela
+    ctx.fillStyle = '#cde';
+    ctx.beginPath(); ctx.arc(0, -4, 6, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // Barra de combustível
+  const barW = 120, barH = 8, barX = W/2 - barW/2, barY = H - 20;
+  ctx.fillStyle = '#1e1e3a'; ctx.beginPath(); ctx.roundRect(barX, barY, barW, barH, 4); ctx.fill();
+  const pct = nave.combustivel / 100;
+  const corComb = pct > 0.5 ? '#10b981' : pct > 0.25 ? '#f59e0b' : '#ef4444';
+  ctx.fillStyle = corComb; ctx.beginPath(); ctx.roundRect(barX, barY, barW*pct, barH, 4); ctx.fill();
+
+  // Joystick
+  if (joy.ativo && ctrlModo === 'joystick') {
+    ctx.fillStyle = 'rgba(139,92,246,0.12)'; ctx.strokeStyle = 'rgba(139,92,246,0.4)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(joy.baseX, joy.baseY, joy.raio, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(139,92,246,0.65)'; ctx.strokeStyle = '#a78bfa';
+    ctx.beginPath(); ctx.arc(joy.caboX, joy.caboY, joy.raio*0.38, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+}
+
+// =====================================================
+// DANO / MORTE
+// =====================================================
+function tomarDano() {
+  nave.vidas--;
+  nave.invencivel = 80;
+  if (navigator.vibrate) navigator.vibrate([100, 30, 100]);
+  const flash = document.getElementById('flash');
+  flash.style.opacity = '1'; setTimeout(() => flash.style.opacity = '0', 150);
+  addParticula(nave.x, nave.y, '#ef4444', 16);
+  atualizarHUD();
+  if (nave.vidas <= 0) morrer();
+}
+
+function morrer() {
+  emJogo = false;
+  cancelAnimationFrame(animId);
+  addParticula(nave.x, nave.y, '#8b5cf6', 30);
+  if (navigator.vibrate) navigator.vibrate([200, 50, 200, 50, 400]);
+
+  const pts = Math.floor(nave.pontos);
+  let novoRec = false;
+  if (pts > recorde) { recorde = pts; localStorage.setItem('nave-caindo-rec', recorde); novoRec = true; }
+
+  document.getElementById('go-emoji').textContent = novoRec ? '🏆' : '💥';
+  document.getElementById('go-titulo').textContent = novoRec ? 'Novo Recorde!' : 'Fim de Jogo!';
+  document.getElementById('go-pts').textContent = `${pts} pontos`;
+  document.getElementById('go-rec').textContent = `Recorde: ${recorde}`;
+  document.getElementById('h-rec').textContent = recorde;
+  document.getElementById('ov-gameover').style.display = 'flex';
+}
+
+function atualizarHUD() {
+  document.getElementById('h-pts').textContent = Math.floor(nave.pontos);
+  const vidas = ['','❤️','❤️❤️','❤️❤️❤️'];
+  document.getElementById('h-vidas').textContent = vidas[nave.vidas] || '';
+}
+
+// =====================================================
+// PAINEL DE CÓDIGO
+// =====================================================
+const CODIGOS = {
+  nave:`<span class="c">// Estrutura da nave</span>
+<span class="k">const</span> <span class="v">nave</span> = {
+  x: W/<span class="n">2</span>, y: H - <span class="n">120</span>,
+  vx: <span class="n">0</span>, vy: <span class="n">0</span>,
+  vidas: <span class="n">3</span>,
+  combustivel: <span class="n">100</span>
+};
+
+<span class="c">// Física no game loop</span>
+nave.vx += ax * ACEL; <span class="c">// acelerar</span>
+nave.vy += ay * ACEL;
+nave.vx *= <span class="n">0.88</span>;      <span class="c">// atrito</span>
+nave.vy *= <span class="n">0.88</span>;
+nave.x  += nave.vx;   <span class="c">// mover</span>
+nave.y  += nave.vy;
+
+<span class="c">// Limitar aos cantos da tela</span>
+nave.x = Math.max(<span class="n">18</span>, Math.min(W-<span class="n">18</span>, nave.x));
+nave.y = Math.max(<span class="n">25</span>, Math.min(H-<span class="n">25</span>, nave.y));`,
+
+  meteoro:`<span class="c">// Spawn de meteoro na borda superior</span>
+<span class="k">function</span> <span class="f">spawnMeteoro</span>() {
+  meteoros.<span class="f">push</span>({
+    x: Math.<span class="f">random</span>() * W,
+    y: -<span class="n">40</span>,           <span class="c">// começa acima da tela</span>
+    r: <span class="n">15</span> + Math.<span class="f">random</span>() * <span class="n">30</span>,
+    vy: velocidade + Math.<span class="f">random</span>() * <span class="n">2</span>,
+    vang: (Math.<span class="f">random</span>()-<span class="n">0.5</span>) * <span class="n">0.06</span>
+  });
+}
+
+<span class="c">// Detectar colisão nave + meteoro</span>
+<span class="k">const</span> <span class="v">dist</span> = Math.<span class="f">hypot</span>(nave.x - m.x, nave.y - m.y);
+<span class="k">if</span> (dist < m.r + <span class="n">18</span>) {
+  <span class="f">tomarDano</span>();
+}`,
+
+  touch:`<span class="c">// Joystick virtual dinâmico</span>
+canvas.addEventListener(<span class="s">'touchstart'</span>, (<span class="v">e</span>) => {
+  joy.ativo = <span class="k">true</span>;
+  joy.baseX = e.touches[<span class="n">0</span>].clientX; <span class="c">// âncora</span>
+  joy.baseY = e.touches[<span class="n">0</span>].clientY;
+});
+
+canvas.addEventListener(<span class="s">'touchmove'</span>, (<span class="v">e</span>) => {
+  <span class="k">const</span> <span class="v">dx</span> = e.touches[<span class="n">0</span>].clientX - joy.baseX;
+  <span class="k">const</span> <span class="v">dy</span> = e.touches[<span class="n">0</span>].clientY - joy.baseY;
+  <span class="k">const</span> <span class="v">d</span>  = Math.<span class="f">hypot</span>(dx, dy);
+
+  <span class="c">// Limitar ao raio</span>
+  <span class="k">if</span> (d > joy.raio) {
+    joy.dx = dx / d; <span class="c">// normalizado -1 a 1</span>
+    joy.dy = dy / d;
+  } <span class="k">else</span> {
+    joy.dx = dx / joy.raio;
+    joy.dy = dy / joy.raio;
+  }
+});`,
+
+  acel:`<span class="c">// Ativar e usar o acelerômetro</span>
+<span class="k">async function</span> <span class="f">ativarAcel</span>() {
+  <span class="c">// iOS 13+ exige permissão</span>
+  <span class="k">if</span> (DeviceOrientationEvent.requestPermission) {
+    <span class="k">const</span> <span class="v">r</span> = <span class="k">await</span> DeviceOrientationEvent
+      .<span class="f">requestPermission</span>();
+    <span class="k">if</span> (r !== <span class="s">'granted'</span>) <span class="k">return</span>;
+  }
+
+  window.addEventListener(<span class="s">'deviceorientation'</span>, (<span class="v">e</span>) => {
+    acelX = e.gamma / <span class="n">40</span>; <span class="c">// -1 a 1</span>
+    acelY = (e.beta - <span class="n">25</span>) / <span class="n">40</span>;
+  });
+}
+
+<span class="c">// No loop: usar igual ao joystick</span>
+nave.vx += acelX * ACEL;
+nave.vy += acelY * ACEL;`
+};
+
+let tabAtual = 'nave';
+function setTab(t) {
+  tabAtual = t;
+  document.querySelectorAll('.p-tab').forEach((el, i) => {
+    el.classList.toggle('ativo', ['nave','meteoro','touch','acel'][i] === t);
+  });
+  document.getElementById('painel-body').innerHTML = `<pre class="cod">${CODIGOS[t]}</pre>`;
+}
+function toggleCod() {
+  const p = document.getElementById('painel');
+  p.classList.toggle('aberto');
+  if (p.classList.contains('aberto')) setTab(tabAtual);
+}
+setTab('nave');
+</script>
+</body>
+</html>

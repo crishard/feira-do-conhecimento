@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula 3 — Primitivas e Blockout</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .primitivas-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
+    .prim-btn {
+      background: var(--card); border: 1px solid var(--borda); border-radius: 8px;
+      padding: 8px 4px; text-align: center; cursor: pointer; transition: border-color 0.15s;
+      font-size: 0.7rem; color: var(--muted);
+    }
+    .prim-btn:hover { border-color: var(--laranja); color: var(--texto); }
+    .prim-btn .ic { font-size: 1.3rem; margin-bottom: 3px; display: block; }
+
+    .personagem-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+    .pbtn {
+      background: var(--card); border: 1px solid var(--borda); border-radius: 8px;
+      padding: 7px 12px; cursor: pointer; font-size: 0.78rem; font-family: inherit;
+      color: var(--texto); transition: background 0.15s;
+    }
+    .pbtn:hover { background: #1c0e00; border-color: var(--laranja); }
+    .pbtn.ativo { background: #1c0e00; border-color: var(--laranja); color: var(--laranja); }
+
+    .peca-info { background: var(--card); border: 1px solid var(--borda); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.7; margin: 8px 0; }
+    .peca-info code { color: #86efac; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- PAINEL -->
+<div class="painel">
+  <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 3</div>
+  <div class="aula-num-badge">Aula 3 de 7 · Intermediário</div>
+  <h1>🏗️ Primitivas e Blockout</h1>
+  <p class="subtitulo">Todo modelador começa com formas simples. Combinando primitivas você pode fazer qualquer coisa — de casas a personagens!</p>
+
+  <h2>🧱 As Primitivas Básicas</h2>
+  <p>Clique para adicionar à cena:</p>
+  <div class="primitivas-grid">
+    <div class="prim-btn" onclick="adicionarPrimitiva('cubo')"><span class="ic">🟫</span>Cubo</div>
+    <div class="prim-btn" onclick="adicionarPrimitiva('esfera')"><span class="ic">🟠</span>Esfera</div>
+    <div class="prim-btn" onclick="adicionarPrimitiva('cilindro')"><span class="ic">🟡</span>Cilindro</div>
+    <div class="prim-btn" onclick="adicionarPrimitiva('cone')"><span class="ic">🔺</span>Cone</div>
+    <div class="prim-btn" onclick="adicionarPrimitiva('torus')"><span class="ic">🍩</span>Torus</div>
+    <div class="prim-btn" onclick="adicionarPrimitiva('plano')"><span class="ic">⬜</span>Plano</div>
+    <div class="prim-btn" onclick="adicionarPrimitiva('capsula')"><span class="ic">💊</span>Cápsula</div>
+    <div class="prim-btn" onclick="adicionarPrimitiva('icosaedro')"><span class="ic">💎</span>Icosaedro</div>
+  </div>
+
+  <div class="sep"></div>
+
+  <h2>🤖 Blockout de Personagem</h2>
+  <p>A técnica <strong>blockout</strong> (ou blockmesh) é: monte o personagem com primitivas simples antes de detalhar. Os botões abaixo constroem peça por peça:</p>
+
+  <div class="personagem-btns">
+    <button class="pbtn" id="pb-cab"  onclick="togglePeca('cab')">🔵 Cabeça</button>
+    <button class="pbtn" id="pb-corp" onclick="togglePeca('corp')">🟫 Corpo</button>
+    <button class="pbtn" id="pb-ba"   onclick="togglePeca('ba')">💪 Braços</button>
+    <button class="pbtn" id="pb-pe"   onclick="togglePeca('pe')">🦵 Pernas</button>
+    <button class="pbtn" id="pb-pes"  onclick="togglePeca('pes')">👟 Pés</button>
+    <button class="pbtn" id="pb-ol"   onclick="togglePeca('ol')">👁️ Olhos</button>
+  </div>
+
+  <div class="peca-info" id="peca-info">← Clique nas peças para ver como cada uma é feita</div>
+
+  <button class="btn-ctrl" style="width:100%;margin-bottom:4px" onclick="montarTudo()">🤖 Montar Tudo</button>
+  <button class="btn-ctrl" style="width:100%"                  onclick="limparCena()">🗑️ Limpar Cena</button>
+
+  <div class="sep"></div>
+
+  <h2>💻 Exemplo de Código</h2>
+  <div class="bloco">
+    <div class="cab">JavaScript — construindo um boneco</div>
+    <pre><span class="c">// Cabeça = esfera</span>
+<span class="k">const</span> <span class="v">cabGeo</span> = <span class="k">new</span> <span class="f">THREE.SphereGeometry</span>(<span class="n">0.4</span>, <span class="n">16</span>, <span class="n">12</span>);
+<span class="k">const</span> <span class="v">cab</span> = <span class="k">new</span> <span class="f">THREE.Mesh</span>(cabGeo, matPele);
+cab.position.y = <span class="n">2.0</span>;
+
+<span class="c">// Corpo = cubo achatado</span>
+<span class="k">const</span> <span class="v">corpGeo</span> = <span class="k">new</span> <span class="f">THREE.BoxGeometry</span>(<span class="n">0.7</span>, <span class="n">0.9</span>, <span class="n">0.4</span>);
+<span class="k">const</span> <span class="v">corp</span> = <span class="k">new</span> <span class="f">THREE.Mesh</span>(corpGeo, matRoupa);
+corp.position.y = <span class="n">1.2</span>;
+
+<span class="c">// Perna = cilindro estreito</span>
+<span class="k">const</span> <span class="v">pernaGeo</span> = <span class="k">new</span> <span class="f">THREE.CylinderGeometry</span>(<span class="n">0.12</span>, <span class="n">0.1</span>, <span class="n">0.7</span>, <span class="n">8</span>);
+<span class="k">const</span> <span class="v">pernaD</span> = <span class="k">new</span> <span class="f">THREE.Mesh</span>(pernaGeo, matCalca);
+pernaD.position.<span class="f">set</span>(<span class="n">0.18</span>, <span class="n">0.4</span>, <span class="n">0</span>);</pre>
+  </div>
+
+  <div class="caixa-dica">
+    <div class="tit">💡 Dica Profissional</div>
+    Programas como Blender, Maya e ZBrush funcionam exatamente assim. Você começa com um cubo ou cilindro e vai moldando. O segredo está em <strong>acertar as proporções primeiro</strong>, depois detalhar!
+  </div>
+
+  <div class="nav">
+    <a href="aula2.html">← Aula 2</a>
+    <a href="aula4.html">Aula 4: UV Mapping →</a>
+  </div>
+</div>
+
+<!-- VIEWPORT -->
+<div class="viewport" id="vp">
+  <div class="controles-painel">
+    <div class="ctrl-grupo">
+      <label>Visualização</label>
+      <select id="sel-vis" onchange="trocarVis()">
+        <option value="solido">Sólido</option>
+        <option value="wire">Wireframe</option>
+        <option value="solido+wire">Sólido + Wire</option>
+      </select>
+    </div>
+    <div class="sep" style="margin:6px 0"></div>
+    <div class="ctrl-grupo">
+      <label>Polígonos na cena: <span id="cnt-poli" style="color:var(--laranja)">0</span></label>
+    </div>
+  </div>
+  <div class="info-viewport">
+    <span id="info-prim">Cena vazia — adicione primitivas</span>
+    <span>🖱️ Arrastar = orbitar · Scroll = zoom</span>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const vp = document.getElementById('vp');
+const vpW = () => window.innerWidth - document.querySelector('.painel').offsetWidth;
+const vpH = () => window.innerHeight;
+
+const cena = new THREE.Scene();
+cena.background = new THREE.Color('#03030a');
+cena.fog = new THREE.Fog('#03030a', 12, 25);
+
+const camera = new THREE.PerspectiveCamera(55, vpW()/vpH(), 0.1, 100);
+camera.position.set(3, 3, 4);
+camera.lookAt(0, 0, 0);
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch(e) {
+  document.getElementById('vp').innerHTML = '<div style="color:#f97316;padding:30px;font-family:monospace">❌ WebGL não iniciou: ' + e + '</div>';
+  throw e;
+}
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(vpW(), vpH());
+renderer.shadowMap.enabled = true;
+vp.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+cena.add(new THREE.AmbientLight('#ffffff', 0.55));
+const sol = new THREE.DirectionalLight('#fffbe6', 1.5);
+sol.position.set(4, 8, 4); sol.castShadow = true; cena.add(sol);
+const preenchimento = new THREE.HemisphereLight('#8bbfe8', '#1e1e3a', 0.5); cena.add(preenchimento);
+
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshStandardMaterial({ color: '#0e0e16' }));
+piso.rotation.x = -Math.PI/2; piso.receiveShadow = true; cena.add(piso);
+cena.add(new THREE.GridHelper(14, 28, '#1c1c2e', '#13131e'));
+
+const objetosNaCena = [];
+let wireMode = false;
+let totalPolys = 0;
+
+const CORES = ['#f97316','#eab308','#10b981','#06b6d4','#8b5cf6','#ec4899','#ef4444','#f59e0b'];
+let corIdx = 0;
+
+function criarMat(cor) {
+  return new THREE.MeshStandardMaterial({ color: cor, roughness: 0.45, metalness: 0.1 });
+}
+function criarWire(geo) {
+  return new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.25 }));
+}
+
+function adicionarPrimitiva(tipo) {
+  const cor = CORES[corIdx++ % CORES.length];
+  let geo;
+  if (tipo==='cubo')      geo = new THREE.BoxGeometry(1,1,1);
+  if (tipo==='esfera')    geo = new THREE.SphereGeometry(0.6, 16, 12);
+  if (tipo==='cilindro')  geo = new THREE.CylinderGeometry(0.5, 0.5, 1.2, 16);
+  if (tipo==='cone')      geo = new THREE.ConeGeometry(0.5, 1.2, 16);
+  if (tipo==='torus')     geo = new THREE.TorusGeometry(0.5, 0.2, 12, 24);
+  if (tipo==='plano')     geo = new THREE.PlaneGeometry(1.5, 1.5);
+  if (tipo==='capsula')   geo = new THREE.CapsuleGeometry(0.35, 0.8, 8, 16);
+  if (tipo==='icosaedro') geo = new THREE.IcosahedronGeometry(0.6, 1);
+
+  const mat = criarMat(cor);
+  const mesh = new THREE.Mesh(geo, mat);
+  const ang = Math.random() * Math.PI * 2;
+  const r   = 0.8 + Math.random() * 2;
+  mesh.position.set(Math.cos(ang)*r, 0.6 + Math.random()*0.5, Math.sin(ang)*r);
+  mesh.castShadow = true;
+  mesh.add(criarWire(geo));
+  cena.add(mesh);
+  objetosNaCena.push(mesh);
+
+  totalPolys += geo.index ? geo.index.count/3 : geo.attributes.position.count/3;
+  document.getElementById('cnt-poli').textContent = Math.round(totalPolys);
+  document.getElementById('info-prim').textContent = `${objetosNaCena.length} objetos · ${Math.round(totalPolys)} polígonos`;
+}
+
+// ── PERSONAGEM ──
+const PECAS_DEF = {
+  cab:  { nome: 'Cabeça', desc: 'SphereGeometry(0.35, 16, 12) · cor de pele', cor: '#e9b897' },
+  corp: { nome: 'Corpo',  desc: 'BoxGeometry(0.65, 0.85, 0.35) · cor de roupa', cor: '#2563eb' },
+  ba:   { nome: 'Braços', desc: '2× CylinderGeometry(0.1, 0.09, 0.7, 8)', cor: '#e9b897' },
+  pe:   { nome: 'Pernas', desc: '2× CylinderGeometry(0.12, 0.1, 0.75, 8)', cor: '#1e40af' },
+  pes:  { nome: 'Pés',    desc: '2× BoxGeometry(0.18, 0.1, 0.3) · posicionado na ponta', cor: '#1c1917' },
+  ol:   { nome: 'Olhos',  desc: '2× SphereGeometry(0.07, 8, 8) · rotacionado na cabeça', cor: '#1e3a5f' },
+};
+
+const PECAS_MESHES = {};
+const pecasAtivas = {};
+
+function criarBoneco() {
+  // Cabeça
+  const cab = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), new THREE.MeshStandardMaterial({ color:'#e9b897', roughness:0.6 }));
+  cab.position.set(0, 2.15, 0); cab.castShadow = true; cab.add(criarWire(cab.geometry));
+
+  // Corpo
+  const corp = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.85, 0.35), new THREE.MeshStandardMaterial({ color:'#2563eb', roughness:0.7 }));
+  corp.position.set(0, 1.35, 0); corp.castShadow = true; corp.add(criarWire(corp.geometry));
+
+  // Braços
+  const braGeo = new THREE.CylinderGeometry(0.1, 0.09, 0.7, 8);
+  const braMat = new THREE.MeshStandardMaterial({ color:'#e9b897', roughness:0.6 });
+  const braD = new THREE.Mesh(braGeo, braMat); braD.position.set(-0.45, 1.35, 0); braD.rotation.z = 0.3; braD.castShadow = true; braD.add(criarWire(braGeo));
+  const braE = braD.clone(); braE.position.set(0.45, 1.35, 0); braE.rotation.z = -0.3;
+  const baGroup = new THREE.Group(); baGroup.add(braD, braE);
+
+  // Pernas
+  const peGeo = new THREE.CylinderGeometry(0.12, 0.1, 0.75, 8);
+  const peMat = new THREE.MeshStandardMaterial({ color:'#1e40af', roughness:0.7 });
+  const peD = new THREE.Mesh(peGeo, peMat); peD.position.set(-0.18, 0.5, 0); peD.castShadow = true; peD.add(criarWire(peGeo));
+  const peE = peD.clone(); peE.position.set(0.18, 0.5, 0);
+  const peGroup = new THREE.Group(); peGroup.add(peD, peE);
+
+  // Pés
+  const pesGeo = new THREE.BoxGeometry(0.18, 0.1, 0.3);
+  const pesMat = new THREE.MeshStandardMaterial({ color:'#1c1917', roughness:0.8 });
+  const pesD = new THREE.Mesh(pesGeo, pesMat); pesD.position.set(-0.18, 0.1, 0.06); pesD.add(criarWire(pesGeo));
+  const pesE = pesD.clone(); pesE.position.set(0.18, 0.1, 0.06);
+  const pesGroup = new THREE.Group(); pesGroup.add(pesD, pesE);
+
+  // Olhos
+  const olGeo = new THREE.SphereGeometry(0.07, 8, 8);
+  const olMat = new THREE.MeshStandardMaterial({ color:'#1e3a5f', roughness:0.2 });
+  const olD = new THREE.Mesh(olGeo, olMat); olD.position.set(-0.13, 2.2, 0.3);
+  const olE = olD.clone(); olE.position.set(0.13, 2.2, 0.3);
+  const olGroup = new THREE.Group(); olGroup.add(olD, olE);
+
+  PECAS_MESHES.cab  = cab;
+  PECAS_MESHES.corp = corp;
+  PECAS_MESHES.ba   = baGroup;
+  PECAS_MESHES.pe   = peGroup;
+  PECAS_MESHES.pes  = pesGroup;
+  PECAS_MESHES.ol   = olGroup;
+}
+criarBoneco();
+
+function togglePeca(id) {
+  const btn = document.getElementById('pb-' + id);
+  const mesh = PECAS_MESHES[id];
+  const def = PECAS_DEF[id];
+
+  if (pecasAtivas[id]) {
+    cena.remove(mesh);
+    delete pecasAtivas[id];
+    btn.classList.remove('ativo');
+  } else {
+    cena.add(mesh);
+    pecasAtivas[id] = true;
+    btn.classList.add('ativo');
+  }
+
+  document.getElementById('peca-info').innerHTML =
+    `<strong style="color:var(--laranja)">${def.nome}</strong><br>
+     Geometria: <code>${def.desc}</code><br>
+     <span style="display:inline-block;width:12px;height:12px;background:${def.cor};border-radius:3px;margin-right:4px;vertical-align:middle"></span>Cor: <code>${def.cor}</code>`;
+}
+
+function montarTudo() {
+  Object.keys(PECAS_DEF).forEach(id => {
+    if (!pecasAtivas[id]) togglePeca(id);
+  });
+}
+
+function limparCena() {
+  // Remover primitivas adicionadas manualmente
+  objetosNaCena.forEach(m => cena.remove(m));
+  objetosNaCena.length = 0;
+  totalPolys = 0;
+  document.getElementById('cnt-poli').textContent = '0';
+  // Remover peças do boneco
+  Object.keys(PECAS_DEF).forEach(id => {
+    if (pecasAtivas[id]) {
+      cena.remove(PECAS_MESHES[id]);
+      delete pecasAtivas[id];
+      document.getElementById('pb-' + id).classList.remove('ativo');
+    }
+  });
+  document.getElementById('info-prim').textContent = 'Cena vazia — adicione primitivas';
+  criarBoneco(); // recriar meshes do boneco
+}
+
+function trocarVis() {
+  const v = document.getElementById('sel-vis').value;
+  [...objetosNaCena, ...Object.values(PECAS_MESHES)].forEach(obj => {
+    obj.traverse(child => {
+      if (child instanceof THREE.Mesh) {
+        child.material.wireframe = v === 'wire';
+        child.visible = true;
+      }
+      if (child instanceof THREE.LineSegments) {
+        child.visible = v !== 'wire';
+      }
+    });
+  });
+}
+
+function animar() {
+  requestAnimationFrame(animar);
+  controls.update();
+  renderer.render(cena, camera);
+}
+animar();
+
+window.addEventListener('resize', () => {
+  camera.aspect = vpW()/vpH();
+  camera.updateProjectionMatrix();
+  renderer.setSize(vpW(), vpH());
+});
+</script>
+</body>
+</html>

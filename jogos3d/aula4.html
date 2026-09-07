@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 4 — Controles com Teclado</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0ff; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+    .painel { overflow-y: auto; padding: 32px; border-right: 1px solid #2d2d4e; }
+    .visualizador { position: relative; background: #050510; outline: none; }
+    canvas { display: block; }
+    h1 { font-size: 1.5rem; color: #7c3aed; margin-bottom: 4px; }
+    .aula-num { font-size: 0.75rem; color: #6b7280; letter-spacing: 2px; text-transform: uppercase; }
+    .secao { margin-top: 28px; padding-top: 20px; border-top: 1px solid #2d2d4e; }
+    .secao h2 { font-size: 1.05rem; color: #06b6d4; margin-bottom: 12px; }
+    p { font-size: 0.9rem; line-height: 1.7; color: #c0c0d8; margin-bottom: 10px; }
+    pre {
+      background: #12121f; border: 1px solid #2d2d4e; border-radius: 8px;
+      padding: 16px; font-size: 0.78rem; overflow-x: auto; line-height: 1.6; margin: 12px 0;
+    }
+    .comment { color: #6b7280; }
+    .keyword { color: #c084fc; }
+    .string { color: #86efac; }
+    .number { color: #fb923c; }
+    .func { color: #60a5fa; }
+    .conceito {
+      background: #1a1a2e; border-left: 3px solid #7c3aed;
+      padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.88rem;
+    }
+    .nav { display: flex; justify-content: space-between; margin-top: 32px; padding-top: 20px; border-top: 1px solid #2d2d4e; }
+    .nav a { color: #7c3aed; text-decoration: none; font-size: 0.88rem; }
+    .hud {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 10;
+    }
+    .label-canvas {
+      background: rgba(0,0,0,0.6); padding: 4px 10px;
+      border-radius: 6px; font-size: 0.75rem; color: #9ca3af;
+    }
+    .teclas-hud {
+      background: rgba(0,0,0,0.7); padding: 8px 12px;
+      border-radius: 8px; font-size: 0.75rem; color: #c0c0d8; line-height: 1.8;
+    }
+    .teclado {
+      display: grid;
+      grid-template-columns: repeat(3, 40px);
+      gap: 4px;
+      margin: 16px 0;
+    }
+    .tecla {
+      width: 40px; height: 40px;
+      background: #1a1a2e; border: 1px solid #2d2d4e;
+      border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: bold; transition: background 0.1s;
+    }
+    .tecla.pressionada { background: #7c3aed; border-color: #7c3aed; }
+    .tecla.vazia { background: transparent; border-color: transparent; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div class="painel">
+    <div class="aula-num">Aula 4 de 6</div>
+    <h1>Controles com Teclado</h1>
+
+    <div class="secao">
+      <h2>⌨️ Como Funciona a Entrada do Teclado</h2>
+      <p>No navegador, capturamos teclas com <strong>event listeners</strong>. O segredo para movimento suave é guardar quais teclas estão <em>pressionadas agora</em>, não reagir ao evento diretamente:</p>
+
+      <div class="conceito">
+        ❌ <strong>Abordagem errada:</strong> mover o objeto dentro do evento <code>keydown</code> — movimento "empacotado"<br><br>
+        ✅ <strong>Abordagem certa:</strong> guardar estado das teclas num objeto, verificar no game loop a cada frame
+      </div>
+
+      <pre><span class="comment">// Objeto para guardar quais teclas estão pressionadas</span>
+<span class="keyword">const</span> teclas = {};
+
+<span class="comment">// Quando aperta: marca como true</span>
+window.<span class="func">addEventListener</span>(<span class="string">'keydown'</span>, (e) => {
+  teclas[e.key] = <span class="keyword">true</span>;
+});
+
+<span class="comment">// Quando solta: marca como false</span>
+window.<span class="func">addEventListener</span>(<span class="string">'keyup'</span>, (e) => {
+  teclas[e.key] = <span class="keyword">false</span>;
+});</pre>
+    </div>
+
+    <div class="secao">
+      <h2>🏃 Usando no Game Loop</h2>
+
+      <pre><span class="keyword">const</span> VELOCIDADE = <span class="number">5</span>; <span class="comment">// unidades por segundo</span>
+
+<span class="keyword">function</span> <span class="func">gameLoop</span>() {
+  <span class="func">requestAnimationFrame</span>(gameLoop);
+
+  <span class="keyword">const</span> delta = clock.<span class="func">getDelta</span>(); <span class="comment">// tempo desde último frame</span>
+
+  <span class="comment">// ← → ou A D: movimento lateral</span>
+  <span class="keyword">if</span> (teclas[<span class="string">'ArrowLeft'</span>]  || teclas[<span class="string">'a'</span>]) {
+    jogador.position.x -= VELOCIDADE * delta;
+  }
+  <span class="keyword">if</span> (teclas[<span class="string">'ArrowRight'</span>] || teclas[<span class="string">'d'</span>]) {
+    jogador.position.x += VELOCIDADE * delta;
+  }
+
+  <span class="comment">// ↑ ↓ ou W S: movimento de profundidade</span>
+  <span class="keyword">if</span> (teclas[<span class="string">'ArrowUp'</span>]   || teclas[<span class="string">'w'</span>]) {
+    jogador.position.z -= VELOCIDADE * delta;
+  }
+  <span class="keyword">if</span> (teclas[<span class="string">'ArrowDown'</span>] || teclas[<span class="string">'s'</span>]) {
+    jogador.position.z += VELOCIDADE * delta;
+  }
+
+  renderer.<span class="func">render</span>(cena, camera);
+}
+<span class="func">gameLoop</span>();</pre>
+    </div>
+
+    <div class="secao">
+      <h2>📷 Câmera que Segue o Jogador</h2>
+      <p>Em jogos com personagem, a câmera geralmente acompanha o jogador. A técnica mais simples é lerp (interpolação linear):</p>
+
+      <pre><span class="comment">// Posição que a câmera QUER alcançar</span>
+<span class="keyword">const</span> alvo = <span class="keyword">new</span> <span class="func">THREE.Vector3</span>(
+  jogador.position.x,
+  jogador.position.y + <span class="number">8</span>,  <span class="comment">// acima do jogador</span>
+  jogador.position.z + <span class="number">10</span>  <span class="comment">// atrás do jogador</span>
+);
+
+<span class="comment">// Lerp: move suavemente 10% do caminho por frame</span>
+<span class="comment">// Isso cria o efeito de câmera "elástica"</span>
+camera.position.<span class="func">lerp</span>(alvo, <span class="number">0.1</span>);
+camera.<span class="func">lookAt</span>(jogador.position);</pre>
+
+      <div class="conceito">
+        🎮 <strong>Teclas do demo ao lado:</strong><br>
+        <strong>WASD</strong> ou <strong>setas</strong> para mover a esfera azul<br>
+        <strong>Espaço</strong> para pular
+      </div>
+    </div>
+
+    <div class="secao">
+      <h2>🕹️ Visualize as Teclas</h2>
+      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+        <div>
+          <div class="teclado" style="grid-template-columns: 40px; margin-bottom:4px;">
+            <div class="tecla" id="k-w">W</div>
+          </div>
+          <div class="teclado">
+            <div class="tecla" id="k-a">A</div>
+            <div class="tecla" id="k-s">S</div>
+            <div class="tecla" id="k-d">D</div>
+          </div>
+        </div>
+        <div style="font-size:0.8rem; color:#6b7280;">+</div>
+        <div>
+          <div class="teclado" style="grid-template-columns: 40px; margin-bottom:4px;">
+            <div class="tecla" id="k-up">↑</div>
+          </div>
+          <div class="teclado">
+            <div class="tecla" id="k-left">←</div>
+            <div class="tecla" id="k-down">↓</div>
+            <div class="tecla" id="k-right">→</div>
+          </div>
+        </div>
+        <div style="margin-left:8px;">
+          <div class="tecla" style="width:100px;" id="k-space">Espaço</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <a href="aula3.html">← Aula 3</a>
+      <a href="aula5.html">Aula 5: Colisões →</a>
+    </div>
+  </div>
+
+  <!-- VISUALIZADOR -->
+  <div class="visualizador" id="visualizador" tabindex="0">
+    <div class="hud">
+      <div class="label-canvas">▶ WASD / Setas para mover · Espaço = pular</div>
+      <div class="teclas-hud" id="info-pos">Pos: 0, 0</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
+<script>
+  const container = document.getElementById('visualizador');
+
+  const cena = new THREE.Scene();
+  cena.background = new THREE.Color('#050510');
+  cena.fog = new THREE.Fog('#050510', 20, 50);
+
+  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.1, 1000);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.shadowMap.enabled = true;
+  container.appendChild(renderer.domElement);
+
+  // Luzes
+  cena.add(new THREE.AmbientLight('#334466', 0.8));
+  const sol = new THREE.DirectionalLight('#fffbe6', 1.5);
+  sol.position.set(8, 15, 8);
+  sol.castShadow = true;
+  cena.add(sol);
+
+  // Chão
+  const chaoGeo = new THREE.PlaneGeometry(40, 40);
+  const chaoMat = new THREE.MeshStandardMaterial({ color: '#1a1a2e' });
+  const chao = new THREE.Mesh(chaoGeo, chaoMat);
+  chao.rotation.x = -Math.PI / 2;
+  chao.receiveShadow = true;
+  cena.add(chao);
+  cena.add(new THREE.GridHelper(40, 40, '#2d2d4e', '#2d2d4e'));
+
+  // Decoração — cubos no cenário
+  const coresDec = ['#7c3aed','#06b6d4','#f59e0b','#ef4444','#10b981'];
+  for (let i = 0; i < 20; i++) {
+    const h = 0.5 + Math.random() * 1.5;
+    const geo = new THREE.BoxGeometry(1, h, 1);
+    const mat = new THREE.MeshStandardMaterial({ color: coresDec[i % 5], roughness: 0.7 });
+    const cubo = new THREE.Mesh(geo, mat);
+    cubo.position.set(
+      (Math.random() - 0.5) * 30,
+      h / 2,
+      (Math.random() - 0.5) * 30
+    );
+    if (Math.abs(cubo.position.x) > 3 || Math.abs(cubo.position.z) > 3) {
+      cena.add(cubo);
+    }
+  }
+
+  // Jogador
+  const jogGeo = new THREE.SphereGeometry(0.6, 24, 24);
+  const jogMat = new THREE.MeshStandardMaterial({ color: '#60a5fa', roughness: 0.2, metalness: 0.8 });
+  const jogador = new THREE.Mesh(jogGeo, jogMat);
+  jogador.position.set(0, 0.6, 0);
+  jogador.castShadow = true;
+  cena.add(jogador);
+
+  // Sombra do jogador
+  const sombraGeo = new THREE.CircleGeometry(0.5, 16);
+  const sombraMat = new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3 });
+  const sombra = new THREE.Mesh(sombraGeo, sombraMat);
+  sombra.rotation.x = -Math.PI / 2;
+  sombra.position.y = 0.01;
+  cena.add(sombra);
+
+  // Estado do teclado
+  const teclas = {};
+  window.addEventListener('keydown', e => {
+    teclas[e.key] = true;
+    e.preventDefault();
+    atualizarVisualizacaoTeclas();
+  });
+  window.addEventListener('keyup', e => {
+    teclas[e.key] = false;
+    atualizarVisualizacaoTeclas();
+  });
+
+  function atualizarVisualizacaoTeclas() {
+    document.getElementById('k-w').classList.toggle('pressionada', !!teclas['w'] || !!teclas['W']);
+    document.getElementById('k-a').classList.toggle('pressionada', !!teclas['a'] || !!teclas['A']);
+    document.getElementById('k-s').classList.toggle('pressionada', !!teclas['s'] || !!teclas['S']);
+    document.getElementById('k-d').classList.toggle('pressionada', !!teclas['d'] || !!teclas['D']);
+    document.getElementById('k-up').classList.toggle('pressionada', !!teclas['ArrowUp']);
+    document.getElementById('k-down').classList.toggle('pressionada', !!teclas['ArrowDown']);
+    document.getElementById('k-left').classList.toggle('pressionada', !!teclas['ArrowLeft']);
+    document.getElementById('k-right').classList.toggle('pressionada', !!teclas['ArrowRight']);
+    document.getElementById('k-space').classList.toggle('pressionada', !!teclas[' ']);
+  }
+
+  const VELOCIDADE = 8;
+  const GRAVIDADE = -20;
+  const FORCA_PULO = 9;
+  let velY = 0;
+  let noCHao = true;
+
+  const clock = new THREE.Clock();
+
+  function gameLoop() {
+    requestAnimationFrame(gameLoop);
+    const delta = clock.getDelta();
+
+    // Movimento horizontal
+    if (teclas['ArrowLeft']  || teclas['a'] || teclas['A']) jogador.position.x -= VELOCIDADE * delta;
+    if (teclas['ArrowRight'] || teclas['d'] || teclas['D']) jogador.position.x += VELOCIDADE * delta;
+    if (teclas['ArrowUp']    || teclas['w'] || teclas['W']) jogador.position.z -= VELOCIDADE * delta;
+    if (teclas['ArrowDown']  || teclas['s'] || teclas['S']) jogador.position.z += VELOCIDADE * delta;
+
+    // Pulo
+    if ((teclas[' '] || teclas['ArrowUp']) && noCHao) {
+      velY = FORCA_PULO;
+      noCHao = false;
+    }
+
+    // Gravidade
+    velY += GRAVIDADE * delta;
+    jogador.position.y += velY * delta;
+
+    // Chão
+    if (jogador.position.y <= 0.6) {
+      jogador.position.y = 0.6;
+      velY = 0;
+      noCHao = true;
+    }
+
+    // Sombra segue o jogador no chão
+    sombra.position.x = jogador.position.x;
+    sombra.position.z = jogador.position.z;
+    const alturaRelativa = jogador.position.y - 0.6;
+    sombraMat.opacity = 0.35 * (1 - Math.min(alturaRelativa / 5, 1));
+    sombra.scale.setScalar(1 - alturaRelativa * 0.08);
+
+    // Câmera segue jogador suavemente
+    const alvo = new THREE.Vector3(
+      jogador.position.x,
+      jogador.position.y + 7,
+      jogador.position.z + 11
+    );
+    camera.position.lerp(alvo, 0.08);
+    camera.lookAt(jogador.position);
+
+    // Esfera rola baseado no movimento
+    if (teclas['ArrowLeft']  || teclas['a'] || teclas['A']) jogador.rotation.z += 3 * delta;
+    if (teclas['ArrowRight'] || teclas['d'] || teclas['D']) jogador.rotation.z -= 3 * delta;
+    if (teclas['ArrowUp']    || teclas['w'] || teclas['W']) jogador.rotation.x += 3 * delta;
+    if (teclas['ArrowDown']  || teclas['s'] || teclas['S']) jogador.rotation.x -= 3 * delta;
+
+    // HUD
+    document.getElementById('info-pos').textContent =
+      `X: ${jogador.position.x.toFixed(1)}  Z: ${jogador.position.z.toFixed(1)}`;
+
+    renderer.render(cena, camera);
+  }
+  gameLoop();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+
+  // Focar no canvas para capturar teclas
+  container.addEventListener('click', () => container.focus());
+</script>
+</body>
+</html>

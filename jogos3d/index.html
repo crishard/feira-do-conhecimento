@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Jogos 3D com Engines — Curso</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e0e0ff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    h1 {
+      font-size: 2.4rem;
+      background: linear-gradient(135deg, #7c3aed, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #9ca3af;
+      margin-bottom: 48px;
+      font-size: 1.05rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 960px;
+      width: 100%;
+    }
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2d2d4e;
+      border-radius: 12px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, border-color 0.2s;
+      cursor: pointer;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: #7c3aed;
+    }
+    .card .numero {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #7c3aed;
+      margin-bottom: 8px;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+    .card p {
+      font-size: 0.88rem;
+      color: #9ca3af;
+      line-height: 1.6;
+    }
+    .badge {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+    }
+    .badge.iniciante { background: #064e3b; color: #34d399; }
+    .badge.intermediario { background: #1e3a5f; color: #60a5fa; }
+    .badge.avancado { background: #3b1f5e; color: #c084fc; }
+    .badge.projeto { background: #7c2d12; color: #fb923c; }
+    footer {
+      margin-top: 60px;
+      color: #4b5563;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 Jogos 3D com Engines</h1>
+  <p class="subtitle">Aprenda a criar jogos 3D do zero usando Three.js — sem instalar nada!</p>
+
+  <div class="grid">
+    <a class="card" href="aula1.html">
+      <div class="numero">Aula 1</div>
+      <h2>O que é uma Engine 3D?</h2>
+      <p>Entenda o que é uma engine, conheça o Three.js e crie sua primeira cena 3D com câmera e um cubo.</p>
+      <span class="badge iniciante">Iniciante</span>
+    </a>
+    <a class="card" href="aula2.html">
+      <div class="numero">Aula 2</div>
+      <h2>Objetos, Materiais e Luzes</h2>
+      <p>Crie diferentes formas 3D, aplique cores e texturas, e ilumine sua cena com tipos de luz.</p>
+      <span class="badge iniciante">Iniciante</span>
+    </a>
+    <a class="card" href="aula3.html">
+      <div class="numero">Aula 3</div>
+      <h2>Animação — O Game Loop</h2>
+      <p>Entenda o conceito fundamental de qualquer jogo: o loop de animação e como mover objetos ao longo do tempo.</p>
+      <span class="badge intermediario">Intermediário</span>
+    </a>
+    <a class="card" href="aula4.html">
+      <div class="numero">Aula 4</div>
+      <h2>Controles com Teclado</h2>
+      <p>Capture eventos de teclado e mova seu personagem pelo cenário 3D em tempo real.</p>
+      <span class="badge intermediario">Intermediário</span>
+    </a>
+    <a class="card" href="aula5.html">
+      <div class="numero">Aula 5</div>
+      <h2>Colisões e Física Simples</h2>
+      <p>Detecte quando dois objetos se tocam, implemente limites de mapa e crie reações ao impacto.</p>
+      <span class="badge avancado">Avançado</span>
+    </a>
+    <a class="card" href="aula6.html">
+      <div class="numero">Aula 6 — Projeto Final</div>
+      <h2>Jogo: "Foge do Cubo!"</h2>
+      <p>Una tudo que aprendeu e construa um jogo completo com pontuação, vidas, obstáculos e tela de game over.</p>
+      <span class="badge projeto">🏆 Projeto Final</span>
+    </a>
+  </div>
+
+  <footer>
+    Curso criado com Three.js • Abra cada aula no navegador • Nenhuma instalação necessária
+  </footer>
+</body>
+</html>

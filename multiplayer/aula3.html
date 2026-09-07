@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Aula 3 — Como a Internet Funciona?</title>
+  <style>
+    :root {
+      --roxo: #7c3aed; --ciano: #06b6d4; --verde: #10b981;
+      --bg: #0a0a14; --card: #13131f; --borda: #252538;
+      --texto: #e2e8f0; --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--texto); }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+
+    .conteudo { padding: 32px 36px; overflow-y: auto; max-height: 100vh; border-right: 1px solid var(--borda); }
+    .breadcrumb { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .breadcrumb a { color: var(--roxo); text-decoration: none; }
+    h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
+    .subtitulo { color: var(--muted); margin-bottom: 28px; font-size: 0.9rem; }
+    h2 { font-size: 1.05rem; color: var(--ciano); margin: 24px 0 10px; }
+    p { font-size: 0.9rem; line-height: 1.75; color: #cbd5e1; margin-bottom: 10px; }
+    strong { color: var(--texto); }
+
+    .analogia {
+      background: #0d1f0d; border: 1px solid #14532d;
+      border-radius: 10px; padding: 14px 18px; margin: 12px 0;
+    }
+    .analogia .tit { color: #4ade80; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .analogia p { font-size: 0.87rem; margin: 0; }
+
+    .bloco-codigo {
+      background: #0d0d1a; border: 1px solid var(--borda);
+      border-radius: 8px; margin: 10px 0; overflow: hidden;
+    }
+    .bloco-codigo .cab { background: #181828; padding: 6px 14px; font-size: 0.72rem; color: var(--muted); }
+    .bloco-codigo pre { padding: 12px 14px; font-size: 0.77rem; line-height: 1.6; overflow-x: auto; }
+    .c { color: #475569; } .k { color: #c084fc; } .s { color: #86efac; }
+    .n { color: #fb923c; } .f { color: #60a5fa; } .v { color: #fde68a; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+    .caixinha {
+      background: var(--card); border: 1px solid var(--borda);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .caixinha .icone { font-size: 1.5rem; margin-bottom: 8px; }
+    .caixinha h3 { font-size: 0.9rem; margin-bottom: 4px; }
+    .caixinha p { font-size: 0.82rem; color: var(--muted); margin: 0; }
+
+    .tabela { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.84rem; }
+    .tabela th { background: #181828; padding: 8px 12px; text-align: left; color: var(--roxo); border-bottom: 1px solid var(--borda); }
+    .tabela td { padding: 8px 12px; border-bottom: 1px solid #1a1a2e; color: #cbd5e1; }
+
+    .nav { display: flex; justify-content: space-between; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--borda); }
+    .nav a { color: var(--roxo); text-decoration: none; font-size: 0.88rem; }
+
+    /* VISUALIZADOR */
+    .visualizador { background: #050510; display: flex; flex-direction: column; overflow: hidden; }
+    .vis-topo {
+      padding: 16px 20px; border-bottom: 1px solid var(--borda);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .vis-topo span { font-size: 0.75rem; color: var(--muted); }
+    .btn-sim {
+      background: var(--roxo); color: white; border: none;
+      padding: 7px 18px; border-radius: 8px; cursor: pointer;
+      font-size: 0.82rem; font-family: inherit; transition: background 0.2s;
+    }
+    .btn-sim:hover { background: #6d28d9; }
+    .btn-sim.verde { background: #059669; }
+    .btn-sim.verde:hover { background: #047857; }
+
+    .canvas-area { flex: 1; position: relative; }
+    #canvas-rede { display: block; }
+
+    .log-area {
+      height: 160px; border-top: 1px solid var(--borda);
+      padding: 10px 16px; overflow-y: auto; background: #0a0a14;
+    }
+    .log-entry {
+      font-size: 0.75rem; font-family: monospace;
+      padding: 3px 0; border-bottom: 1px solid #13131f;
+      display: flex; gap: 10px;
+    }
+    .log-entry .ts { color: var(--muted); flex-shrink: 0; }
+    .log-entry .de-para { color: var(--roxo); flex-shrink: 0; }
+    .log-entry .msg { color: #cbd5e1; }
+    .log-entry.resp .de-para { color: var(--verde); }
+    .log-entry.erro .msg { color: #ef4444; }
+
+    .modo-tabs {
+      display: flex; gap: 0; padding: 12px 20px 0; border-bottom: 1px solid var(--borda);
+    }
+    .modo-tab {
+      padding: 6px 16px; font-size: 0.8rem; cursor: pointer;
+      border-bottom: 2px solid transparent; color: var(--muted);
+      transition: color 0.2s, border-color 0.2s; background: none; border-top: none; border-left: none; border-right: none;
+      font-family: inherit;
+    }
+    .modo-tab.ativo { color: var(--ciano); border-bottom-color: var(--ciano); }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- CONTEÚDO -->
+  <div class="conteudo">
+    <div class="breadcrumb"><a href="index.html">← Início</a> / Aula 3</div>
+    <h1>🌐 Como a Internet Funciona?</h1>
+    <p class="subtitulo">Para criar jogos multiplayer online, você precisa entender como dados viajam pela rede.</p>
+
+    <h2>📮 Analogia do Correio</h2>
+    <div class="analogia">
+      <div class="tit">📬 Pensa assim</div>
+      <p>Quando você manda uma mensagem no WhatsApp, ela sai do seu celular, passa por vários computadores na internet e chega no celular do seu amigo. Esses computadores no meio são os <strong>servidores</strong>. Você e seu amigo são os <strong>clientes</strong>.</p>
+    </div>
+
+    <h2>🏗️ Cliente e Servidor</h2>
+    <div class="grid2">
+      <div class="caixinha">
+        <div class="icone">📱</div>
+        <h3>Cliente</h3>
+        <p>É você (o jogador). Pede informações e envia ações (mover, atirar).</p>
+      </div>
+      <div class="caixinha">
+        <div class="icone">🖥️</div>
+        <h3>Servidor</h3>
+        <p>Computador sempre ligado. Recebe tudo de todos os clientes e manda de volta.</p>
+      </div>
+    </div>
+
+    <div class="analogia">
+      <div class="tit">🎮 Em um jogo multiplayer</div>
+      <p>
+        <strong>Você aperta W</strong> → seu computador envia "jogador1 se moveu pra cima" ao servidor<br>
+        → o servidor atualiza a posição<br>
+        → o servidor envia a nova posição para <em>todos</em> os jogadores<br>
+        → seu amigo vê você se mover na tela dele
+      </p>
+    </div>
+
+    <h2>📡 O que é uma Mensagem (Pacote)?</h2>
+    <p>Na internet, tudo que trafega são <strong>pacotes</strong> — pequenos blocos de dados. Um pacote tem:</p>
+
+    <div class="bloco-codigo">
+      <div class="cab">Exemplo de pacote em JSON (formato muito usado em jogos)</div>
+      <pre>{
+  <span class="s">"tipo"</span>: <span class="s">"mover"</span>,
+  <span class="s">"jogadorId"</span>: <span class="s">"player_42"</span>,
+  <span class="s">"posicao"</span>: { <span class="s">"x"</span>: <span class="n">150</span>, <span class="s">"y"</span>: <span class="n">320</span> },
+  <span class="s">"timestamp"</span>: <span class="n">1720000000123</span>
+}</pre>
+    </div>
+
+    <h2>⚡ Latência — O Atraso da Rede</h2>
+    <p>O tempo que um pacote leva para ir do seu computador ao servidor e voltar chama-se <strong>latência</strong> (ou ping). É medido em milissegundos (ms):</p>
+
+    <table class="tabela">
+      <tr><th>Ping</th><th>Qualidade</th><th>Sensação no jogo</th></tr>
+      <tr><td>&lt; 30ms</td><td>🟢 Excelente</td><td>Praticamente instantâneo</td></tr>
+      <tr><td>30–80ms</td><td>🟡 Bom</td><td>Quase imperceptível</td></tr>
+      <tr><td>80–150ms</td><td>🟠 Razoável</td><td>Dá pra jogar, mas dá pra sentir</td></tr>
+      <tr><td>&gt; 150ms</td><td>🔴 Ruim</td><td>"Lag" — o jogo parece lento</td></tr>
+    </table>
+
+    <h2>📨 WebSockets — A Conexão de Jogos</h2>
+    <p>A maioria dos sites usa HTTP (você pede, o servidor responde, acabou). Mas em jogos precisamos de uma <strong>conexão aberta o tempo todo</strong>. Para isso existe o <strong>WebSocket</strong>:</p>
+
+    <div class="bloco-codigo">
+      <div class="cab">JavaScript — WebSocket básico</div>
+      <pre><span class="c">// Conectar ao servidor</span>
+<span class="k">const</span> <span class="v">ws</span> = <span class="k">new</span> <span class="f">WebSocket</span>(<span class="s">'ws://servidor.com/jogo'</span>);
+
+<span class="c">// Quando a conexão abrir</span>
+<span class="v">ws</span>.onopen = () => {
+  console.log(<span class="s">'Conectado ao servidor!'</span>);
+};
+
+<span class="c">// Quando receber uma mensagem</span>
+<span class="v">ws</span>.onmessage = (evento) => {
+  <span class="k">const</span> <span class="v">dados</span> = JSON.parse(evento.data);
+  <span class="f">atualizarJogo</span>(dados);
+};
+
+<span class="c">// Enviar uma mensagem</span>
+<span class="v">ws</span>.send(JSON.stringify({
+  tipo: <span class="s">'mover'</span>,
+  x: jogador.x,
+  y: jogador.y
+}));</pre>
+    </div>
+
+    <p>No nosso curso, ao invés de WebSockets com um servidor real, vamos usar o <strong>BroadcastChannel</strong> — que funciona da mesma forma, mas entre abas do mesmo navegador. O conceito é idêntico!</p>
+
+    <div class="nav">
+      <a href="aula2.html">← Aula 2</a>
+      <a href="aula4.html">Aula 4: Mensagens →</a>
+    </div>
+  </div>
+
+  <!-- VISUALIZADOR -->
+  <div class="visualizador">
+    <div class="modo-tabs">
+      <button class="modo-tab ativo" onclick="setModo('requisicao')">Requisição simples</button>
+      <button class="modo-tab" onclick="setModo('websocket')">WebSocket (jogo)</button>
+    </div>
+    <div class="vis-topo">
+      <span id="vis-descricao">Clique para simular uma requisição</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sim verde" id="btn-auto" onclick="toggleAuto()">▶ Auto</button>
+        <button class="btn-sim" onclick="disparar()">Enviar Pacote</button>
+      </div>
+    </div>
+    <div class="canvas-area">
+      <canvas id="canvas-rede"></canvas>
+    </div>
+    <div class="log-area" id="log-area">
+      <div style="font-size:0.75rem;color:var(--muted);padding:4px 0;">Aguardando mensagens...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('canvas-rede');
+  const ctx = canvas.getContext('2d');
+  const area = document.querySelector('.canvas-area');
+  let modo = 'requisicao';
+  let autoMode = false;
+  let autoInterval;
+
+  function resize() {
+    canvas.width  = area.clientWidth;
+    canvas.height = area.clientHeight;
+  }
+  resize();
+  window.addEventListener('resize', () => { resize(); desenharFundo(); });
+
+  // Pacotes animados
+  const pacotes = [];
+  let contMensagens = 0;
+
+  const MENSAGENS_JOGO = [
+    { tipo: 'mover',   cor: '#60a5fa', dir: 'ida',    texto: '{ tipo:"mover", x:142, y:87 }' },
+    { tipo: 'atirar',  cor: '#ef4444', dir: 'ida',    texto: '{ tipo:"atirar", angulo:45 }' },
+    { tipo: 'estado',  cor: '#10b981', dir: 'volta',  texto: '{ jogadores: [{...},{...}] }' },
+    { tipo: 'hit',     cor: '#f59e0b', dir: 'volta',  texto: '{ tipo:"hit", dano:25 }' },
+    { tipo: 'mover',   cor: '#c084fc', dir: 'ida',    texto: '{ tipo:"mover", x:200, y:150 }' },
+    { tipo: 'ping',    cor: '#64748b', dir: 'ida',    texto: '{ tipo:"ping" }' },
+    { tipo: 'pong',    cor: '#64748b', dir: 'volta',  texto: '{ tipo:"pong", latencia:28 }' },
+  ];
+
+  function setModo(m) {
+    modo = m;
+    document.querySelectorAll('.modo-tab').forEach((t, i) => {
+      t.classList.toggle('ativo', (i === 0 && m === 'requisicao') || (i === 1 && m === 'websocket'));
+    });
+    document.getElementById('vis-descricao').textContent =
+      m === 'requisicao' ? 'HTTP: cliente pede, servidor responde, conexão fecha' : 'WebSocket: conexão aberta — mensagens em tempo real';
+    pacotes.length = 0;
+    contMensagens = 0;
+  }
+
+  function toggleAuto() {
+    autoMode = !autoMode;
+    const btn = document.getElementById('btn-auto');
+    if (autoMode) {
+      btn.textContent = '⏸ Auto';
+      btn.classList.remove('verde');
+      autoInterval = setInterval(disparar, 1200);
+    } else {
+      btn.textContent = '▶ Auto';
+      btn.classList.add('verde');
+      clearInterval(autoInterval);
+    }
+  }
+
+  function disparar() {
+    const W = canvas.width, H = canvas.height;
+    const cx = W / 2, cxS = W * 0.75, cxC = W * 0.25;
+    const cy = H / 2;
+
+    if (modo === 'requisicao') {
+      // ida
+      pacotes.push({ x: cxC, y: cy, tx: cxS, ty: cy, prog: 0, cor: '#60a5fa', msg: 'GET /posicoes', fase: 'ida' });
+      setTimeout(() => {
+        pacotes.push({ x: cxS, y: cy, tx: cxC, ty: cy, prog: 0, cor: '#10b981', msg: '200 OK {...}', fase: 'volta' });
+        adicionarLog('Servidor', 'Cliente', '200 OK { jogadores: [...] }', 'resp');
+      }, 900);
+      adicionarLog('Cliente', 'Servidor', 'GET /posicoes');
+    } else {
+      const info = MENSAGENS_JOGO[contMensagens % MENSAGENS_JOGO.length];
+      contMensagens++;
+      if (info.dir === 'ida') {
+        pacotes.push({ x: cxC, y: cy + (Math.random()-0.5)*40, tx: cxS, ty: cy + (Math.random()-0.5)*40, prog: 0, cor: info.cor, msg: info.tipo });
+        adicionarLog('Cliente', 'Servidor', info.texto);
+      } else {
+        pacotes.push({ x: cxS, y: cy + (Math.random()-0.5)*40, tx: cxC, ty: cy + (Math.random()-0.5)*40, prog: 0, cor: info.cor, msg: info.tipo });
+        adicionarLog('Servidor', 'Cliente', info.texto, 'resp');
+      }
+    }
+  }
+
+  function adicionarLog(de, para, msg, cls) {
+    const log = document.getElementById('log-area');
+    if (log.children.length === 1 && log.children[0].tagName === 'DIV' && log.children[0].style.color) {
+      log.innerHTML = '';
+    }
+    const entry = document.createElement('div');
+    entry.className = 'log-entry' + (cls ? ' ' + cls : '');
+    const ts = new Date().toLocaleTimeString('pt-BR', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    entry.innerHTML = `<span class="ts">${ts}</span><span class="de-para">${de} → ${para}</span><span class="msg">${msg}</span>`;
+    log.insertBefore(entry, log.firstChild);
+    if (log.children.length > 30) log.removeChild(log.lastChild);
+  }
+
+  function desenharFundo() {
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0, 0, W, H);
+
+    const cxC = W * 0.25, cxS = W * 0.75, cy = H / 2;
+
+    // Linha de conexão
+    if (modo === 'websocket') {
+      ctx.save();
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = '#1e3a5f';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cxC + 50, cy); ctx.lineTo(cxS - 50, cy); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#1e3a5f';
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('conexão permanente aberta', W/2, cy - 12);
+    } else {
+      ctx.save();
+      ctx.setLineDash([4, 8]);
+      ctx.strokeStyle = '#252538';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cxC + 50, cy); ctx.lineTo(cxS - 50, cy); ctx.stroke();
+      ctx.restore();
+    }
+
+    // Cliente
+    desenharNode(cxC, cy, '💻', 'Cliente\n(Você)', '#60a5fa');
+    // Servidor
+    desenharNode(cxS, cy, '🖥️', 'Servidor', '#10b981');
+  }
+
+  function desenharNode(x, y, emoji, label, cor) {
+    ctx.fillStyle = '#13131f';
+    ctx.strokeStyle = cor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x - 45, y - 40, 90, 80, 12);
+    ctx.fill(); ctx.stroke();
+
+    ctx.font = '24px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(emoji, x, y - 5);
+
+    ctx.font = '11px Segoe UI';
+    ctx.fillStyle = '#94a3b8';
+    const linhas = label.split('\n');
+    linhas.forEach((l, i) => ctx.fillText(l, x, y + 16 + i * 14));
+  }
+
+  function animationLoop() {
+    requestAnimationFrame(animationLoop);
+    desenharFundo();
+
+    for (let i = pacotes.length - 1; i >= 0; i--) {
+      const p = pacotes[i];
+      p.prog += 0.022;
+      if (p.prog >= 1) { pacotes.splice(i, 1); continue; }
+
+      const x = p.x + (p.tx - p.x) * p.prog;
+      const y = p.y + (p.ty - p.y) * p.prog;
+
+      // Trilha
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = p.cor;
+      ctx.beginPath();
+      ctx.arc(x - (p.tx - p.x) * 0.08, y - (p.ty - p.y) * 0.08, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Pacote
+      ctx.fillStyle = p.cor;
+      ctx.shadowBlur = 12; ctx.shadowColor = p.cor + '80';
+      ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Label
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.msg, x, y - 16);
+    }
+  }
+  animationLoop();
+
+  // Setas indicativas de latência
+  setInterval(() => {
+    if (modo === 'websocket' && autoMode && pacotes.length === 0) {
+      // pulso visual de conexão
+    }
+  }, 100);
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barras do Marataoã — Expedição pela Cidade</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>🛶 Barras do Marataoã</h1>
+        <p class="tag">Expedição point &amp; click pela história, pelos rios e pela gente de Barras — Piauí · clique nos pontos do mapa, leia a curiosidade e conquiste os selos do explorador</p>
+      </div>
+      <div class="placar">
+        <span id="selos">0 / 10 selos</span>
+        <span class="prazo" id="subPlacar">nenhum lugar visitado ainda</span>
+      </div>
+    </header>
+
+    <div class="barra-progresso"><div id="progresso"></div></div>
+
+    <main>
+      <section class="visao">
+        <canvas id="mapa" width="900" height="620"></canvas>
+        <div class="legenda-mapa">
+          <span><i class="cor rio"></i> Rios Marataoã e Longá</span>
+          <span><i class="cor cidade"></i> Cidade e patrimônio</span>
+          <span><i class="cor mata"></i> Carnaubais e babaçuais</span>
+          <span class="dica-mapa">💡 passe o mouse (ou o dedo) e clique nos marcadores</span>
+        </div>
+      </section>
+
+      <aside class="painel" id="painel">
+        <div class="painel-vazio" id="painelVazio">
+          <div class="brasao">🌾</div>
+          <h2>Bem-vindo, explorador!</h2>
+          <p>
+            Barras fica a 126 km ao norte de Teresina, entre o rio Marataoã e o rio Longá.
+            São <strong>10 lugares</strong> para descobrir no mapa.
+          </p>
+          <p class="instrucao">
+            Em cada ponto você lê uma curiosidade e responde a um desafio.
+            Acertando, ganha o <strong>selo</strong> daquele lugar.
+          </p>
+          <ul class="checklist" id="checklist"></ul>
+        </div>
+
+        <article class="ficha escondido" id="ficha">
+          <div class="ficha-topo">
+            <span class="ficha-emoji" id="fichaEmoji">📍</span>
+            <div>
+              <h2 id="fichaNome">—</h2>
+              <span class="ficha-tipo" id="fichaTipo">—</span>
+            </div>
+          </div>
+
+          <p class="ficha-texto" id="fichaTexto"></p>
+          <div class="sabia" id="fichaSabia"></div>
+          <p class="fonte" id="fichaFonte"></p>
+
+          <div class="quiz escondido" id="quiz">
+            <h3 id="quizPergunta">—</h3>
+            <div class="opcoes" id="quizOpcoes"></div>
+            <div class="feedback escondido" id="quizFeedback"></div>
+          </div>
+
+          <div class="ficha-acoes">
+            <button id="btnDesafio" class="btn-principal">Encarar o desafio 🎯</button>
+            <button id="btnVoltar" class="btn-fantasma">Voltar ao mapa</button>
+          </div>
+        </article>
+      </aside>
+    </main>
+
+    <div id="telaFinal" class="tela-final escondido">
+      <div class="certificado">
+        <span class="selo-final">🏅</span>
+        <h2>Expedição concluída!</h2>
+        <p id="resumoFinal">—</p>
+        <label for="nomeAluno">Escreva seu nome para o certificado:</label>
+        <input id="nomeAluno" type="text" maxlength="40" placeholder="seu nome aqui" autocomplete="off">
+        <div class="diploma" id="diploma">
+          <h3>Certificado de Explorador Barrense</h3>
+          <p class="nome-diploma" id="nomeDiploma">—</p>
+          <p>percorreu os 10 pontos históricos e naturais de <strong>Barras do Marataoã</strong>,
+             no Piauí, e conhece a história da Terra dos Governadores e dos Poetas.</p>
+          <span class="data-diploma" id="dataDiploma"></span>
+        </div>
+        <div class="acoes-final">
+          <button id="btnReiniciar" class="btn-principal">Nova expedição 🔁</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="rodape">
+      <p>
+        Jogo educativo para feira de conhecimento. Fontes: Wikipédia (Barras/PI), IBGE Cidades,
+        Prefeitura Municipal de Barras e Museu Virtual de Barras do Marataoã.
+        <strong>Confira os dados com fontes locais antes da apresentação.</strong>
+      </p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
